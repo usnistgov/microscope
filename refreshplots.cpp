@@ -16,7 +16,7 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-/// \brief Constructor. Requires the active Client object and a plotWindow.
+/// \brief Constructor
 /// \param client_in    The active Client object
 /// \param msec_period  The refresh time in milliseconds
 ///

@@ -24,8 +24,9 @@ socket = context.socket(zmq.PUB)
 socket.bind("tcp://*:%s" % port)
 
 t = np.arange(-256, 767, 1024)
-messagedata = np.exp(-t/200.) - np.exp(-t/40) + 1000
-messagedata[t<0] = 1000
+pulse = np.exp(-t/200.) - np.exp(-t/40) + 1000
+pulse[t<0] = 1000
+messagedata = np.array(pulse, dtype=np.uint64)
 
 
 while True:
