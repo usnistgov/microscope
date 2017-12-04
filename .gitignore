@@ -1,1 +1,5 @@
+*.pyc
+*.o
+*~
 microscope.pro.user
+.DS_Store
