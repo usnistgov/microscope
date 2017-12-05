@@ -1,13 +1,16 @@
 #include <iostream>
+#include <sstream>
 #include <unistd.h>
 #include <QThread>
 #include <QTimer>
 #include <zmq.hpp>
 
 #include "datasubscriber.h"
+#include "plotwindow.h"
 
-dataSubscriber::dataSubscriber()
+dataSubscriber::dataSubscriber(plotWindow *w)
 {
+    window = w;
     myThread = new QThread;
     moveToThread(myThread);
 
@@ -52,9 +55,15 @@ void dataSubscriber::process() {
     while (true) {
         zmq::message_t update;
         subscriber->recv(&update);
-        std::cout << "Received message of size " << update.size() << std::endl;
+        std::cout << "Received message of size " << update.size();
 
-//        std::istringstream iss(static_cast<char*>(update.data()));
-//        iss >> zipcode >> temperature >> relhumidity ;
+        uint32_t * lptr = reinterpret_cast<uint32_t *>(update.data());
+        std::cout << " for chan " << lptr[0] << " with " << lptr[1] <<" presamples and "
+                  << lptr[2] <<"-byte words: [";
+        int N = (update.size()-3*sizeof(uint32_t))/lptr[2];
+        uint16_t * sptr = reinterpret_cast<uint16_t *>(&lptr[3]);
+        std::cout << sptr[0] <<", " << sptr[1] << "... " << sptr[N-1] <<"]"<< std::endl;
+
+        window->newPlotTrace(lptr[0], sptr, N);
     }
 }

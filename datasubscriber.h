@@ -4,6 +4,7 @@
 #include <QObject>
 
 class QThread;
+class plotWindow;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Object to run in a private thread,
@@ -13,7 +14,7 @@ class dataSubscriber : public QObject
     Q_OBJECT
 
 public:
-    dataSubscriber();
+    dataSubscriber(plotWindow *w);
     ~dataSubscriber();
 
 signals:
@@ -27,6 +28,7 @@ public slots:
 
 private:
     QThread *myThread;  ///< The QThread where this object's work is performed
+    plotWindow *window; ///< Where we render data
 };
 
 #endif // DATASUBSCRIBER_H

@@ -35,10 +35,11 @@ int main(int argc, char *argv[])
 
     plotWindow *w = new plotWindow();
     w->show();
-    dataSubscriber *sub = new dataSubscriber();
+    dataSubscriber *sub = new dataSubscriber(w);
 
     // Start the main event loop, and when it returns, clean up.
     int app_return_val = a.exec();
     delete w;
+    delete sub;
     return app_return_val;
 }
