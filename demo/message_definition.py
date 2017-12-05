@@ -21,4 +21,4 @@ class DastardPulse(object):
         else:
             raise ValueError("Cannot handle numpy type %s"%self.data.dtype)
         fmt = "<lll%d%s"%(len(self.data), wordcode)
-        return struct.pack(fmt, self.channel, self.presamples, size, self.data)
+        return struct.pack(fmt, self.channel, self.presamples, size, *self.data)
