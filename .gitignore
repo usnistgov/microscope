@@ -1,5 +1,9 @@
 *.pyc
 *.o
+moc_*.cpp
+ui_*.h
 *~
+microscope
 microscope.pro.user
+Makefile
 .DS_Store

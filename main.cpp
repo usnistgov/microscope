@@ -1,8 +1,9 @@
 #include "plotwindow.h"
+#include "datasubscriber.h"
+
 #include <QApplication>
 #include <QMetaType>
 #include <QObject>
-#include <QThread>
 #include <QVector>
 #include <vector>
 #include <iostream>
@@ -34,6 +35,7 @@ int main(int argc, char *argv[])
 
     plotWindow *w = new plotWindow();
     w->show();
+    dataSubscriber *sub = new dataSubscriber();
 
     // Start the main event loop, and when it returns, clean up.
     int app_return_val = a.exec();

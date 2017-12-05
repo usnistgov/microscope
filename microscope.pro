@@ -40,13 +40,15 @@ SOURCES += main.cpp\
     periodicupdater.cpp \
     plotwindow.cpp \
     qcustomplot.cpp \
-    refreshplots.cpp
+    refreshplots.cpp \
+    datasubscriber.cpp
 
 HEADERS  += plotwindow.h \
     periodicupdater.h \
     qcustomplot.h \
     refreshplots.h \
-    version.h
+    version.h \
+    datasubscriber.h
 
 FORMS    +=  plotwindow.ui
 
