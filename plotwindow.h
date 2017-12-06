@@ -121,6 +121,9 @@ signals:
     /// \param msg  The message to log.
     void sendConsoleMessage(const QString &msg);
 
+    void startPlottingChannel(int);
+    void stopPlottingChannel(int);
+
 
 private:
     Ui::plotWindow *ui;                   ///< The underlying GUI form built in Qt Designer

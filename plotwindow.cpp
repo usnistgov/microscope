@@ -642,11 +642,18 @@ void plotWindow::channelChanged(int newChan)
     QSpinBox *box = (QSpinBox *)sender();
     for (unsigned int i=0; i<spinners.size(); i++) {
         if (spinners[i] == box) {
+            int oldChan = selectedChannel[i];
             selectedChannel[i] = newChan;
             refreshPlotsThread->changedChannel(i, newChan);
             QCPGraph *graph = ui->plot->graph(i);
             QVector<double> empty;
             graph->setData(empty, empty);
+
+            // Signal to dataSubscriber
+            emit startPlottingChannel(newChan);
+            if (oldChan >= 0) {
+                emit stopPlottingChannel(oldChan); // TODO: check that oldChan is not on another spinner.
+            }
             return;
         }
     }

@@ -1,6 +1,7 @@
 #ifndef DATASUBSCRIBER_H
 #define DATASUBSCRIBER_H
 
+#include <zmq.hpp>
 #include <QObject>
 
 class QThread;
@@ -25,10 +26,13 @@ public slots:
     /// Slot to call when it's time to terminate this thread.
     void terminate(void) {emit finished();}
     void process(void);
+    void subscribeChannel(int channum);
+    void unsubscribeChannel(int channum);
 
 private:
     QThread *myThread;  ///< The QThread where this object's work is performed
     plotWindow *window; ///< Where we render data
+    zmq::socket_t *subscriber;
 };
 
 #endif // DATASUBSCRIBER_H

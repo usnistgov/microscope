@@ -20,6 +20,14 @@ dataSubscriber::dataSubscriber(plotWindow *w)
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(myThread, SIGNAL(finished()), myThread, SLOT(deleteLater()));
 
+    // These signals would normally have to cross threads, but the receiver (this) will be blocked waiting
+    // on ZMQ messages from DASTARD: the receipt would never happen if we used the default auto connections.
+    // Using the direct connection means that the slot runs in the *sender's* thread, which isn't blocked.
+    // I'm not sure this obey's ZMQ's thread rules, honestly. If it causes problems, then we'll need to
+    // replace these signals with ZMQ messages on an inproc socket. --12/6/2017 jwf
+    connect(window, SIGNAL(startPlottingChannel(int)), this, SLOT(subscribeChannel(int)), Qt::DirectConnection);
+    connect(window, SIGNAL(stopPlottingChannel(int)), this, SLOT(unsubscribeChannel(int)), Qt::DirectConnection);
+
     myThread->start();
 }
 
@@ -33,17 +41,30 @@ dataSubscriber::~dataSubscriber() {
 }
 
 
+void dataSubscriber::subscribeChannel(int channum) {
+    if (subscriber == 0)
+        return;
+    const char *filter = reinterpret_cast<char *>(&channum);
+    subscriber->setsockopt(ZMQ_SUBSCRIBE, filter, sizeof(int));
+}
+
+void dataSubscriber::unsubscribeChannel(int channum) {
+    if (subscriber == 0)
+        return;
+    const char *filter = reinterpret_cast<char *>(&channum);
+    subscriber->setsockopt(ZMQ_UNSUBSCRIBE, filter, sizeof(int));
+}
+
+
 void dataSubscriber::process() {
     zmq::context_t *zmqcontext = new zmq::context_t();
-    zmq::socket_t *subscriber = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
+    subscriber = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
     std::string rpcport = "tcp://localhost:";
     const long long int pn = 5556; //port();
     rpcport += std::to_string(pn);
     std::cout << "Connecting to Server at " << rpcport <<"...";
     try {
         subscriber->connect(rpcport.c_str());
-        const char *filter = "";
-        subscriber->setsockopt(ZMQ_SUBSCRIBE, filter, strlen (filter));
         std::cout << "done!" << std::endl;
     } catch (zmq::error_t) {
         delete subscriber;

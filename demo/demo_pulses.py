@@ -29,8 +29,8 @@ pulse[t<0] = 0
 messagedata = np.asarray(pulse, dtype=np.uint16)
 
 while True:
-    channel = random.randrange(1,9)
+    channel = random.randrange(1,21)
     message = message_definition.DastardPulse(channel, 256, 1000*channel+messagedata)
     print "chan %d data: %s message length %d" % (channel, 1000*channel+messagedata, len(message.pack()))
     socket.send(message.pack())
-    time.sleep(0.3)
+    time.sleep(0.1)
