@@ -196,6 +196,19 @@ plotWindow::plotWindow(QWidget *parent) :
 
 
 ///////////////////////////////////////////////////////////////////////////////
+/// \brief The trace number where this channel is now being plotted (or -1 if none).
+///
+int plotWindow::chan2trace(int channum) {
+    for (int i=0; i<NUM_TRACES; i++) {
+        if (channum == selectedChannel[i])
+            return i;
+    }
+    return -1;
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
 /// \brief Start the thread that refreshed the plot traces
 ///
 void plotWindow::startRefresh(void) {

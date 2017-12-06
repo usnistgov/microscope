@@ -58,12 +58,16 @@ void dataSubscriber::process() {
         std::cout << "Received message of size " << update.size();
 
         uint32_t * lptr = reinterpret_cast<uint32_t *>(update.data());
-        std::cout << " for chan " << lptr[0] << " with " << lptr[1] <<" presamples and "
+        uint32_t channum=lptr[0], presamples=lptr[1], wordsize=lptr[2];
+        std::cout << " for chan " << channum << " with " << presamples <<" presamples and "
                   << lptr[2] <<"-byte words: [";
-        int N = (update.size()-3*sizeof(uint32_t))/lptr[2];
+        int N = (update.size()-3*sizeof(uint32_t))/wordsize;
         uint16_t * sptr = reinterpret_cast<uint16_t *>(&lptr[3]);
         std::cout << sptr[0] <<", " << sptr[1] << "... " << sptr[N-1] <<"]"<< std::endl;
 
-        window->newPlotTrace(lptr[0], sptr, N);
+        int tracenum = window->chan2trace(channum);
+        if (tracenum >= 0) {
+            window->newPlotTrace(tracenum, sptr, N);
+        }
     }
 }

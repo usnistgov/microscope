@@ -96,16 +96,18 @@ public:
     explicit plotWindow(QWidget *parent = 0);
     ~plotWindow();
 
+    int chan2trace(int channum);
+
 public slots:
     void updateQuickSelect(int nrows, int ncols);
-    void newPlotTrace(int channum, const uint16_t *data, int nsamples);
-    void newPlotTrace(int channum, const uint32_t *data, int nsamples);
-    void newPlotTrace(int channum, const int16_t *data, int nsamples);
-    void newPlotTrace(int channum, const int32_t *data, int nsamples);
-    void newPlotTrace(int channum, const QVector<double> &data);
-    void newPlotTrace(int channum, const QVector<double> &xdata,
+    void newPlotTrace(int tracenum, const uint16_t *data, int nsamples);
+    void newPlotTrace(int tracenum, const uint32_t *data, int nsamples);
+    void newPlotTrace(int tracenum, const int16_t *data, int nsamples);
+    void newPlotTrace(int tracenum, const int32_t *data, int nsamples);
+    void newPlotTrace(int tracenum, const QVector<double> &data);
+    void newPlotTrace(int tracenum, const QVector<double> &xdata,
                       const QVector<double> &data);
-    void addPlotData(int channum, const QVector<double> &xdata,
+    void addPlotData(int tracenum, const QVector<double> &xdata,
                       const QVector<double> &data);
     void newSampleTime(double);
     void newRecordLengths(int,int);
