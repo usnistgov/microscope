@@ -39,7 +39,7 @@ private:
 class pulseRecord {
 
 public:
-    pulseRecord(zmq::message_t &message);
+    pulseRecord(const zmq::message_t &message);
     ~pulseRecord();
 
 public:
@@ -47,7 +47,7 @@ public:
     int presamples;
     int wordsize;
     int nsamples;
-    uint16_t *data;
+    const uint16_t *data;
 };
 
 

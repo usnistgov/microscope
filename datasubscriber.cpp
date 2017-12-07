@@ -73,24 +73,17 @@ void dataSubscriber::process() {
         return;
     }
 
+    zmq::message_t update;
     while (true) {
-        zmq::message_t update;
         subscriber->recv(&update);
         std::cout << "Received message of size " << update.size();
 
         pulseRecord *pr = new pulseRecord(update);
         std::cout << " for chan " << pr->channum << " with " << pr->nsamples << "/"
                   << pr->presamples <<" samples/presamples and "
-                  << *reinterpret_cast<uint16_t *>(update.data()-2+update.size()) <<"x "
                   << pr->wordsize <<"-byte words: [";
         std::cout << pr->data[0] <<", " << pr->data[1] << "... "
-                                << pr->data[pr->nsamples-7] << ", "
-                                << pr->data[pr->nsamples-6] << ", "
-                                << pr->data[pr->nsamples-5] << ", "
-                                << pr->data[pr->nsamples-4] << ", "
-                                << pr->data[pr->nsamples-3] << ", "
-                                << pr->data[pr->nsamples-2] << ", "
-                                << pr->data[pr->nsamples-1] <<"]"<< std::endl;
+                  << pr->data[pr->nsamples-1] <<"]"<< std::endl;
         int tracenum = window->chan2trace(pr->channum);
         if (tracenum >= 0) {
             window->newPlotTrace(tracenum, pr->data, pr->nsamples);
@@ -104,14 +97,14 @@ void dataSubscriber::process() {
 /// \brief pulseRecord::pulseRecord
 /// \param message
 ///
-pulseRecord::pulseRecord(zmq::message_t &message) {
-    uint32_t * lptr = reinterpret_cast<uint32_t *>(message.data());
+pulseRecord::pulseRecord(const zmq::message_t &message) {
+    const uint32_t * lptr = reinterpret_cast<const uint32_t *>(message.data());
     channum = lptr[0];
     presamples = lptr[1];
     wordsize = lptr[2];
     const size_t prefix_size = 3*sizeof(uint32_t);
     nsamples = (message.size()-prefix_size)/wordsize;
-    data = reinterpret_cast<uint16_t *>(lptr+prefix_size);
+    data = reinterpret_cast<const uint16_t *>(&lptr[3]);
 //    data = new uint16_t[nsamples];
 //    memcpy(data, lptr+prefix_size, message.size()-prefix_size);
 }

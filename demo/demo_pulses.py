@@ -23,14 +23,15 @@ context = zmq.Context()
 socket = context.socket(zmq.PUB)
 socket.bind("tcp://*:%s" % port)
 
-t = np.linspace(-256, 767, 1024)
+t = np.arange(-100, 900, dtype=float)
 pulse = 30000*(np.exp(-t/200.) - np.exp(-t/40)) + 0
 pulse[t<0] = 0
 messagedata = np.asarray(pulse, dtype=np.uint16)
 
 while True:
     channel = random.randrange(1,21)
-    message = message_definition.DastardPulse(channel, 256, 1000*channel+messagedata)
-    print "chan %d data: %s message length %d" % (channel, 1000*channel+messagedata, len(message.pack()))
-    socket.send(message.pack())
+    thisdata = 1000*channel + messagedata
+    message = message_definition.DastardPulse(channel, 256, thisdata).pack()
+    print "chan %d message length %d" % (channel, len(message))
+    socket.send(message)
     time.sleep(0.1)
