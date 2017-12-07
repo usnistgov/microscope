@@ -36,14 +36,19 @@ private:
 };
 
 
-#pragma pack(push,1)
+class pulseRecord {
 
-struct pulseRecordHeader {
-    uint32_t channum;
-    uint32_t presamples;
-    uint32_t wordsize;
+public:
+    pulseRecord(zmq::message_t &message);
+    ~pulseRecord();
+
+public:
+    int channum;
+    int presamples;
+    int wordsize;
+    int nsamples;
+    uint16_t *data;
 };
 
-#pragma pack(pop)
 
 #endif // DATASUBSCRIBER_H
