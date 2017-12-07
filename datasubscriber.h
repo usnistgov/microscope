@@ -35,4 +35,15 @@ private:
     zmq::socket_t *subscriber;
 };
 
+
+#pragma pack(push,1)
+
+struct pulseRecordHeader {
+    uint32_t channum;
+    uint32_t presamples;
+    uint32_t wordsize;
+};
+
+#pragma pack(pop)
+
 #endif // DATASUBSCRIBER_H
