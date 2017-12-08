@@ -1,5 +1,6 @@
 #include "plotwindow.h"
 #include "datasubscriber.h"
+#include "microscope.h"
 
 #include <QApplication>
 #include <QMetaType>
@@ -7,6 +8,8 @@
 #include <QVector>
 #include <vector>
 #include <iostream>
+#include <unistd.h> // for usleep
+
 
 int main(int argc, char *argv[])
 {
@@ -32,14 +35,33 @@ int main(int argc, char *argv[])
         }
         std::cout << "Application name for QSettings purposes: " << QCoreApplication::applicationName().toStdString() << std::endl;
     }
+    zmq::context_t zmqcontext;
 
     plotWindow *w = new plotWindow();
     w->show();
-    dataSubscriber *sub = new dataSubscriber(w);
+    dataSubscriber *sub = new dataSubscriber(w, &zmqcontext);
+
+    zmq::socket_t *killsocket = new zmq::socket_t(zmqcontext, ZMQ_PUB);
+    try {
+       killsocket->bind(KILLPORT);
+    } catch (zmq::error_t) {
+        delete killsocket;
+        killsocket = NULL;
+        std::cerr << "Could not bind a socket to " << KILLPORT << std::endl;
+        return 0;
+    }
 
     // Start the main event loop, and when it returns, clean up.
     int app_return_val = a.exec();
+
+    const char quit[] = "Quit";
+    killsocket->send(quit, strlen(quit));
+    std::cout << "Sent kill message" << std::endl;
+    usleep(5000000);
+
     delete w;
     delete sub;
+    delete killsocket;
+
     return app_return_val;
 }

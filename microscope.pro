@@ -48,7 +48,8 @@ HEADERS  += plotwindow.h \
     qcustomplot.h \
     refreshplots.h \
     version.h \
-    datasubscriber.h
+    datasubscriber.h \
+    microscope.h
 
 FORMS    +=  plotwindow.ui
 

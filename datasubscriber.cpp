@@ -5,10 +5,12 @@
 #include <QTimer>
 #include <zmq.hpp>
 
+#include "microscope.h"
 #include "datasubscriber.h"
 #include "plotwindow.h"
 
-dataSubscriber::dataSubscriber(plotWindow *w)
+dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin) :
+    zmqcontext(zin)
 {
     window = w;
     myThread = new QThread;
@@ -57,7 +59,6 @@ void dataSubscriber::unsubscribeChannel(int channum) {
 
 
 void dataSubscriber::process() {
-    zmq::context_t *zmqcontext = new zmq::context_t();
     subscriber = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
     std::string rpcport = "tcp://localhost:";
     const long long int pn = 5556; //port();
@@ -73,12 +74,41 @@ void dataSubscriber::process() {
         return;
     }
 
+    killsocket = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
+    try {
+        killsocket->connect(KILLPORT);
+        killsocket->setsockopt(ZMQ_SUBSCRIBE, "Quit", 4);
+        std::cout << "killsocket subscriber connected" << std::endl;
+    } catch (zmq::error_t) {
+        delete killsocket;
+        killsocket = NULL;
+        return;
+    }
+
+    const size_t NPOLLITEMS=2;
+    zmq::pollitem_t pollitems[NPOLLITEMS] = {
+        {static_cast<void *>(*killsocket), 0, ZMQ_POLLIN, 0},
+        {static_cast<void *>(*subscriber), 0, ZMQ_POLLIN, 0},
+    };
+
     zmq::message_t update;
     while (true) {
-        subscriber->recv(&update);
-        std::cout << "Received message of size " << update.size();
+        int events_seen = zmq::poll(&pollitems[0], NPOLLITEMS, -1);
 
+        if (pollitems[0].revents & ZMQ_POLLIN) {
+            // killsocket received a message. Any message there means DIE.
+            killsocket->recv(&update);
+            break;
+        }
+        if (!(pollitems[1].revents & ZMQ_POLLIN)) {
+            std::cerr << "Poll succeeded, but I don't know why" << std::endl;
+            continue;
+        }
+
+        subscriber->recv(&update);
         pulseRecord *pr = new pulseRecord(update);
+
+        std::cout << "Received message of size " << update.size();
         std::cout << " for chan " << pr->channum << " with " << pr->nsamples << "/"
                   << pr->presamples <<" samples/presamples and "
                   << pr->wordsize <<"-byte words: [";

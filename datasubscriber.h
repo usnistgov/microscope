@@ -15,7 +15,7 @@ class dataSubscriber : public QObject
     Q_OBJECT
 
 public:
-    dataSubscriber(plotWindow *w);
+    dataSubscriber(plotWindow *w, zmq::context_t *zmqcontext);
     ~dataSubscriber();
 
 signals:
@@ -32,7 +32,9 @@ public slots:
 private:
     QThread *myThread;  ///< The QThread where this object's work is performed
     plotWindow *window; ///< Where we render data
+    zmq::context_t *zmqcontext;
     zmq::socket_t *subscriber;
+    zmq::socket_t *killsocket;
 };
 
 
