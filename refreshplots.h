@@ -13,9 +13,6 @@
 #include "periodicupdater.h"
 #include "plotwindow.h"
 
-namespace xdaq {
-class Client;
-};
 class MatterMainWindow;
 class plotWindow;
 
