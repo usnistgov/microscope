@@ -22,14 +22,6 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin) :
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(myThread, SIGNAL(finished()), myThread, SLOT(deleteLater()));
 
-    // These signals would normally have to cross threads, but the receiver (this) will be blocked waiting
-    // on ZMQ messages from DASTARD: the receipt would never happen if we used the default auto connections.
-    // Using the direct connection means that the slot runs in the *sender's* thread, which isn't blocked.
-    // I'm not sure this obey's ZMQ's thread rules, honestly. If it causes problems, then we'll need to
-    // replace these signals with ZMQ messages on an inproc socket. --12/6/2017 jwf
-    connect(window, SIGNAL(startPlottingChannel(int)), this, SLOT(subscribeChannel(int)), Qt::DirectConnection);
-    connect(window, SIGNAL(stopPlottingChannel(int)), this, SLOT(unsubscribeChannel(int)), Qt::DirectConnection);
-
     myThread->start();
 }
 
@@ -39,6 +31,9 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin) :
 /// to the connections made in the constructor.
 ///
 dataSubscriber::~dataSubscriber() {
+    delete chansocket;
+    delete killsocket;
+    delete subscriber;
     emit finished();
 }
 
@@ -48,6 +43,7 @@ void dataSubscriber::subscribeChannel(int channum) {
         return;
     const char *filter = reinterpret_cast<char *>(&channum);
     subscriber->setsockopt(ZMQ_SUBSCRIBE, filter, sizeof(int));
+//    std::cout << "Subscribed chan " << channum << std::endl;
 }
 
 void dataSubscriber::unsubscribeChannel(int channum) {
@@ -55,6 +51,20 @@ void dataSubscriber::unsubscribeChannel(int channum) {
         return;
     const char *filter = reinterpret_cast<char *>(&channum);
     subscriber->setsockopt(ZMQ_UNSUBSCRIBE, filter, sizeof(int));
+//    std::cout << "Unsubscribed chan " << channum << std::endl;
+}
+
+void dataSubscriber::parseChannelMessage(zmq::message_t &msg) {
+    // Message will be of form: "add 35" or "rem 0".
+    char txt[4];
+    int channum;
+    std::istringstream iss(static_cast<char*>(msg.data()));
+    iss >> txt >> channum;
+    if (strncmp(txt, "add", 3) == 0) {
+        subscribeChannel(channum);
+    } else if (strncmp(txt, "rem", 3) == 0) {
+        unsubscribeChannel(channum);
+    }
 }
 
 
@@ -85,22 +95,41 @@ void dataSubscriber::process() {
         return;
     }
 
-    const size_t NPOLLITEMS=2;
+    chansocket = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
+    try {
+        chansocket->connect(CHANSUBPORT);
+        chansocket->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+        std::cout << "chansocket subscriber connected" << std::endl;
+    } catch (zmq::error_t) {
+        delete chansocket;
+        chansocket = NULL;
+        return;
+    }
+
+    const size_t NPOLLITEMS=3;
     zmq::pollitem_t pollitems[NPOLLITEMS] = {
         {static_cast<void *>(*killsocket), 0, ZMQ_POLLIN, 0},
+        {static_cast<void *>(*chansocket), 0, ZMQ_POLLIN, 0},
         {static_cast<void *>(*subscriber), 0, ZMQ_POLLIN, 0},
     };
 
     zmq::message_t update;
     while (true) {
-        int events_seen = zmq::poll(&pollitems[0], NPOLLITEMS, -1);
+        zmq::poll(&pollitems[0], NPOLLITEMS, -1);
 
         if (pollitems[0].revents & ZMQ_POLLIN) {
             // killsocket received a message. Any message there means DIE.
             killsocket->recv(&update);
+            std::cout << "--> killing dataSubscriber" << std::endl;
             break;
         }
-        if (!(pollitems[1].revents & ZMQ_POLLIN)) {
+        if (pollitems[1].revents & ZMQ_POLLIN) {
+            // chansocket received a message.
+            chansocket->recv(&update);
+            parseChannelMessage(update);
+            continue;
+        }
+        if (!(pollitems[2].revents & ZMQ_POLLIN)) {
             std::cerr << "Poll succeeded, but I don't know why" << std::endl;
             continue;
         }
@@ -120,7 +149,16 @@ void dataSubscriber::process() {
         }
         delete pr;
     }
+
+    myThread->quit();
 }
+
+void dataSubscriber::wait(unsigned long time) {
+    std::cout << "Waiting to end" << std::endl;
+    myThread->wait(time);
+    std::cout << "Waited to end" << std::endl;
+}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////

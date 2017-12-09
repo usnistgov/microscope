@@ -18,6 +18,7 @@
 #include <QVector>
 #include <QWidget>
 #include "qcustomplot.h"
+#include  <zmq.hpp>
 
 
 namespace Ui {
@@ -93,7 +94,7 @@ class plotWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit plotWindow(QWidget *parent = 0);
+    explicit plotWindow(zmq::context_t *zmqcontext, QWidget *parent = 0);
     ~plotWindow();
 
     int chan2trace(int channum);
@@ -120,9 +121,6 @@ signals:
     /// Send a message to the console (in the main window)
     /// \param msg  The message to log.
     void sendConsoleMessage(const QString &msg);
-
-    void startPlottingChannel(int);
-    void stopPlottingChannel(int);
 
 
 private:
@@ -151,6 +149,8 @@ private:
     bool preferYaxisRawUnits;            ///< Whether user wants raw units on y axis
     double phys_per_rawFB;               ///< Multiply raw feedback data by this to get physical units
     double phys_per_avgErr;              ///< Multiply mean error data by this to get physical units
+    zmq::context_t *zmqcontext;
+    zmq::socket_t *chansocket;
 
     void startRefresh();
     void rescalePlots(QCPGraph *);

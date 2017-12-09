@@ -18,6 +18,8 @@ public:
     dataSubscriber(plotWindow *w, zmq::context_t *zmqcontext);
     ~dataSubscriber();
 
+    void wait(unsigned long time=ULONG_MAX);
+
 signals:
     /// Signal emitted when this object completes (i.e., its destructor is called)
     void finished(void);
@@ -26,8 +28,6 @@ public slots:
     /// Slot to call when it's time to terminate this thread.
     void terminate(void) {emit finished();}
     void process(void);
-    void subscribeChannel(int channum);
-    void unsubscribeChannel(int channum);
 
 private:
     QThread *myThread;  ///< The QThread where this object's work is performed
@@ -35,6 +35,11 @@ private:
     zmq::context_t *zmqcontext;
     zmq::socket_t *subscriber;
     zmq::socket_t *killsocket;
+    zmq::socket_t *chansocket;
+
+    void subscribeChannel(int channum);
+    void unsubscribeChannel(int channum);
+    void parseChannelMessage(zmq::message_t &);
 };
 
 

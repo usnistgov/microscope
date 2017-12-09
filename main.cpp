@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     }
     zmq::context_t zmqcontext;
 
-    plotWindow *w = new plotWindow();
+    plotWindow *w = new plotWindow(&zmqcontext);
     w->show();
     dataSubscriber *sub = new dataSubscriber(w, &zmqcontext);
 
@@ -57,11 +57,15 @@ int main(int argc, char *argv[])
     const char quit[] = "Quit";
     killsocket->send(quit, strlen(quit));
     std::cout << "Sent kill message" << std::endl;
-    usleep(5000000);
 
-    delete w;
+    sub->wait(1000);
+    std::cout << "About to delete sub" << std::endl;
     delete sub;
+    std::cout << "Deleted sub" << std::endl;
     delete killsocket;
+    std::cout << "Deleted killsocket" << std::endl;
+//    delete w;
+    std::cout << "Deleted window" << std::endl;
 
     return app_return_val;
 }

@@ -8,6 +8,7 @@
 #include "refreshplots.h"
 #include "ui_plotwindow.h"
 #include "version.h"
+#include "microscope.h"
 
 #include <QCloseEvent>
 #include <QFileDialog>
@@ -23,7 +24,7 @@
 /// \param client_in Client object that will supply the data.
 /// \param parent    Qt parent widget
 ///
-plotWindow::plotWindow(QWidget *parent) :
+plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::plotWindow),
     plotMenuActionGroup(this),
@@ -37,10 +38,21 @@ plotWindow::plotWindow(QWidget *parent) :
     ms_per_sample(1),
     num_presamples(0),
     phys_per_rawFB(1000.0/16384.),
-    phys_per_avgErr(1000.0/4096.)
+    phys_per_avgErr(1000.0/4096.),
+    zmqcontext(context_in)
 {
     nrows = 24; //client->nMuxRows();
     ncols = 8; //client->nMuxCols();
+
+    chansocket = new zmq::socket_t(*zmqcontext, ZMQ_PUB);
+    try {
+        chansocket->bind(CHANSUBPORT);
+        std::cout << "chansocket publisher connected" << std::endl;
+    } catch (zmq::error_t) {
+        delete chansocket;
+        chansocket = NULL;
+    }
+
 
     setWindowFlags(Qt::Window);
     setAttribute(Qt::WA_DeleteOnClose); // important!
@@ -650,9 +662,15 @@ void plotWindow::channelChanged(int newChan)
             graph->setData(empty, empty);
 
             // Signal to dataSubscriber
-            emit startPlottingChannel(newChan);
+            char text[50];
+            snprintf(text, 50, "add %d", newChan);
+            zmq::message_t msg(text, strlen(text));
+            chansocket->send(msg);
             if (oldChan >= 0) {
-                emit stopPlottingChannel(oldChan); // TODO: check that oldChan is not on another spinner.
+                // TODO: check that oldChan is not on another spinner.
+                snprintf(text, 50, "rem %d", oldChan);
+                zmq::message_t msg(text, strlen(text));
+                chansocket->send(msg);
             }
             return;
         }
