@@ -142,7 +142,7 @@ void dataSubscriber::process() {
                   << pr->presamples <<" samples/presamples and "
                   << pr->wordsize <<"-byte words: [";
         std::cout << pr->data[0] <<", " << pr->data[1] << "... "
-                  << pr->data[pr->nsamples-1] <<"]"<< std::endl;
+                  << pr->data[pr->nsamples-1] <<"]"<< pr->sampletime << std::endl;
         int tracenum = window->chan2trace(pr->channum);
         if (tracenum >= 0) {
             window->newPlotTrace(tracenum, pr->data, pr->nsamples);
@@ -170,9 +170,11 @@ pulseRecord::pulseRecord(const zmq::message_t &message) {
     channum = lptr[0];
     presamples = lptr[1];
     wordsize = lptr[2];
-    const size_t prefix_size = 3*sizeof(uint32_t);
+    sampletime = *reinterpret_cast<const float *>(&lptr[3]);
+    voltsperarb = *reinterpret_cast<const float *>(&lptr[4]);
+    const size_t prefix_size = 3*sizeof(uint32_t) + 2*sizeof(float);
     nsamples = (message.size()-prefix_size)/wordsize;
-    data = reinterpret_cast<const uint16_t *>(&lptr[3]);
+    data = reinterpret_cast<const uint16_t *>(&lptr[5]);
 //    data = new uint16_t[nsamples];
 //    memcpy(data, lptr+prefix_size, message.size()-prefix_size);
 }

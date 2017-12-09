@@ -53,6 +53,8 @@ public:
     int channum;
     int presamples;
     int wordsize;
+    float sampletime;
+    float voltsperarb;
     int nsamples;
     const uint16_t *data;
 };
