@@ -15,6 +15,7 @@ import time
 import message_definition
 
 chanmin, chanmax = 1, 25
+samples, presamples = 1000, 200
 
 port = "5556"
 if len(sys.argv) > 1:
@@ -25,11 +26,11 @@ context = zmq.Context()
 socket = context.socket(zmq.PUB)
 socket.bind("tcp://*:%s" % port)
 
-t = np.arange(-100, 900, dtype=float)
+t = np.arange(1-presamples, samples-presamples+1, dtype=float)
 pulse = 30000*(np.exp(-t/200.) - np.exp(-t/40)) + 0
 pulse[t<0] = 0
 messagedata = np.asarray(pulse, dtype=np.uint16)
-pulseRecord = {ch:message_definition.DastardPulse(ch, 256, 1.5e-6, 1./65535) for ch in range(chanmin, chanmax)}
+pulseRecord = {ch:message_definition.DastardPulse(ch, presamples, 2.5e-6, 1./65535) for ch in range(chanmin, chanmax)}
 
 while True:
     channel = random.randrange(1,21)

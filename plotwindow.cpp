@@ -271,11 +271,14 @@ void plotWindow::closeEvent(QCloseEvent *event)
 ///
 void plotWindow::newPlotTrace(int tracenum, const uint16_t *data, int nsamples)
 {
-    QVector<double> ddata;
+    QVector<double> tdata, ddata;
+    tdata.resize(nsamples);
     ddata.resize(nsamples);
-    for (int i=0; i<nsamples; i++)
+    for (int i=0; i<nsamples; i++) {
+        tdata[i] = i-num_presamples;
         ddata[i] = double(data[i]);
-    newPlotTrace(tracenum, ddata);
+    }
+    newPlotTrace(tracenum, tdata, ddata);
 }
 
 
@@ -416,6 +419,7 @@ void plotWindow::newPlotTrace(int tracenum, const QVector<double> &xdata,
     } else
         graph->setData(xdata, data);
     rescalePlots(graph);
+    updateXAxisRange(ui->plot->xAxis->range());
 }
 
 
@@ -739,11 +743,10 @@ void plotWindow::updateXAxisRange(QCPRange newrange)
     ui->xmaxBox->setValue(newrange.upper);
     ui->xrangeBox->setValue(newrange.size());
 
-    newrange -= num_presamples;
-    if (ms_per_sample > 0)
+    if (ms_per_sample > 0) {
         newrange *= ms_per_sample;
-    ui->plot->xAxis2->setRange(newrange);
-
+        ui->plot->xAxis2->setRange(newrange);
+    }
 }
 
 

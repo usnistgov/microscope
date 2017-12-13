@@ -23,6 +23,8 @@ public:
 signals:
     /// Signal emitted when this object completes (i.e., its destructor is called)
     void finished(void);
+    void newSampleTime(double);
+    void newRecordLengths(int,int);
 
 public slots:
     /// Slot to call when it's time to terminate this thread.
@@ -40,6 +42,10 @@ private:
     void subscribeChannel(int channum);
     void unsubscribeChannel(int channum);
     void parseChannelMessage(zmq::message_t &);
+
+    double sampletime;
+    int nsamples;
+    int presamples;
 };
 
 

@@ -10,7 +10,10 @@
 #include "plotwindow.h"
 
 dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin) :
-    zmqcontext(zin)
+    zmqcontext(zin),
+    sampletime(1.0),
+    nsamples(0),
+    presamples(0)
 {
     window = w;
     myThread = new QThread;
@@ -21,6 +24,9 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin) :
     connect(this, SIGNAL(finished()), myThread, SLOT(quit()));
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(myThread, SIGNAL(finished()), myThread, SLOT(deleteLater()));
+
+    connect(this, SIGNAL(newSampleTime(double)), window, SLOT(newSampleTime(double)));
+    connect(this, SIGNAL(newRecordLengths(int,int)), window, SLOT(newRecordLengths(int,int)));
 
     myThread->start();
 }
@@ -145,6 +151,15 @@ void dataSubscriber::process() {
                   << pr->data[pr->nsamples-1] <<"]"<< pr->sampletime << std::endl;
         int tracenum = window->chan2trace(pr->channum);
         if (tracenum >= 0) {
+            if (pr->presamples != presamples || pr->nsamples != nsamples) {
+                presamples = pr->presamples;
+                nsamples = pr->nsamples;
+                emit newRecordLengths(nsamples, presamples);
+            }
+            if (pr->sampletime != sampletime) {
+                sampletime = pr->sampletime;
+                emit newSampleTime(sampletime);
+            }
             window->newPlotTrace(tracenum, pr->data, pr->nsamples);
         }
         delete pr;
