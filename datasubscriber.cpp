@@ -126,7 +126,6 @@ void dataSubscriber::process() {
         if (pollitems[0].revents & ZMQ_POLLIN) {
             // killsocket received a message. Any message there means DIE.
             killsocket->recv(&update);
-            std::cout << "--> killing dataSubscriber" << std::endl;
             break;
         }
         if (pollitems[1].revents & ZMQ_POLLIN) {
@@ -136,7 +135,7 @@ void dataSubscriber::process() {
             continue;
         }
         if (!(pollitems[2].revents & ZMQ_POLLIN)) {
-            std::cerr << "Poll succeeded, but I don't know why" << std::endl;
+            std::cerr << "Poll timed out, but I don't know why" << std::endl;
             continue;
         }
 
@@ -169,9 +168,7 @@ void dataSubscriber::process() {
 }
 
 void dataSubscriber::wait(unsigned long time) {
-    std::cout << "Waiting to end" << std::endl;
     myThread->wait(time);
-    std::cout << "Waited to end" << std::endl;
 }
 
 

@@ -245,6 +245,7 @@ void plotWindow::startRefresh(void) {
 ///
 plotWindow::~plotWindow()
 {
+    delete chansocket;
     delete ui;
 }
 

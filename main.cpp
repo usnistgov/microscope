@@ -56,16 +56,10 @@ int main(int argc, char *argv[])
 
     const char quit[] = "Quit";
     killsocket->send(quit, strlen(quit));
-    std::cout << "Sent kill message" << std::endl;
 
     sub->wait(1000);
-    std::cout << "About to delete sub" << std::endl;
     delete sub;
-    std::cout << "Deleted sub" << std::endl;
     delete killsocket;
-    std::cout << "Deleted killsocket" << std::endl;
-//    delete w;
-    std::cout << "Deleted window" << std::endl;
 
     return app_return_val;
 }
