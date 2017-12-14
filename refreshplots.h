@@ -13,7 +13,6 @@
 #include "periodicupdater.h"
 #include "plotwindow.h"
 
-class MatterMainWindow;
 class plotWindow;
 
 
