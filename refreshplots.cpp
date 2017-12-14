@@ -29,6 +29,7 @@ refreshPlots::refreshPlots(int msec_period) :
     isPSD(false),
     isFFT(false),
 //    isHistogram(false),
+    averaging(false),
     analysisType(ANALYSIS_PULSE_MAX),
     time_zero(0)
 {
@@ -83,8 +84,15 @@ void refreshPlots::receiveNewData(int tracenum, const uint16_t *data, int length
     for (int i=0; i<length; i++)
         (*rec)[i]= data[i];
     pulseHistories[tracenum]->insertRecord(rec);
-    std::cout << "Received record for trace " << tracenum << " (have stored "
-              << pulseHistories[tracenum]->size() << ")." << std::endl;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+/// \brief refreshPlots::toggledAveraging
+/// \param doAvg
+///
+void refreshPlots::toggledAveraging(bool doAvg) {
+    averaging = doAvg;
 }
 
 
@@ -131,7 +139,12 @@ void refreshPlots::refreshStandardPlots()
         if (channum < 0)
             continue;
 
-        emit newDataToPlot(trace, *pulseHistories[trace]->newestRecord());
+        if (averaging) {
+            QVector<double> *mean = pulseHistories[trace]->meanRecord();
+            emit newDataToPlot(trace, *mean);
+            delete mean;
+        } else
+            emit newDataToPlot(trace, *pulseHistories[trace]->newestRecord());
 
 //        xdaq::XPulseRec *PR = client->latestTriggeredPulse[channum];
 

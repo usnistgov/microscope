@@ -238,8 +238,9 @@ void plotWindow::startRefresh(void) {
             this, SLOT(newPlotTrace(int, const QVector<double> &, const QVector<double> &)));
     connect(refreshPlotsThread, SIGNAL(addDataToPlot(int, const QVector<double> &, const QVector<double> &)),
             this, SLOT(addPlotData(int, const QVector<double> &, const QVector<double> &)));
-    connect(ui->clearDataButton, SIGNAL(clicked()),
-            refreshPlotsThread, SLOT(clearHistograms()));
+    connect(ui->averageTraces, SIGNAL(toggled(bool)), refreshPlotsThread, SLOT(toggledAveraging(bool)));
+    //    connect(ui->clearDataButton, SIGNAL(clicked()),
+    //            refreshPlotsThread, SLOT(clearHistograms()));
 }
 
 

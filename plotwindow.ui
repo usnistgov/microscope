@@ -15,11 +15,20 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="centralLayout" stretch="1,300">
-    <property name="margin">
+    <property name="leftMargin">
+     <number>6</number>
+    </property>
+    <property name="topMargin">
+     <number>6</number>
+    </property>
+    <property name="rightMargin">
+     <number>6</number>
+    </property>
+    <property name="bottomMargin">
      <number>6</number>
     </property>
     <item>
-     <layout class="QVBoxLayout" name="chanSelectLayout" stretch="0,0,0,0,0,0,0">
+     <layout class="QVBoxLayout" name="chanSelectLayout" stretch="0,0,0,0,0,0,0,0">
       <property name="spacing">
        <number>6</number>
       </property>
@@ -100,6 +109,13 @@
          <widget class="QComboBox" name="quickErrComboBox"/>
         </item>
        </layout>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="averageTraces">
+        <property name="text">
+         <string>Average Traces</string>
+        </property>
+       </widget>
       </item>
       <item>
        <spacer name="verticalSpacer">
@@ -583,8 +599,8 @@
    <slot>close()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>636</x>
-     <y>403</y>
+     <x>635</x>
+     <y>397</y>
     </hint>
     <hint type="destinationlabel">
      <x>550</x>
@@ -599,8 +615,8 @@
    <slot>yAxisLog(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>61</x>
-     <y>359</y>
+     <x>68</x>
+     <y>353</y>
     </hint>
     <hint type="destinationlabel">
      <x>144</x>
@@ -632,7 +648,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>325</x>
-     <y>400</y>
+     <y>397</y>
     </hint>
     <hint type="destinationlabel">
      <x>315</x>

@@ -1,3 +1,4 @@
+#include <iostream>
 #include "pulsehistory.h"
 
 ///
@@ -45,19 +46,23 @@ QVector<double> *pulseHistory::newestRecord() {
 ///
 QVector<double> *pulseHistory::meanRecord() const {
     QVector<double> *last = records.back();
-    int len = last->size();
-    QVector<double> *result = new QVector<double>(len, 0.0);
+    if (last == NULL) {
+        return NULL;
+    }
+
+    QVector<double> *result = new QVector<double>(nsamples, 0.0);
 
     int nused = 0;
     for (int i=0; i<records.size(); i++) {
-        if (records[i]->size() == len) {
-            for (int j=0; j<len; j++)
-                result[j] += (*records[i])[j];
+        if (records[i]->size() <= nsamples) {
+            for (int j=0; j<nsamples; j++)
+                (*result)[j] += (*records[i])[j];
             nused++;
         }
     }
+
     if (nused > 0) {
-         for (int j=0; j<len; j++)
+         for (int j=0; j<nsamples; j++)
             (*result)[j] /= nused;
     }
     return result;
