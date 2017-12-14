@@ -24,8 +24,17 @@ public:
 signals:
     /// Signal emitted when this object completes (i.e., its destructor is called)
     void finished(void);
+
     void newSampleTime(double);
+
     void newRecordLengths(int,int);
+
+    /// Signal that a QVector is ready to plot
+    void newDataToPlot(int channum, const uint16_t *data, int nsamp);
+
+//    /// Signal that a y vs x pair of QVectors are ready to plot
+//    void newDataToPlot(int channum, const QVector<double> &xdata,
+//                       const QVector<double> &ydata);
 
 public slots:
     /// Slot to call when it's time to terminate this thread.

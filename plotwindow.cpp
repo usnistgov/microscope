@@ -28,13 +28,13 @@ Q_DECLARE_METATYPE(QCPRange)
 ///
 plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
     QMainWindow(parent),
+    refreshPlotsThread(NULL),
     ui(new Ui::plotWindow),
     plotMenuActionGroup(this),
     analysisMenuActionGroup(this),
     axisMenuActionGroup(this),
     yaxisUnitsActionGroup(this),
     sampleIndex(),
-    refreshPlotsThread(NULL),
     plotType(PLOTTYPE_STANDARD),
     analysisType(ANALYSIS_PULSE_MAX),
     ms_per_sample(1),

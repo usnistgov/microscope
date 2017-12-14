@@ -14,7 +14,7 @@
 #include "plotwindow.h"
 
 class plotWindow;
-
+class pulseHistory;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief The Histogram class histograms data with fixed, equal bin spacings.
@@ -87,6 +87,9 @@ signals:
 public slots:
     virtual void workQuantum(void);
     void clearHistograms(void);
+    void receiveNewData(int tracenum, const uint16_t *data, int length);
+//    void receiveNewData(int channum, const QVector<double> &xdata,
+//                       const QVector<double> &ydata);
 
 private:
     std::vector<int> channels;        ///< The channel for each trace [0,N-1]
@@ -101,6 +104,8 @@ private:
     bool isHistogram;                 ///< Are we plotting histograms?
     enum analysisFields analysisType; ///< What analysis field to plot?
     double time_zero;                 ///< In a timeseries, what time is plotted as t=0?
+
+    QVector<pulseHistory *> pulseHistories;
 
     void refreshSpectrumPlots(void);
     void refreshStandardPlots(void);

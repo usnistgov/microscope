@@ -19,16 +19,17 @@ public:
     pulseHistory(int capacity);
 
     void clearQueue();
-    QVector<double>& newestRecord();
-    QVector<double> meanRecord() const;
-    void insertRecord(QVector<double> r);
+    QVector<double> *newestRecord();
+    QVector<double> *meanRecord() const;
+    void insertRecord(QVector<double> *r);
+    int  size() const;
 
 private:
     int queueCapacity; ///< How long the records and spectra queues should be.
     int nsamples;      ///< How many samples are in the currently stored records.
     bool doDFT;        ///< Whether we are actively doing DFTs on each record.
-    QQueue<QVector<double>> records;  ///< The last N pulse records.
-    QQueue<QVector<double>> spectra;  ///< The last N power spectra.
+    QQueue<QVector<double> *> records;  ///< The last N pulse records.
+    QQueue<QVector<double> *> spectra;  ///< The last N power spectra.
 };
 
 #endif // DATACHANNEL_H

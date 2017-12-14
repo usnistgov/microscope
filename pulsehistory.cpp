@@ -17,8 +17,14 @@ pulseHistory::pulseHistory(int capacity) :
 /// \brief Clear the stored queues of records and power spectra.
 ///
 void pulseHistory::clearQueue() {
-    records.clear();
-    spectra.clear();
+    while (!records.isEmpty()) {
+        QVector<double> *r = records.dequeue();
+        delete r;
+    }
+    while (!spectra.isEmpty()) {
+        QVector<double> *r = spectra.dequeue();
+        delete r;
+    }
 }
 
 
@@ -26,7 +32,7 @@ void pulseHistory::clearQueue() {
 /// \brief Return the most recently stored record.
 /// \return
 ///
-QVector<double>& pulseHistory::newestRecord() {
+QVector<double> *pulseHistory::newestRecord() {
     return records.back();
 }
 
@@ -35,22 +41,22 @@ QVector<double>& pulseHistory::newestRecord() {
 /// \brief Compute and return the mean of all stored records.
 /// \return
 ///
-QVector<double> pulseHistory::meanRecord() const {
-    QVector<double> last = records.back();
-    int len = last.size();
-    QVector<double> result(len, 0.0);
+QVector<double> *pulseHistory::meanRecord() const {
+    QVector<double> *last = records.back();
+    int len = last->size();
+    QVector<double> *result = new QVector<double>(len, 0.0);
 
     int nused = 0;
     for (int i=0; i<records.size(); i++) {
-        if (records[i].size() == len) {
+        if (records[i]->size() == len) {
             for (int j=0; j<len; j++)
-                result[j] += records[i][j];
+                result[j] += (*records[i])[j];
             nused++;
         }
     }
     if (nused > 0) {
          for (int j=0; j<len; j++)
-            result[j] /= nused;
+            (*result)[j] /= nused;
     }
     return result;
 }
@@ -60,10 +66,10 @@ QVector<double> pulseHistory::meanRecord() const {
 /// \brief Insert a single triggered record into storage.
 /// \param r  The record to store
 ///
-void pulseHistory::insertRecord(QVector<double> r) {
+void pulseHistory::insertRecord(QVector<double> *r) {
 
     // If this record is not the same length as the others, clear out the others.
-    int len = r.size();
+    int len = r->size();
     if (len != nsamples) {
         nsamples = len;
         clearQueue();
@@ -71,6 +77,17 @@ void pulseHistory::insertRecord(QVector<double> r) {
 
     // Now add this record and trim to size.
     records.enqueue(r);
-    while (records.size() > queueCapacity)
-        records.dequeue();
+    while (records.size() > queueCapacity) {
+        QVector<double> *r = records.dequeue();
+        delete r;
+    }
+}
+
+
+///
+/// \brief pulseHistory::size
+/// \return
+///
+int pulseHistory::size() const {
+    return records.size();
 }

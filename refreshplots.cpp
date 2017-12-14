@@ -8,10 +8,12 @@
 ///
 
 
+#include <iostream>
 #include <QVector>
 
 #include "periodicupdater.h"
 #include "refreshplots.h"
+#include "pulsehistory.h"
 
 
 
@@ -40,6 +42,11 @@ refreshPlots::refreshPlots(int msec_period) :
     for (int i=0; i<INITIAL_TRACES; i++) {
         histograms.push_back(new Histogram);
     }
+
+    const int PULSES_TO_STORE=4;
+    for (int i=0; i<INITIAL_TRACES; i++) {
+        pulseHistories.append(new pulseHistory(PULSES_TO_STORE));
+    }
 }
 
 
@@ -51,8 +58,28 @@ refreshPlots::~refreshPlots()
 {
     for (unsigned int i=0; i<histograms.size(); i++)
         delete histograms[i];
+    for (int i=0; i<pulseHistories.size(); i++)
+        delete pulseHistories[i];
 }
 
+
+////////////////////////////////////////////////////////////////////////////////////
+/// \brief receiveNewData
+/// \param channum
+/// \param data
+/// \param length
+///
+void refreshPlots::receiveNewData(int tracenum, const uint16_t *data, int length) {
+    if (tracenum < 0 || tracenum >= pulseHistories.size())
+        return;
+
+    QVector<double> *rec = new QVector<double>(length);
+    for (int i=0; i<length; i++)
+        (*rec)[i]= data[i];
+    pulseHistories[tracenum]->insertRecord(rec);
+    std::cout << "Received record for trace " << tracenum << " (have stored "
+              << pulseHistories[tracenum]->size() << ")." << std::endl;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -62,17 +89,14 @@ void refreshPlots::workQuantum(void) {
     if (plottingPaused)
         return;
 
-    if (true) { // TODO
-//        if (client->streaming()) {
-        if (isPSD || isFFT)
-            refreshSpectrumPlots();
-        else if (isTimeseries)
-            refreshTimeseriesPlots();
-        else if (isHistogram)
-            refreshHistograms();
-        else
-            refreshStandardPlots();
-    }
+    if (isPSD || isFFT)
+        refreshSpectrumPlots();
+    else if (isTimeseries)
+        refreshTimeseriesPlots();
+    else if (isHistogram)
+        refreshHistograms();
+    else
+        refreshStandardPlots();
 }
 
 
@@ -100,6 +124,8 @@ void refreshPlots::refreshStandardPlots()
         int channum = channels[trace];
         if (channum < 0)
             continue;
+
+        emit newDataToPlot(trace, *pulseHistories[trace]->newestRecord());
 
 //        xdaq::XPulseRec *PR = client->latestTriggeredPulse[channum];
 
