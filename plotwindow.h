@@ -99,6 +99,8 @@ public:
 
     int chan2trace(int channum);
 
+    refreshPlots *refreshPlotsThread;    ///< Thread to periodically update traces.
+
 public slots:
     void updateQuickSelect(int nrows, int ncols);
     void newPlotTrace(int tracenum, const uint16_t *data, int nsamples);
@@ -139,7 +141,6 @@ private:
     int nrows;    ///< Number of rows in the current array.
     int ncols;    ///< Number of columns in the current array.
     QVector<double>  sampleIndex;        ///< Temporary object to hold [0,1,...]
-    refreshPlots *refreshPlotsThread;    ///< Thread to periodically update traces.
     enum plotTypeComboItems plotType;    ///< Current plot style
     enum analysisFields analysisType;    ///< Current type of analysis to plot (histo/timeseries)
     double ms_per_sample;                ///< Scaling from sample # to ms.

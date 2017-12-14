@@ -1,7 +1,7 @@
 #include "pulsehistory.h"
 
 ///
-/// \brief Constructor for data channel of the given capacity.
+/// \brief Constructor for a pulse history log of the given capacity.
 /// \param capacity
 ///
 pulseHistory::pulseHistory(int capacity) :

@@ -6,6 +6,7 @@
 
 class QThread;
 class plotWindow;
+class refreshPlots;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Object to run in a private thread,
@@ -33,7 +34,8 @@ public slots:
 
 private:
     QThread *myThread;  ///< The QThread where this object's work is performed
-    plotWindow *window; ///< Where we render data
+    plotWindow   *window;      ///< Where we the data are plotted
+    refreshPlots *plotManager; ///< Where we send data for plotting
     zmq::context_t *zmqcontext;
     zmq::socket_t *subscriber;
     zmq::socket_t *killsocket;

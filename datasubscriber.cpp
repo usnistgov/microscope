@@ -7,15 +7,16 @@
 
 #include "microscope.h"
 #include "datasubscriber.h"
-#include "plotwindow.h"
+#include "refreshplots.h"
 
 dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin) :
+    window(w),
+    plotManager(w->refreshPlotsThread),
     zmqcontext(zin),
     sampletime(1.0),
     nsamples(0),
     presamples(0)
 {
-    window = w;
     myThread = new QThread;
     moveToThread(myThread);
 
