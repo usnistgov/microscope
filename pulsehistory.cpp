@@ -33,6 +33,8 @@ void pulseHistory::clearQueue() {
 /// \return
 ///
 QVector<double> *pulseHistory::newestRecord() {
+    if (records.size() <= 0)
+        return NULL;
     return records.back();
 }
 

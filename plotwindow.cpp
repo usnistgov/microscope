@@ -228,7 +228,7 @@ int plotWindow::chan2trace(int channum) {
 /// \brief Start the thread that refreshed the plot traces
 ///
 void plotWindow::startRefresh(void) {
-    const int PLOTPERIOD_MSEC=7500;
+    const int PLOTPERIOD_MSEC=500;
     refreshPlotsThread = new refreshPlots(PLOTPERIOD_MSEC);
 
     // This connection is how the traces in the plots will be updated
