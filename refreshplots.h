@@ -68,9 +68,9 @@ public:
     void setErrVsFeedback(bool evf);
     void setIsPSD(bool psd);
     void setIsFFT(bool fft);
-    void setIsHistogram(bool hist);
     void setIsTimeseries(bool ts);
     void setAnalysisType(analysisFields newType);
+    //    void setIsHistogram(bool hist);
 
 signals:
     /// Signal that a QVector is ready to plot
@@ -86,14 +86,13 @@ signals:
 
 public slots:
     virtual void workQuantum(void);
-    void clearHistograms(void);
     void receiveNewData(int tracenum, const uint16_t *data, int length);
-//    void receiveNewData(int channum, const QVector<double> &xdata,
-//                       const QVector<double> &ydata);
+
+    //    void clearHistograms(void);
+    //    void receiveNewData(int channum, const QVector<double> &xdata,
+    //                       const QVector<double> &ydata);
 
 private:
-    std::vector<Histogram *> histograms;       ///< Histograms to be used when histogramming analysis
-    std::vector<std::vector<double> > scratch;  ///< Scratch space for pre-histogrammed data
     QVector<int> channels;            ///< The channel for each trace [0,N-1]
     QVector<unsigned long long> lastTimes; ///< The timecode of last record plotted (one per trace).
     bool plottingPaused;              ///< Is this refresher paused?
@@ -101,7 +100,6 @@ private:
     bool isPSD;                       ///< Are we plotting power spectral density?
     bool isFFT;                       ///< Are we plotting FFT (sqrt of PSD)?
     bool isTimeseries;                ///< Are we plotting a timeseries?
-    bool isHistogram;                 ///< Are we plotting histograms?
     enum analysisFields analysisType; ///< What analysis field to plot?
     double time_zero;                 ///< In a timeseries, what time is plotted as t=0?
 
@@ -110,7 +108,11 @@ private:
     void refreshSpectrumPlots(void);
     void refreshStandardPlots(void);
     void refreshTimeseriesPlots(void);
-    void refreshHistograms(void);
+
+    //    std::vector<Histogram *> histograms;       ///< Histograms to be used when histogramming analysis
+    //    std::vector<std::vector<double> > scratch;  ///< Scratch space for pre-histogrammed data
+    //    bool isHistogram;                 ///< Are we plotting histograms?
+    //    void refreshHistograms(void);
 };
 
 #endif // REFRESHPLOTS_H

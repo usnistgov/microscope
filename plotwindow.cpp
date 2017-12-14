@@ -921,7 +921,7 @@ void plotWindow::plotTypeChanged(QAction *action)
     refreshPlotsThread->setIsFFT(plotType == PLOTTYPE_FFT);
     refreshPlotsThread->setIsPSD(plotType == PLOTTYPE_PSD);
     refreshPlotsThread->setIsTimeseries(plotType == PLOTTYPE_TIMESERIES);
-    refreshPlotsThread->setIsHistogram(plotType == PLOTTYPE_HISTOGRAM);
+//    refreshPlotsThread->setIsHistogram(plotType == PLOTTYPE_HISTOGRAM);
 
     bool scatter=false, line=false, histogram=false;
 
