@@ -18,6 +18,8 @@
 #include <QSpinBox>
 #include <QStatusBar>
 
+Q_DECLARE_METATYPE(QCPRange)
+
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief Constructor
@@ -159,6 +161,8 @@ plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
     connect(ui->xminBox, SIGNAL(valueChanged(double)), this, SLOT(typedXAxisMin(double)));
     connect(ui->xmaxBox, SIGNAL(valueChanged(double)), this, SLOT(typedXAxisMax(double)));
     connect(ui->xrangeBox, SIGNAL(valueChanged(double)), this, SLOT(typedXAxisRange(double)));
+
+    qRegisterMetaType<QCPRange>();
 
     // make left and bottom axes always transfer their ranges to right and top axes:
     pl->xAxis2->setLabel("Time (ms)");
