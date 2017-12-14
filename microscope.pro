@@ -42,7 +42,7 @@ SOURCES += main.cpp\
     qcustomplot.cpp \
     refreshplots.cpp \
     datasubscriber.cpp \
-    datachannel.cpp
+    pulsehistory.cpp
 
 HEADERS  += plotwindow.h \
     periodicupdater.h \
@@ -51,7 +51,7 @@ HEADERS  += plotwindow.h \
     version.h \
     datasubscriber.h \
     microscope.h \
-    datachannel.h
+    pulsehistory.h
 
 FORMS    +=  plotwindow.ui
 

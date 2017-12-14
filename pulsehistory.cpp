@@ -1,10 +1,10 @@
-#include "datachannel.h"
+#include "pulsehistory.h"
 
 ///
 /// \brief Constructor for data channel of the given capacity.
 /// \param capacity
 ///
-dataChannel::dataChannel(int capacity) :
+pulseHistory::pulseHistory(int capacity) :
     queueCapacity(capacity),
     nsamples(0),
     doDFT(false)
@@ -16,7 +16,7 @@ dataChannel::dataChannel(int capacity) :
 ///
 /// \brief Clear the stored queues of records and power spectra.
 ///
-void dataChannel::clearQueue() {
+void pulseHistory::clearQueue() {
     records.clear();
     spectra.clear();
 }
@@ -26,7 +26,7 @@ void dataChannel::clearQueue() {
 /// \brief Return the most recently stored record.
 /// \return
 ///
-QVector<double>& dataChannel::newestRecord() {
+QVector<double>& pulseHistory::newestRecord() {
     return records.back();
 }
 
@@ -35,7 +35,7 @@ QVector<double>& dataChannel::newestRecord() {
 /// \brief Compute and return the mean of all stored records.
 /// \return
 ///
-QVector<double> dataChannel::meanRecord() const {
+QVector<double> pulseHistory::meanRecord() const {
     QVector<double> last = records.back();
     int len = last.size();
     QVector<double> result(len, 0.0);
@@ -60,7 +60,7 @@ QVector<double> dataChannel::meanRecord() const {
 /// \brief Insert a single triggered record into storage.
 /// \param r  The record to store
 ///
-void dataChannel::insertRecord(QVector<double> r) {
+void pulseHistory::insertRecord(QVector<double> r) {
 
     // If this record is not the same length as the others, clear out the others.
     int len = r.size();

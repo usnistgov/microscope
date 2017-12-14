@@ -13,10 +13,10 @@
 /// of their power-spectral-density.
 ///
 ///
-class dataChannel
+class pulseHistory
 {
 public:
-    dataChannel(int capacity);
+    pulseHistory(int capacity);
 
     void clearQueue();
     QVector<double>& newestRecord();
