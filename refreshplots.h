@@ -63,7 +63,7 @@ public:
     refreshPlots(int period_msec);
     virtual ~refreshPlots();
 
-    void changedChannel(unsigned int traceNumber, int channelNumber);
+    void changedChannel(int traceNumber, int channelNumber);
     void pause(bool);
     void setErrVsFeedback(bool evf);
     void setIsPSD(bool psd);
@@ -92,10 +92,10 @@ public slots:
 //                       const QVector<double> &ydata);
 
 private:
-    std::vector<int> channels;        ///< The channel for each trace [0,N-1]
-    std::vector<unsigned long long> lastTimes; ///< The timecode of last record plotted (one per trace).
     std::vector<Histogram *> histograms;       ///< Histograms to be used when histogramming analysis
     std::vector<std::vector<double> > scratch;  ///< Scratch space for pre-histogrammed data
+    QVector<int> channels;            ///< The channel for each trace [0,N-1]
+    QVector<unsigned long long> lastTimes; ///< The timecode of last record plotted (one per trace).
     bool plottingPaused;              ///< Is this refresher paused?
     bool ErrVsFeedback;               ///< Are we plotting Err vs FB mode?
     bool isPSD;                       ///< Are we plotting power spectral density?

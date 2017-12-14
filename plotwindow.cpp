@@ -87,8 +87,8 @@ plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
         box->setValue(-1);\
         box->setPrefix("Ch ");
         box->setAlignment(Qt::AlignRight);
-        spinners.push_back(box);
-        selectedChannel.push_back(-1);
+        spinners.append(box);
+        selectedChannel.append(-1);
         connect(box, SIGNAL(valueChanged(int)), this, SLOT(channelChanged(int)));
 
         chanSpinnersLayout->addWidget(label, i, 0);
@@ -550,8 +550,8 @@ void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
 {
     quickSelectErrChan1.clear();
     quickSelectErrChan2.clear();
-    quickSelectErrChan1.push_back(-1);
-    quickSelectErrChan2.push_back(-1);
+    quickSelectErrChan1.append(-1);
+    quickSelectErrChan2.append(-1);
     ui->quickFBComboBox->clear();
     ui->quickErrComboBox->clear();
     ui->quickFBComboBox->addItem("");
@@ -573,8 +573,8 @@ void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
             // Don't let the last channel in the list be selected from column c+1!
             if (c3 >= 2*(c+1)*nrows)
                 c3 = 2*(c+1)*nrows - 2;
-            quickSelectErrChan1.push_back(c2);
-            quickSelectErrChan2.push_back(c3);
+            quickSelectErrChan1.append(c2);
+            quickSelectErrChan2.append(c3);
             ui->quickFBComboBox->addItem(text.arg(c).arg(c2+1).arg(c3+1));
             ui->quickErrComboBox->addItem(text.arg(c).arg(c2).arg(c3));
         }
@@ -637,7 +637,7 @@ void plotWindow::updateQuickTypeFromFB(int index)
 void plotWindow::updateQuickTypeText(void)
 {
     QString text;
-    for (std::vector<QSpinBox *>::iterator box=spinners.begin();
+    for (QVector<QSpinBox *>::iterator box=spinners.begin();
          box != spinners.end(); box++) {
         int c = (*box)->value();
         if (c>=0)
@@ -661,7 +661,7 @@ void plotWindow::updateQuickTypeText(void)
 void plotWindow::channelChanged(int newChan)
 {
     QSpinBox *box = (QSpinBox *)sender();
-    for (unsigned int i=0; i<spinners.size(); i++) {
+    for (int i=0; i<spinners.size(); i++) {
         if (spinners[i] == box) {
             int oldChan = selectedChannel[i];
             selectedChannel[i] = newChan;
@@ -1000,7 +1000,7 @@ void plotWindow::plotTypeChanged(QAction *action)
 
     // Require odd channel # in Err vs FB mode
     if (is_xvsy) {
-        for (unsigned int i=0; i<spinners.size(); i++) {
+        for (int i=0; i<spinners.size(); i++) {
             QSpinBox *box = spinners[i];
             int idx = box->value();
             if (idx %2 == 0) {
@@ -1015,7 +1015,7 @@ void plotWindow::plotTypeChanged(QAction *action)
         ui->quickErrComboBox->setEnabled(false);
         updateQuickTypeText();
     } else {
-        for (unsigned int i=0; i<spinners.size(); i++) {
+        for (int i=0; i<spinners.size(); i++) {
             QSpinBox *box = spinners[i];
             box->setRange(-1, 480-1); // TODO
 //            box->setRange(-1, client->nDataStreams()-1);

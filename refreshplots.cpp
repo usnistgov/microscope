@@ -35,15 +35,20 @@ refreshPlots::refreshPlots(int msec_period) :
     // Fill the list of channels to be plotted with the no-plot indicator.
     const int INITIAL_TRACES=8;
     const int DONT_PLOT = -1;
-    channels.resize(INITIAL_TRACES, DONT_PLOT);
-    lastTimes.resize(INITIAL_TRACES, 0);
     scratch.resize(INITIAL_TRACES);
     histograms.clear();
     for (int i=0; i<INITIAL_TRACES; i++) {
         histograms.push_back(new Histogram);
     }
+    for (int i=0; i<INITIAL_TRACES; i++)
+        channels[i] = DONT_PLOT;
+    lastTimes.resize(INITIAL_TRACES);
+    for (int i=0; i<INITIAL_TRACES; i++)
+        lastTimes[i] = 0;
+
 
     const int PULSES_TO_STORE=4;
+    pulseHistories.reserve(INITIAL_TRACES);
     for (int i=0; i<INITIAL_TRACES; i++) {
         pulseHistories.append(new pulseHistory(PULSES_TO_STORE));
     }
@@ -120,7 +125,7 @@ void refreshPlots::clearHistograms()
 ///
 void refreshPlots::refreshStandardPlots()
 {
-    for (unsigned int trace=0; trace<channels.size(); trace++) {
+    for (int trace=0; trace<channels.size(); trace++) {
         int channum = channels[trace];
         if (channum < 0)
             continue;
@@ -163,7 +168,7 @@ void refreshPlots::refreshStandardPlots()
 ///
 void refreshPlots::refreshSpectrumPlots()
 {
-    for (unsigned int trace=0; trace<channels.size(); trace++) {
+    for (int trace=0; trace<channels.size(); trace++) {
         int channum = channels[trace];
         if (channum < 0)
             continue;
@@ -196,7 +201,7 @@ void refreshPlots::refreshSpectrumPlots()
 ///
 void refreshPlots::refreshTimeseriesPlots()
 {
-    for (unsigned int trace=0; trace<channels.size(); trace++) {
+    for (int trace=0; trace<channels.size(); trace++) {
         int channum = channels[trace];
         if (channum < 0)
             continue;
@@ -293,7 +298,7 @@ void refreshPlots::refreshHistograms()
 /// \param traceNumber    Which trace is changed.
 /// \param channelNumber  Which channel is now plotted in that trace.
 ///
-void refreshPlots::changedChannel(unsigned int traceNumber, int channelNumber)
+void refreshPlots::changedChannel(int traceNumber, int channelNumber)
 {
     if (traceNumber >= channels.size())
         return;
@@ -384,7 +389,7 @@ void refreshPlots::setIsTimeseries(bool ts)
 void refreshPlots::setAnalysisType(enum analysisFields newType)
 {
     analysisType = newType;
-    for (unsigned int trNum=0; trNum < channels.size(); trNum++) {
+    for (int trNum=0; trNum < channels.size(); trNum++) {
         lastTimes[trNum] = 0;
         scratch[trNum].clear();
         histograms[trNum]->clear();

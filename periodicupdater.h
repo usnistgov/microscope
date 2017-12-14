@@ -12,6 +12,7 @@
 class QThread;
 class QTimer;
 
+
 ///////////////////////////////////////////////////////////////////////////////
 /// Object to run in a private thread, waking up periodically to refresh
 /// any GUI objects that need periodic, manual, refreshing.

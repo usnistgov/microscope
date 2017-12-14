@@ -128,10 +128,10 @@ signals:
 private:
     Ui::plotWindow *ui;                   ///< The underlying GUI form built in Qt Designer
     const static int NUM_TRACES=8;        ///< How many plot curves have their own channel selector
-    std::vector<QSpinBox *> spinners;     ///< The spin boxes that control which channels are plotted
-    std::vector<int> quickSelectErrChan1; ///< The lowest channel # signified by each comboBox range
-    std::vector<int> quickSelectErrChan2; ///< The highest channel # signified by each comboBox range
-    std::vector<int> selectedChannel;     ///< The channel number currently chosen in each spin box
+    QVector<QSpinBox *> spinners;     ///< The spin boxes that control which channels are plotted
+    QVector<int> quickSelectErrChan1; ///< The lowest channel # signified by each comboBox range
+    QVector<int> quickSelectErrChan2; ///< The highest channel # signified by each comboBox range
+    QVector<int> selectedChannel;         ///< The channel number currently chosen in each spin box
     QActionGroup plotMenuActionGroup;     ///< Object that keeps plot type choices exclusive.
     QActionGroup analysisMenuActionGroup; ///< Object that keeps analysis choices exclusive.
     QActionGroup axisMenuActionGroup;     ///< Object that keeps axis choices exclusive.
