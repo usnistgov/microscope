@@ -95,7 +95,7 @@ public slots:
 
 private:
     QVector<int> channels;            ///< The channel for each trace [0,N-1]
-    QVector<unsigned long long> lastTimes; ///< The timecode of last record plotted (one per trace).
+    QVector<int> lastSerial;          ///< The serial # of last record plotted (one per trace).
     bool plottingPaused;              ///< Is this refresher paused?
     bool ErrVsFeedback;               ///< Are we plotting Err vs FB mode?
     bool isPSD;                       ///< Are we plotting power spectral density?

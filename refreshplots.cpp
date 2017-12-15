@@ -39,9 +39,9 @@ refreshPlots::refreshPlots(int msec_period) :
     channels.resize(INITIAL_TRACES);
     for (int i=0; i<INITIAL_TRACES; i++)
         channels[i] = DONT_PLOT;
-    lastTimes.resize(INITIAL_TRACES);
+    lastSerial.resize(INITIAL_TRACES);
     for (int i=0; i<INITIAL_TRACES; i++)
-        lastTimes[i] = 0;
+        lastSerial[i] = -1;
 
 //    scratch.resize(INITIAL_TRACES);
 //    histograms.clear();
@@ -92,7 +92,13 @@ void refreshPlots::receiveNewData(int tracenum, const uint16_t *data, int length
 /// \param doAvg
 ///
 void refreshPlots::toggledAveraging(bool doAvg) {
+    if (averaging == doAvg)
+        return;
     averaging = doAvg;
+
+    // Make every plot "expire" by marking it as old.
+    for (int trace=0; trace<channels.size(); trace++)
+        lastSerial[trace] = -1;
 }
 
 
@@ -139,39 +145,22 @@ void refreshPlots::refreshStandardPlots()
         if (channum < 0)
             continue;
 
+        // Check: have we already plotted this record? If so, don't replot.
+        if (pulseHistories[trace]->uses() <= lastSerial[trace])
+            continue;
+        lastSerial[trace] = pulseHistories[trace]->uses();
+
+
         if (averaging) {
             QVector<double> *mean = pulseHistories[trace]->meanRecord();
-            emit newDataToPlot(trace, *mean);
+            if (mean != NULL)
+                emit newDataToPlot(trace, *mean);
             delete mean;
-        } else
-            emit newDataToPlot(trace, *pulseHistories[trace]->newestRecord());
-
-//        xdaq::XPulseRec *PR = client->latestTriggeredPulse[channum];
-
-        // Make sure there IS a pulse record AND that it's newer than our
-        // last plot, or we don't want to plot it.
-//        if (PR != NULL && PR->triggerTime() > lastTimes[trace]) {
-//            lastTimes[trace] = PR->triggerTime();
-
-//            ///\todo This is a dumb way to do things, so fix.
-//            /// Notice how we're ignoring the x vector, etc etc.
-//            QVector<double> _x, y;
-//            const bool RAW=true;
-//            PR->requestDataCopy(_x, y, RAW);
-//            if (ErrVsFeedback) {
-//                int chanerr = channum - 1;
-//                if (client->streamDataFlag(chanerr)) {
-//                    client->latestTriggeredPulseLock[chanerr].getLock();
-//                    xdaq::XPulseRec *PRe = client->latestTriggeredPulse[chanerr];
-//                    if (PRe != NULL) {
-//                        QVector<double> _xe, ye;
-//                        PRe->requestDataCopy(_xe, ye, RAW);
-//                        emit newDataToPlot(trace, y, ye);
-//                    }
-//                }
-//            } else
-//                emit newDataToPlot(trace, y);
-//        }
+        } else {
+            QVector<double> *record = pulseHistories[trace]->newestRecord();
+            if (record != NULL)
+                emit newDataToPlot(trace, *record);
+        }
     }
 }
 
@@ -404,7 +393,7 @@ void refreshPlots::setAnalysisType(enum analysisFields newType)
 {
     analysisType = newType;
     for (int trNum=0; trNum < channels.size(); trNum++) {
-        lastTimes[trNum] = 0;
+        lastSerial[trNum] = -1;
 //        scratch[trNum].clear();
 //        histograms[trNum]->clear();
     }

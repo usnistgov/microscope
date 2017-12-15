@@ -84,6 +84,7 @@ void pulseHistory::insertRecord(QVector<double> *r) {
 
     // Now add this record and trim to size.
     records.enqueue(r);
+    nstored++;
     while (records.size() > queueCapacity) {
         QVector<double> *r = records.dequeue();
         delete r;
