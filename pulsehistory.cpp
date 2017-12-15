@@ -19,16 +19,20 @@ pulseHistory::pulseHistory(int capacity, FFTMaster *master) :
 ///
 /// \brief Clear the stored queues of records and power spectra.
 ///
-void pulseHistory::clearQueue() {
-    while (!records.isEmpty()) {
+void pulseHistory::clearQueue(int keep) {
+    if (keep < 0)
+        keep = 0;
+    while (records.size() > keep) {
         QVector<double> *r = records.dequeue();
         delete r;
     }
-    clearSpectra();
+    clearSpectra(keep);
 }
 
-void pulseHistory::clearSpectra() {
-    while (!spectra.isEmpty()) {
+void pulseHistory::clearSpectra(int keep) {
+    if (keep < 0)
+        keep = 0;
+    while (spectra.size() > keep) {
         QVector<double> *r = spectra.dequeue();
         delete r;
     }
@@ -80,7 +84,7 @@ QVector<double> *pulseHistory::newestPSD() {
     if (records.size() <= 0)
         return NULL;
 
-    return records.back();
+    return spectra.back();
 }
 
 
@@ -128,13 +132,15 @@ void pulseHistory::insertRecord(QVector<double> *r) {
 
     // Now add this record and trim to size.
     nstored++;
+    clearQueue(queueCapacity-1);
     records.enqueue(r);
-    while (records.size() > queueCapacity) {
-        QVector<double> *r = records.dequeue();
-        delete r;
+
+    if (doDFT) {
+        const bool WINDOW=true; // always use Hann windowing
+        QVector<double> *psd = new QVector<double>();
+        fftMaster->computePSD(*r, *psd, 1.0, WINDOW, previous_mean);
+        spectra.enqueue(psd);
     }
-
-
 }
 
 

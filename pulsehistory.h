@@ -18,7 +18,7 @@ class pulseHistory
 public:
     pulseHistory(int capacity, FFTMaster *master);
 
-    void clearQueue();
+    void clearQueue(int keep=0);
     QVector<double> *newestRecord();
     QVector<double> *newestPSD();
     QVector<double> *meanRecord() const;
@@ -34,7 +34,7 @@ private:
     bool doDFT;        ///< Whether we are actively doing DFTs on each record.
     QQueue<QVector<double> *> records;  ///< The last N pulse records.
     QQueue<QVector<double> *> spectra;  ///< The last N power spectra.
-    void clearSpectra();
+    void clearSpectra(int keep=0);
     FFTMaster *fftMaster;
     double previous_mean;
 };
