@@ -9,6 +9,7 @@
 pulseHistory::pulseHistory(int capacity, FFTMaster *master) :
     queueCapacity(capacity),
     nsamples(0),
+    nstored(0),
     doDFT(false),
     fftMaster(master)
 {
@@ -26,6 +27,7 @@ void pulseHistory::clearQueue(int keep) {
         QVector<double> *r = records.dequeue();
         delete r;
     }
+    Q_ASSERT(records.size() <= keep);
     clearSpectra(keep);
 }
 
@@ -36,6 +38,7 @@ void pulseHistory::clearSpectra(int keep) {
         QVector<double> *r = spectra.dequeue();
         delete r;
     }
+    Q_ASSERT(spectra.size() <= keep);
 }
 
 
@@ -70,7 +73,7 @@ void pulseHistory::setDoDFT(bool dft) {
 /// \return
 ///
 QVector<double> *pulseHistory::newestRecord() {
-    if (records.size() <= 0)
+    if (records.isEmpty())
         return NULL;
     return records.back();
 }
@@ -81,9 +84,8 @@ QVector<double> *pulseHistory::newestRecord() {
 /// \return
 ///
 QVector<double> *pulseHistory::newestPSD() {
-    if (records.size() <= 0)
+    if (spectra.isEmpty())
         return NULL;
-
     return spectra.back();
 }
 
