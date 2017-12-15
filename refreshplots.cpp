@@ -103,6 +103,23 @@ void refreshPlots::toggledAveraging(bool doAvg) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////
+/// \brief refreshPlots::toggledDFTing
+/// \param dft
+///
+void refreshPlots::toggledDFTing(bool dft) {
+    if (doingDFT == dft)
+        return;
+    doingDFT = dft;
+
+    // Make every plot "expire" by marking it as old.
+    for (int trace=0; trace<channels.size(); trace++) {
+        lastSerial[trace] = -1;
+        pulseHistories[trace]->setDoDFT(dft);
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
 /// \brief The run loop. All repeated work must appear here.
 ///
 void refreshPlots::workQuantum(void) {

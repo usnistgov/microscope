@@ -24,6 +24,7 @@ public:
     void insertRecord(QVector<double> *r);
     int  size() const;
     int  uses() const {return nstored;}
+    void setDoDFT(bool dft) {doDFT=dft;}
 
 private:
     int queueCapacity; ///< How long the records and spectra queues should be.

@@ -88,6 +88,7 @@ public slots:
     virtual void workQuantum(void);
     void receiveNewData(int tracenum, const uint16_t *data, int length);
     void toggledAveraging(bool doAvg);
+    void toggledDFTing(bool dft);
 
     //    void clearHistograms(void);
     //    void receiveNewData(int channum, const QVector<double> &xdata,
@@ -102,6 +103,7 @@ private:
     bool isFFT;                       ///< Are we plotting FFT (sqrt of PSD)?
     bool isTimeseries;                ///< Are we plotting a timeseries?
     bool averaging;                   ///< Do we average stored data before plotting
+    bool doingDFT;                    ///< Do we do DFT of data?
     enum analysisFields analysisType; ///< What analysis field to plot?
     double time_zero;                 ///< In a timeseries, what time is plotted as t=0?
 
