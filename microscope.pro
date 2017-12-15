@@ -12,7 +12,7 @@ TEMPLATE = app
 CONFIG -= app_bundle
 CONFIG += qt thread
 
-LIBS += -lpthread -lzmq # -lpthread -lX11 -lm -lXext -ldl -lfftw3 -lzmq
+LIBS += -lpthread -lfftw3 -lzmq # -lpthread -lX11 -lm -lXext -ldl -lfftw3 -lzmq
 QMAKE_CXXFLAGS += -std=c++0x
 QMAKE_CFLAGS_RELEASE += -O3
 QMAKE_CXXFLAGS_RELEASE += -O3
@@ -42,7 +42,8 @@ SOURCES += main.cpp\
     qcustomplot.cpp \
     refreshplots.cpp \
     datasubscriber.cpp \
-    pulsehistory.cpp
+    pulsehistory.cpp \
+    fftcomputer.cpp
 
 HEADERS  += plotwindow.h \
     periodicupdater.h \
@@ -51,7 +52,8 @@ HEADERS  += plotwindow.h \
     version.h \
     datasubscriber.h \
     microscope.h \
-    pulsehistory.h
+    pulsehistory.h \
+    fftcomputer.h
 
 FORMS    +=  plotwindow.ui
 
