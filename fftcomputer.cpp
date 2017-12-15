@@ -45,7 +45,8 @@ either even or odd N: the input and output arrays are the same length.
 FFTComputer::FFTComputer() :
     fftIn(NULL),
     fftOut(NULL),
-    window(NULL)
+    window(NULL),
+    plan_made(false)
 {
 }
 
@@ -72,6 +73,7 @@ void FFTComputer::prepare(int length_in) {
         FFTW_R2HC,     // the "direction" of the transform, in this case Real to Half Complex
         FFTW_MEASURE); // how "optimal" you want the FFT routines
         // FFTW_MEASURE uses more inital overhead to achieve less per-calc cost.
+    plan_made = true;
 
 //    // Recompute the x (frequency) axis for plots of this FFT.
 //    // Careful! We are going to drop the zero-frequency bin.
@@ -187,9 +189,11 @@ void FFTComputer::computePSD(QVector<double> &data, QVector<double> &psd, double
 ///
 FFTComputer::~FFTComputer() {
     delete []window;
-    fftw_destroy_plan(plan);
     fftw_free(fftIn);
     fftw_free(fftOut);
+    if (plan_made)
+        fftw_destroy_plan(plan);
+    plan_made = false;
 }
 
 
@@ -201,6 +205,7 @@ FFTComputer::~FFTComputer() {
 ///
 FFTMaster::FFTMaster()
 {
+    computers.reserve(10);
 }
 
 
@@ -213,13 +218,16 @@ FFTMaster::FFTMaster()
 void FFTMaster::computePSD(QVector<double> &data, QVector<double> &psd, double sampleRate,
                              bool useWindow, double &mean) {
     int length = data.size();
+    std::cout << "Data has size " << length << std::endl;
+    std::cout << "Checking computers: contains " << computers.size() << " values " << std::endl;
     if (!computers.contains(length)) {
         computers[length].prepare(length);
+        std::cout << "Checking computers: now contains " << computers.size() << " values " << std::endl;
     }
-    FFTComputer *prep = &computers[length];
-    // TODO: here remove old preparations, once there are too many.
-    // Will need to keep track of the order they were added, so delete the oldest.
+    FFTComputer *computer = &computers[length];
+//    // TODO: here remove old preparations, once there are too many.
+//    // Will need to keep track of the order they were added, so delete the oldest.
 
-    prep->computePSD(data, psd, sampleRate, useWindow, mean);
+    computer->computePSD(data, psd, sampleRate, useWindow, mean);
 }
 

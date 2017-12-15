@@ -123,7 +123,7 @@ signals:
     /// Send a message to the console (in the main window)
     /// \param msg  The message to log.
     void sendConsoleMessage(const QString &msg);
-
+    void doDFT(bool);
 
 private:
     Ui::plotWindow *ui;                   ///< The underlying GUI form built in Qt Designer

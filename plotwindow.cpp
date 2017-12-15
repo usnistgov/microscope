@@ -239,6 +239,8 @@ void plotWindow::startRefresh(void) {
     connect(refreshPlotsThread, SIGNAL(addDataToPlot(int, const QVector<double> &, const QVector<double> &)),
             this, SLOT(addPlotData(int, const QVector<double> &, const QVector<double> &)));
     connect(ui->averageTraces, SIGNAL(toggled(bool)), refreshPlotsThread, SLOT(toggledAveraging(bool)));
+    connect(this, SIGNAL(doDFT(bool)), refreshPlotsThread, SLOT(toggledDFTing(bool)));
+
     //    connect(ui->clearDataButton, SIGNAL(clicked()),
     //            refreshPlotsThread, SLOT(clearHistograms()));
 }
@@ -922,6 +924,7 @@ void plotWindow::plotTypeChanged(QAction *action)
     refreshPlotsThread->setIsFFT(plotType == PLOTTYPE_FFT);
     refreshPlotsThread->setIsPSD(plotType == PLOTTYPE_PSD);
     refreshPlotsThread->setIsTimeseries(plotType == PLOTTYPE_TIMESERIES);
+    emit doDFT(is_fft_or_psd);
 //    refreshPlotsThread->setIsHistogram(plotType == PLOTTYPE_HISTOGRAM);
 
     bool scatter=false, line=false, histogram=false;

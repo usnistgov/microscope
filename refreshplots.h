@@ -15,6 +15,7 @@
 
 class plotWindow;
 class pulseHistory;
+class FFTMaster;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief The Histogram class histograms data with fixed, equal bin spacings.
@@ -108,6 +109,7 @@ private:
     double time_zero;                 ///< In a timeseries, what time is plotted as t=0?
 
     QVector<pulseHistory *> pulseHistories;
+    FFTMaster *fftMaster;
 
     void refreshSpectrumPlots(void);
     void refreshStandardPlots(void);

@@ -1,14 +1,16 @@
 #include <iostream>
 #include "pulsehistory.h"
+#include "fftcomputer.h"
 
 ///
 /// \brief Constructor for a pulse history log of the given capacity.
 /// \param capacity
 ///
-pulseHistory::pulseHistory(int capacity) :
+pulseHistory::pulseHistory(int capacity, FFTMaster *master) :
     queueCapacity(capacity),
     nsamples(0),
-    doDFT(false)
+    doDFT(false),
+    fftMaster(master)
 {
     ;
 }
@@ -22,9 +24,39 @@ void pulseHistory::clearQueue() {
         QVector<double> *r = records.dequeue();
         delete r;
     }
+    clearSpectra();
+}
+
+void pulseHistory::clearSpectra() {
     while (!spectra.isEmpty()) {
         QVector<double> *r = spectra.dequeue();
         delete r;
+    }
+}
+
+
+void pulseHistory::setDoDFT(bool dft) {
+    if (doDFT == dft)
+        return;
+    doDFT=dft;
+    const bool WINDOW=true; // always use Hann windowing
+
+    if (dft) {
+        // run DFT on all data
+        int n = records.size();
+        if (n <= 0)
+            return;
+        if (previous_mean == 0.0)
+            previous_mean = (*records[0])[0];
+        for (int i=0; i<n; i++) {
+            std::cout << "Doing fft on record " << i << std::endl;
+            QVector<double> *psd = new QVector<double>;
+            QVector<double> *data = records[i];
+            const double sampleRate = 1.0;
+            fftMaster->computePSD(*data, *psd, sampleRate, WINDOW, previous_mean);
+        }
+    } else {
+        clearSpectra();
     }
 }
 
@@ -36,6 +68,18 @@ void pulseHistory::clearQueue() {
 QVector<double> *pulseHistory::newestRecord() {
     if (records.size() <= 0)
         return NULL;
+    return records.back();
+}
+
+
+///
+/// \brief Return the most recently stored record.
+/// \return
+///
+QVector<double> *pulseHistory::newestPSD() {
+    if (records.size() <= 0)
+        return NULL;
+
     return records.back();
 }
 

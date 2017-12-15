@@ -4,7 +4,7 @@
 #include <QVector>
 #include <QQueue>
 
-/// \file datachannel.h defines the dataChannel object.
+class FFTMaster;
 
 ///
 /// \brief An object to store a brief history of pulse records.
@@ -16,15 +16,16 @@
 class pulseHistory
 {
 public:
-    pulseHistory(int capacity);
+    pulseHistory(int capacity, FFTMaster *master);
 
     void clearQueue();
     QVector<double> *newestRecord();
+    QVector<double> *newestPSD();
     QVector<double> *meanRecord() const;
     void insertRecord(QVector<double> *r);
     int  size() const;
     int  uses() const {return nstored;}
-    void setDoDFT(bool dft) {doDFT=dft;}
+    void setDoDFT(bool dft);
 
 private:
     int queueCapacity; ///< How long the records and spectra queues should be.
@@ -33,6 +34,9 @@ private:
     bool doDFT;        ///< Whether we are actively doing DFTs on each record.
     QQueue<QVector<double> *> records;  ///< The last N pulse records.
     QQueue<QVector<double> *> spectra;  ///< The last N power spectra.
+    void clearSpectra();
+    FFTMaster *fftMaster;
+    double previous_mean;
 };
 
 #endif // DATACHANNEL_H

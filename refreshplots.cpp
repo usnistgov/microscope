@@ -10,9 +10,10 @@
 
 #include <iostream>
 #include <QVector>
+#include <math.h>
 
+#include "fftcomputer.h"
 #include "periodicupdater.h"
-#include "refreshplots.h"
 #include "pulsehistory.h"
 
 
@@ -49,10 +50,13 @@ refreshPlots::refreshPlots(int msec_period) :
 //        histograms.push_back(new Histogram);
 //    }
 
+    fftMaster = new FFTMaster;
+
     const int PULSES_TO_STORE=4;
     pulseHistories.reserve(INITIAL_TRACES);
     for (int i=0; i<INITIAL_TRACES; i++) {
-        pulseHistories.append(new pulseHistory(PULSES_TO_STORE));
+        pulseHistory *h = new pulseHistory(PULSES_TO_STORE, fftMaster);
+        pulseHistories.append(h);
     }
 }
 
@@ -193,24 +197,26 @@ void refreshPlots::refreshSpectrumPlots()
         if (channum < 0)
             continue;
 
-        // Make sure there IS a pulse record AND that it's newer than our
-        // last plot, or we don't want to plot it.
-//        xdaq::FFTChannel *fftchan = client->noiseRecordFFT[channum];
-//        if (fftchan == NULL)
-//            continue;
+        // Check: have we already plotted this record? If so, don't replot.
+        if (pulseHistories[trace]->uses() <= lastSerial[trace])
+            continue;
+        lastSerial[trace] = pulseHistories[trace]->uses();
 
-//        unsigned long long timecode = fftchan->plotTime();
-//        if (timecode > lastTimes[trace]) {
-//            lastTimes[trace] = timecode;
-//            QVector<double> x, y;
-//            fftchan->plotX(x);
-//            fftchan->plotY(y);
-//            if (isFFT) {
-//                for (int i=0; i<y.size(); i++)
-//                    y[i] = sqrt(y[i]);
-//            }
-//            emit newDataToPlot(trace, x, y);
-//        }
+        if (averaging) {
+        } else {
+            QVector<double> *record = pulseHistories[trace]->newestPSD();
+            if (record == NULL)
+                continue;
+            if (isPSD) {
+                emit newDataToPlot(trace, *record);
+            } else {
+                QVector<double> fft(record->size());
+                for (int i=0; i<record->size(); i++) {
+                    fft[i] = sqrt((*record)[i]);
+                }
+                emit newDataToPlot(trace, fft);
+            }
+        }
     }
 }
 
@@ -359,6 +365,9 @@ void refreshPlots::setErrVsFeedback(bool evf)
 ///
 void refreshPlots::setIsPSD(bool psd)
 {
+    if (isPSD == psd)
+        return;
+    toggledDFTing(psd);
     isPSD = psd;
 }
 
