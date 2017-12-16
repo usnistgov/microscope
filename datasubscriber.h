@@ -29,7 +29,7 @@ signals:
 
     void newRecordLengths(int,int);
 
-    /// Signal that a QVector is ready to plot
+    /// Signal that a data vector is ready to plot
     void newDataToPlot(int channum, const uint16_t *data, int nsamp);
 
 //    /// Signal that a y vs x pair of QVectors are ready to plot

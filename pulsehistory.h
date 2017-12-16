@@ -26,6 +26,7 @@ public:
     QVector<double> *meanPSD() const;
     int  size() const;
     int  uses() const {return nstored;}
+    int  samples() const {return nsamples;}
     void setDoDFT(bool dft);
 
 private:

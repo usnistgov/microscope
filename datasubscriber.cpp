@@ -27,10 +27,12 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin) :
     connect(myThread, SIGNAL(finished()), myThread, SLOT(deleteLater()));
 
     connect(this, SIGNAL(newSampleTime(double)), window, SLOT(newSampleTime(double)));
+    connect(this, SIGNAL(newSampleTime(double)), plotManager, SLOT(newSampleTime(double)));
     connect(this, SIGNAL(newRecordLengths(int,int)), window, SLOT(newRecordLengths(int,int)));
 
     connect(this, SIGNAL(newDataToPlot(int, const uint16_t *, int)), plotManager, SLOT(receiveNewData(int, const uint16_t *, int)));
-//    connect(this, SIGNAL(newDataToPlot(int, const QVector<double>, const QVector<double>)),
+
+    //    connect(this, SIGNAL(newDataToPlot(int, const QVector<double>, const QVector<double>)),
 //            plotManager, SLOT(receiveNewData(int,QVector<double>, const QVector<double>)));
 
     myThread->start();

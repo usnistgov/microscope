@@ -90,12 +90,14 @@ public slots:
     void receiveNewData(int tracenum, const uint16_t *data, int length);
     void toggledAveraging(bool doAvg);
     void toggledDFTing(bool dft);
+    void newSampleTime(double);
 
     //    void clearHistograms(void);
     //    void receiveNewData(int channum, const QVector<double> &xdata,
     //                       const QVector<double> &ydata);
 
 private:
+    double ms_per_sample;             ///< Scaling from sample # to ms.
     QVector<int> channels;            ///< The channel for each trace [0,N-1]
     QVector<int> lastSerial;          ///< The serial # of last record plotted (one per trace).
     bool plottingPaused;              ///< Is this refresher paused?
@@ -110,6 +112,7 @@ private:
 
     QVector<pulseHistory *> pulseHistories;
     FFTMaster *fftMaster;
+    QVector<double> frequencies;
 
     void refreshSpectrumPlots(void);
     void refreshStandardPlots(void);

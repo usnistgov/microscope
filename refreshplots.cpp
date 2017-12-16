@@ -25,6 +25,7 @@
 ///
 refreshPlots::refreshPlots(int msec_period) :
     periodicUpdater(msec_period),
+    ms_per_sample(1),
     plottingPaused(false),
     ErrVsFeedback(false),
     isPSD(false),
@@ -89,6 +90,20 @@ void refreshPlots::receiveNewData(int tracenum, const uint16_t *data, int length
         (*rec)[i]= data[i];
     pulseHistories[tracenum]->insertRecord(rec);
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// \brief Slot to be informed that the sample time has changed.
+/// \param dt  The new sample time (in seconds)
+///
+void refreshPlots::newSampleTime(double dt)
+{
+    if (dt*1000. == ms_per_sample)
+        return;
+    ms_per_sample = dt*1000.;
+    frequencies.clear();
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -210,14 +225,23 @@ void refreshPlots::refreshSpectrumPlots()
         }
         if (record == NULL)
             continue;
+
+        const int nfreq = record->size();
+        if (nfreq != frequencies.size()) {
+            frequencies.resize(nfreq);
+            const double scaling = 1e3/(ms_per_sample * pulseHistories[trace]->samples());
+            for (int i=0; i<nfreq; i++)
+                frequencies[i] = i * scaling;
+        }
+
         if (isPSD) {
-            emit newDataToPlot(trace, *record);
+            emit newDataToPlot(trace, frequencies, *record);
         } else {
-            QVector<double> fft(record->size());
-            for (int i=0; i<record->size(); i++) {
+            QVector<double> fft(nfreq);
+            for (int i=0; i<nfreq; i++) {
                 fft[i] = sqrt((*record)[i]);
             }
-            emit newDataToPlot(trace, fft);
+            emit newDataToPlot(trace, frequencies, fft);
         }
         if (averaging)
             delete record;
