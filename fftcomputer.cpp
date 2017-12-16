@@ -218,11 +218,8 @@ FFTMaster::FFTMaster()
 void FFTMaster::computePSD(QVector<double> &data, QVector<double> &psd, double sampleRate,
                              bool useWindow, double &mean) {
     int length = data.size();
-    std::cout << "Data has size " << length << std::endl;
-    std::cout << "Checking computers: contains " << computers.size() << " values " << std::endl;
     if (!computers.contains(length)) {
         computers[length].prepare(length);
-        std::cout << "Checking computers: now contains " << computers.size() << " values " << std::endl;
     }
     FFTComputer *computer = &computers[length];
 //    // TODO: here remove old preparations, once there are too many.

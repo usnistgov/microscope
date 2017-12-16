@@ -56,7 +56,6 @@ void pulseHistory::setDoDFT(bool dft) {
         if (previous_mean == 0.0)
             previous_mean = (*records[0])[0];
         for (int i=0; i<n; i++) {
-            std::cout << "Doing fft on record " << i << std::endl;
             QVector<double> *psd = new QVector<double>;
             QVector<double> *data = records[i];
             const double sampleRate = 1.0;
@@ -72,7 +71,7 @@ void pulseHistory::setDoDFT(bool dft) {
 /// \brief Return the most recently stored record.
 /// \return
 ///
-QVector<double> *pulseHistory::newestRecord() {
+QVector<double> *pulseHistory::newestRecord() const {
     if (records.isEmpty())
         return NULL;
     return records.back();
@@ -83,7 +82,7 @@ QVector<double> *pulseHistory::newestRecord() {
 /// \brief Return the most recently stored record.
 /// \return
 ///
-QVector<double> *pulseHistory::newestPSD() {
+QVector<double> *pulseHistory::newestPSD() const {
     if (spectra.isEmpty())
         return NULL;
     return spectra.back();
@@ -111,8 +110,38 @@ QVector<double> *pulseHistory::meanRecord() const {
         }
     }
 
-    if (nused > 0) {
+    if (nused > 1) {
          for (int j=0; j<nsamples; j++)
+            (*result)[j] /= nused;
+    }
+    return result;
+}
+
+
+///
+/// \brief pulseHistory::meanPSD
+/// \return
+///
+QVector<double> *pulseHistory::meanPSD() const {
+    QVector<double> *last = spectra.back();
+    if (last == NULL) {
+        return NULL;
+    }
+
+    int nfreq = last->size();
+    QVector<double> *result = new QVector<double>(nfreq, 0.0);
+
+    int nused = 0;
+    for (int i=0; i<spectra.size(); i++) {
+        if (spectra[i]->size() <= nfreq) {
+            for (int j=0; j<nfreq; j++)
+                (*result)[j] += (*spectra[i])[j];
+            nused++;
+        }
+    }
+
+    if (nused > 1) {
+         for (int j=0; j<nfreq; j++)
             (*result)[j] /= nused;
     }
     return result;

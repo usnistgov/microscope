@@ -202,21 +202,25 @@ void refreshPlots::refreshSpectrumPlots()
             continue;
         lastSerial[trace] = pulseHistories[trace]->uses();
 
+        QVector<double> *record;
         if (averaging) {
+            record = pulseHistories[trace]->meanPSD();
         } else {
-            QVector<double> *record = pulseHistories[trace]->newestPSD();
-            if (record == NULL)
-                continue;
-            if (isPSD) {
-                emit newDataToPlot(trace, *record);
-            } else {
-                QVector<double> fft(record->size());
-                for (int i=0; i<record->size(); i++) {
-                    fft[i] = sqrt((*record)[i]);
-                }
-                emit newDataToPlot(trace, fft);
-            }
+            record = pulseHistories[trace]->newestPSD();
         }
+        if (record == NULL)
+            continue;
+        if (isPSD) {
+            emit newDataToPlot(trace, *record);
+        } else {
+            QVector<double> fft(record->size());
+            for (int i=0; i<record->size(); i++) {
+                fft[i] = sqrt((*record)[i]);
+            }
+            emit newDataToPlot(trace, fft);
+        }
+        if (averaging)
+            delete record;
     }
 }
 
