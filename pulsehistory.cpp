@@ -1,4 +1,6 @@
 #include <iostream>
+#include <math.h>
+
 #include "pulsehistory.h"
 #include "fftcomputer.h"
 
@@ -18,7 +20,24 @@ pulseHistory::pulseHistory(int capacity, FFTMaster *master) :
 
 
 ///
-/// \brief Clear the stored queues of records and power spectra.
+/// \brief shorten_from_front Remove all but the last `keep` values from the vector, moving them to the front.
+///
+/// Notice that resize won't work, because it removes values from the back, not the front.
+/// \param v   Vector to shorten
+/// \param keep  How many values to keep.
+///
+inline void shorten_from_front(QVector<double> &v, int keep) {
+    if (keep == 0) {
+        v.resize(0);
+    } else if (keep > v.size())
+        return;
+    else
+        v.remove(0, v.size()-keep);
+}
+
+
+///
+/// \brief Clear the stored queues of records, power spectra, and analysis.
 ///
 void pulseHistory::clearQueue(int keep) {
     if (keep < 0)
@@ -29,8 +48,17 @@ void pulseHistory::clearQueue(int keep) {
     }
     Q_ASSERT(records.size() <= keep);
     clearSpectra(keep);
+
+    shorten_from_front(pulse_average, keep);
+    shorten_from_front(pulse_peak, keep);
+    shorten_from_front(pulse_rms, keep);
 }
 
+
+///
+/// \brief pulseHistory::clearSpectra
+/// \param keep
+///
 void pulseHistory::clearSpectra(int keep) {
     if (keep < 0)
         keep = 0;
@@ -42,6 +70,10 @@ void pulseHistory::clearSpectra(int keep) {
 }
 
 
+///
+/// \brief pulseHistory::setDoDFT
+/// \param dft
+///
 void pulseHistory::setDoDFT(bool dft) {
     if (doDFT == dft)
         return;
@@ -152,10 +184,10 @@ QVector<double> *pulseHistory::meanPSD() const {
 /// \brief Insert a single triggered record into storage.
 /// \param r  The record to store
 ///
-void pulseHistory::insertRecord(QVector<double> *r) {
+void pulseHistory::insertRecord(QVector<double> *r, int presamples) {
 
     // If this record is not the same length as the others, clear out the others.
-    int len = r->size();
+    const int len = r->size();
     if (len != nsamples) {
         nsamples = len;
         clearQueue();
@@ -172,6 +204,34 @@ void pulseHistory::insertRecord(QVector<double> *r) {
         fftMaster->computePSD(*r, *psd, 1.0, WINDOW, previous_mean);
         spectra.enqueue(psd);
     }
+
+    // Now compute and store its "analysis" values
+    QVector<double> rec = *r;
+    double ptmean = 0.0;
+    for (int i=0; i<presamples; i++)
+        ptmean += rec[i];
+    ptmean /= presamples;
+
+    double pavg = 0.0;
+    double peak = 0.0;
+    for (int i=presamples+1; i<len; i++) {
+        pavg += rec[i];
+        if (rec[i] > peak)
+            peak = rec[i];
+    }
+    pavg = pavg/(len-presamples-1) - ptmean;
+    peak -= ptmean;
+
+    double sumsq = 0.0;
+    for (int i=presamples+1; i<len; i++) {
+        double v = rec[i]-ptmean;
+        sumsq += v*v;
+    }
+    double prms = sqrt(sumsq/(len-presamples-1));
+
+    pulse_average.append(pavg);
+    pulse_peak.append(peak);
+    pulse_rms.append(prms);
 }
 
 

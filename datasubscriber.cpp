@@ -30,7 +30,8 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin) :
     connect(this, SIGNAL(newSampleTime(double)), plotManager, SLOT(newSampleTime(double)));
     connect(this, SIGNAL(newRecordLengths(int,int)), window, SLOT(newRecordLengths(int,int)));
 
-    connect(this, SIGNAL(newDataToPlot(int, const uint16_t *, int)), plotManager, SLOT(receiveNewData(int, const uint16_t *, int)));
+    connect(this, SIGNAL(newDataToPlot(int, const uint16_t *, int, int)),
+            plotManager, SLOT(receiveNewData(int, const uint16_t *, int, int)));
 
     //    connect(this, SIGNAL(newDataToPlot(int, const QVector<double>, const QVector<double>)),
 //            plotManager, SLOT(receiveNewData(int,QVector<double>, const QVector<double>)));
@@ -166,7 +167,7 @@ void dataSubscriber::process() {
                 sampletime = pr->sampletime;
                 emit newSampleTime(sampletime);
             }
-            emit newDataToPlot(tracenum, pr->data, pr->nsamples);
+            emit newDataToPlot(tracenum, pr->data, pr->nsamples, pr->presamples);
         }
         delete pr;
     }

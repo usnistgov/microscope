@@ -81,14 +81,15 @@ refreshPlots::~refreshPlots()
 /// \param data
 /// \param length
 ///
-void refreshPlots::receiveNewData(int tracenum, const uint16_t *data, int length) {
+void refreshPlots::receiveNewData(int tracenum, const uint16_t *data, int length,
+                                  int presamples) {
     if (tracenum < 0 || tracenum >= pulseHistories.size())
         return;
 
     QVector<double> *rec = new QVector<double>(length);
     for (int i=0; i<length; i++)
         (*rec)[i]= data[i];
-    pulseHistories[tracenum]->insertRecord(rec);
+    pulseHistories[tracenum]->insertRecord(rec, presamples);
 }
 
 

@@ -18,7 +18,7 @@ class pulseHistory
 public:
     pulseHistory(int capacity, FFTMaster *master);
 
-    void insertRecord(QVector<double> *r);
+    void insertRecord(QVector<double> *r, int presamples);
     void clearQueue(int keep=0);
     QVector<double> *newestRecord() const;
     QVector<double> *newestPSD() const;
@@ -38,6 +38,11 @@ private:
     QQueue<QVector<double> *> spectra;  ///< The last N power spectra.
     FFTMaster *fftMaster;
     double previous_mean;
+
+    // Analysis of single records
+    QVector<double> pulse_rms;
+    QVector<double> pulse_peak;
+    QVector<double> pulse_average;
 
     void clearSpectra(int keep=0);
 };
