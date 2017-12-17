@@ -29,6 +29,8 @@ public:
     int  samples() const {return nsamples;}
     void setDoDFT(bool dft);
 
+    QVector<double> &rms() {return pulse_rms;}
+
 private:
     int queueCapacity; ///< How long the records and spectra queues should be.
     int nsamples;      ///< How many samples are in the currently stored records.

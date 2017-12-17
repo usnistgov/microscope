@@ -261,22 +261,27 @@ void refreshPlots::refreshTimeseriesPlots()
         if (channum < 0)
             continue;
 
-//        xdaq::StreamChannel *schan = client->streamData[channum];
-//        double oldest_time = double(lastTimes[trace])/1e6;
-        std::vector<double> timevec, valuevec;
-//        schan->getRecentAnalysis(timevec, valuevec, oldest_time, analysisType);
-        unsigned int n = timevec.size();
-        if (n==0)
+        // Check: have we already plotted this record? If so, don't replot.
+        if (pulseHistories[trace]->uses() <= lastSerial[trace])
             continue;
-//        lastTimes[trace] = counter_t(timevec.back()*1e6);
+        lastSerial[trace] = pulseHistories[trace]->uses();
 
-        QVector<double> xqv(n);
-        QVector<double> yqv(n);
-        for (unsigned int i=0; i<n; i++) {
-            xqv[i] = double(timevec[i] - time_zero);
-            yqv[i] = double(valuevec[i]);
-        }
-        emit addDataToPlot(trace, xqv, yqv);
+        QVector<double> rms = pulseHistories[trace]->rms();
+        QVector<double> timevec(rms.size());
+        for (int i=0; i<rms.size(); i++)
+            timevec[i] = i*5;
+        emit addDataToPlot(trace, timevec, rms);
+//        QVector<double> *record = pulseHistories[trace]->newestRecord();
+//        if (record != NULL)
+//            emit newDataToPlot(trace, *record);
+
+//        QVector<double> xqv(n);
+//        QVector<double> yqv(n);
+//        for (unsigned int i=0; i<n; i++) {
+//            xqv[i] = double(timevec[i] - time_zero);
+//            yqv[i] = double(valuevec[i]);
+//        }
+//        emit addDataToPlot(trace, xqv, yqv);
     }
 }
 
