@@ -19,7 +19,7 @@ public:
     pulseHistory(int capacity, FFTMaster *master);
 
     void insertRecord(QVector<double> *r, int presamples);
-    void clearQueue(int keep=0);
+    void clearAllData();
     QVector<double> *newestRecord() const;
     QVector<double> *newestPSD() const;
     QVector<double> *meanRecord() const;
@@ -46,6 +46,7 @@ private:
     QVector<double> pulse_peak;
     QVector<double> pulse_average;
 
+    void clearQueue(int keep=0);
     void clearSpectra(int keep=0);
 };
 

@@ -20,24 +20,20 @@ pulseHistory::pulseHistory(int capacity, FFTMaster *master) :
 
 
 ///
-/// \brief shorten_from_front Remove all but the last `keep` values from the vector, moving them to the front.
+/// \brief Clear the stored queues of records, power spectra, and analysis.
 ///
-/// Notice that resize won't work, because it removes values from the back, not the front.
-/// \param v   Vector to shorten
-/// \param keep  How many values to keep.
-///
-inline void shorten_from_front(QVector<double> &v, int keep) {
-    if (keep == 0) {
-        v.resize(0);
-    } else if (keep > v.size())
-        return;
-    else
-        v.remove(0, v.size()-keep);
+void pulseHistory::clearAllData() {
+    pulse_average.resize(0);
+    pulse_peak.resize(0);
+    pulse_rms.resize(0);
+
+    clearQueue();
 }
 
 
+
 ///
-/// \brief Clear the stored queues of records, power spectra, and analysis.
+/// \brief Clear the stored queues of records and power spectra\.
 ///
 void pulseHistory::clearQueue(int keep) {
     if (keep < 0)
@@ -48,10 +44,6 @@ void pulseHistory::clearQueue(int keep) {
     }
     Q_ASSERT(records.size() <= keep);
     clearSpectra(keep);
-
-    shorten_from_front(pulse_average, keep);
-    shorten_from_front(pulse_peak, keep);
-    shorten_from_front(pulse_rms, keep);
 }
 
 
