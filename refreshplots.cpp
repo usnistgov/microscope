@@ -270,13 +270,14 @@ void refreshPlots::refreshTimeseriesPlots()
             continue;
 
         // Check: have we already plotted this record? If so, don't replot.
-        if (pulseHistories[trace]->uses() <= lastSerial[trace])
+        const int numNew = pulseHistories[trace]->uses() - lastSerial[trace];
+        if (numNew <= 0)
             continue;
         lastSerial[trace] = pulseHistories[trace]->uses();
 
         QVector<double> rms = pulseHistories[trace]->rms();
         QVector<double> times = pulseHistories[trace]->times();
-        emit addDataToPlot(trace, times, rms);
+        emit newDataToPlot(trace, times, rms);
     }
 }
 
