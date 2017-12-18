@@ -32,8 +32,7 @@ refreshPlots::refreshPlots(int msec_period) :
     isFFT(false),
 //    isHistogram(false),
     averaging(false),
-    analysisType(ANALYSIS_PULSE_MAX),
-    time_zero(0)
+    analysisType(ANALYSIS_PULSE_MAX)
 {
     // Fill the list of channels to be plotted with the no-plot indicator.
     const int INITIAL_TRACES=8;
@@ -44,6 +43,11 @@ refreshPlots::refreshPlots(int msec_period) :
     lastSerial.resize(INITIAL_TRACES);
     for (int i=0; i<INITIAL_TRACES; i++)
         lastSerial[i] = -1;
+
+    // Let plots have time-zero reference of now, rounded down to next exact hour
+    gettimeofday(&time_zero, NULL);
+    time_zero.tv_usec = 0;
+    time_zero.tv_sec -= time_zero.tv_sec%3600;
 
 //    scratch.resize(INITIAL_TRACES);
 //    histograms.clear();
@@ -89,7 +93,11 @@ void refreshPlots::receiveNewData(int tracenum, const uint16_t *data, int length
     QVector<double> *rec = new QVector<double>(length);
     for (int i=0; i<length; i++)
         (*rec)[i]= data[i];
-    pulseHistories[tracenum]->insertRecord(rec, presamples);
+
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    double dt = now.tv_sec-time_zero.tv_sec + now.tv_usec*1e-6;
+    pulseHistories[tracenum]->insertRecord(rec, presamples, dt);
 }
 
 
@@ -267,21 +275,8 @@ void refreshPlots::refreshTimeseriesPlots()
         lastSerial[trace] = pulseHistories[trace]->uses();
 
         QVector<double> rms = pulseHistories[trace]->rms();
-        QVector<double> timevec(rms.size());
-        for (int i=0; i<rms.size(); i++)
-            timevec[i] = i*5;
-        emit addDataToPlot(trace, timevec, rms);
-//        QVector<double> *record = pulseHistories[trace]->newestRecord();
-//        if (record != NULL)
-//            emit newDataToPlot(trace, *record);
-
-//        QVector<double> xqv(n);
-//        QVector<double> yqv(n);
-//        for (unsigned int i=0; i<n; i++) {
-//            xqv[i] = double(timevec[i] - time_zero);
-//            yqv[i] = double(valuevec[i]);
-//        }
-//        emit addDataToPlot(trace, xqv, yqv);
+        QVector<double> times = pulseHistories[trace]->times();
+        emit addDataToPlot(trace, times, rms);
     }
 }
 

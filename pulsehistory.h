@@ -18,7 +18,7 @@ class pulseHistory
 public:
     pulseHistory(int capacity, FFTMaster *master);
 
-    void insertRecord(QVector<double> *r, int presamples);
+    void insertRecord(QVector<double> *r, int presamples, double dtime);
     void clearAllData();
     QVector<double> *newestRecord() const;
     QVector<double> *newestPSD() const;
@@ -30,6 +30,7 @@ public:
     void setDoDFT(bool dft);
 
     QVector<double> &rms() {return pulse_rms;}
+    QVector<double> &times() {return pulse_time;}
 
 private:
     int queueCapacity; ///< How long the records and spectra queues should be.
@@ -45,6 +46,7 @@ private:
     QVector<double> pulse_rms;
     QVector<double> pulse_peak;
     QVector<double> pulse_average;
+    QVector<double> pulse_time;
 
     void clearQueue(int keep=0);
     void clearSpectra(int keep=0);

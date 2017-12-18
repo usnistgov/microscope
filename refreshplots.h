@@ -8,6 +8,7 @@
 ///
 
 #include <stdint.h>
+#include <sys/time.h>
 #include <deque>
 #include <vector>
 #include "periodicupdater.h"
@@ -108,7 +109,7 @@ private:
     bool averaging;                   ///< Do we average stored data before plotting
     bool doingDFT;                    ///< Do we do DFT of data?
     enum analysisFields analysisType; ///< What analysis field to plot?
-    double time_zero;                 ///< In a timeseries, what time is plotted as t=0?
+    struct timeval time_zero;         ///< In a timeseries, what time is plotted as t=0?
 
     QVector<pulseHistory *> pulseHistories;
     FFTMaster *fftMaster;

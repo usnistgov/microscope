@@ -1,6 +1,7 @@
 #include <iostream>
 #include <math.h>
 
+#include <ctime>
 #include "pulsehistory.h"
 #include "fftcomputer.h"
 
@@ -176,7 +177,7 @@ QVector<double> *pulseHistory::meanPSD() const {
 /// \brief Insert a single triggered record into storage.
 /// \param r  The record to store
 ///
-void pulseHistory::insertRecord(QVector<double> *r, int presamples) {
+void pulseHistory::insertRecord(QVector<double> *r, int presamples, double dtime) {
 
     // If this record is not the same length as the others, clear out the others.
     const int len = r->size();
@@ -224,6 +225,7 @@ void pulseHistory::insertRecord(QVector<double> *r, int presamples) {
     pulse_average.append(pavg);
     pulse_peak.append(peak);
     pulse_rms.append(prms);
+    pulse_time.append(dtime);
 }
 
 
