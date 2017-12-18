@@ -275,9 +275,13 @@ void refreshPlots::refreshTimeseriesPlots()
             continue;
         lastSerial[trace] = pulseHistories[trace]->uses();
 
-        QVector<double> rms = pulseHistories[trace]->rms();
         QVector<double> times = pulseHistories[trace]->times();
-        emit newDataToPlot(trace, times, rms);
+        QVector<double> rms = pulseHistories[trace]->rms();
+
+        int offset = times.size() - numNew;
+        QVector<double> x = times.mid(offset);
+        QVector<double> y = rms.mid(offset);
+        emit addDataToPlot(trace, x, y);
     }
 }
 
