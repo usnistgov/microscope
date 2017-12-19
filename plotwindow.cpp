@@ -241,8 +241,8 @@ void plotWindow::startRefresh(void) {
     connect(ui->averageTraces, SIGNAL(toggled(bool)), refreshPlotsThread, SLOT(toggledAveraging(bool)));
     connect(this, SIGNAL(doDFT(bool)), refreshPlotsThread, SLOT(toggledDFTing(bool)));
 
-    //    connect(ui->clearDataButton, SIGNAL(clicked()),
-    //            refreshPlotsThread, SLOT(clearHistograms()));
+    connect(ui->clearDataButton, SIGNAL(clicked()),
+            refreshPlotsThread, SLOT(clearStoredData()));
 }
 
 

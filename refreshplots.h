@@ -93,7 +93,7 @@ public slots:
     void toggledDFTing(bool dft);
     void newSampleTime(double);
 
-    //    void clearHistograms(void);
+    void clearStoredData(void);
     //    void receiveNewData(int channum, const QVector<double> &xdata,
     //                       const QVector<double> &ydata);
 

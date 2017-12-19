@@ -24,11 +24,19 @@ pulseHistory::pulseHistory(int capacity, FFTMaster *master) :
 /// \brief Clear the stored queues of records, power spectra, and analysis.
 ///
 void pulseHistory::clearAllData() {
-    pulse_average.resize(0);
-    pulse_peak.resize(0);
-    pulse_rms.resize(0);
+    pulse_average.clear();
+    pulse_peak.clear();
+    pulse_rms.clear();
+    pulse_time.clear();
+
+    const int RESERVE=32; // reserve space for this many values
+    pulse_average.reserve(RESERVE);
+    pulse_peak.reserve(RESERVE);
+    pulse_rms.reserve(RESERVE);
+    pulse_time.reserve(RESERVE);
 
     clearQueue();
+    clearSpectra();
 }
 
 
@@ -183,7 +191,7 @@ void pulseHistory::insertRecord(QVector<double> *r, int presamples, double dtime
     const int len = r->size();
     if (len != nsamples) {
         nsamples = len;
-        clearQueue();
+        clearAllData();
     }
 
     // Now add this record and trim to size.
@@ -192,6 +200,7 @@ void pulseHistory::insertRecord(QVector<double> *r, int presamples, double dtime
     records.enqueue(r);
 
     if (doDFT) {
+        clearSpectra(queueCapacity-1);
         const bool WINDOW=true; // always use Hann windowing
         QVector<double> *psd = new QVector<double>();
         fftMaster->computePSD(*r, *psd, 1.0, WINDOW, previous_mean);

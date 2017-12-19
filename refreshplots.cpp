@@ -170,13 +170,17 @@ void refreshPlots::workQuantum(void) {
 /// \brief Clear all stored data for building histograms, including the "scratch"
 /// vectors of raw data that we use before hist limits are fixed.
 ///
-//void refreshPlots::clearHistograms()
-//{
-//    for (unsigned int i=0; i<histograms.size(); i++) {
-//        histograms[i]->clear();
-//        scratch[i].clear();
-//    }
-//}
+void refreshPlots::clearStoredData()
+{
+    for (int trace=0; trace<channels.size(); trace++) {
+        lastSerial[trace] = pulseHistories[trace]->uses();
+        pulseHistories[trace]->clearAllData();
+    }
+    //    for (unsigned int i=0; i<histograms.size(); i++) {
+    //        histograms[i]->clear();
+    //        scratch[i].clear();
+    //    }
+}
 
 
 
@@ -363,8 +367,10 @@ void refreshPlots::changedChannel(int traceNumber, int channelNumber)
     if (traceNumber >= channels.size())
         return;
     channels[traceNumber] = channelNumber;
-//    scratch[traceNumber].clear();
-//    histograms[traceNumber]->clear();
+    pulseHistories[traceNumber]->clearAllData();
+
+    //    scratch[traceNumber].clear();
+    //    histograms[traceNumber]->clear();
     // don't change lastTimes[traceNumber], or we'll re-plot old data from that channel
     // when new data isn't streaming. That's not what we want.
 }
