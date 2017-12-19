@@ -3,6 +3,7 @@
 
 #include <QVector>
 #include <QQueue>
+#include <QMutex>
 
 class FFTMaster;
 
@@ -22,8 +23,8 @@ public:
     void clearAllData();
     QVector<double> *newestRecord() const;
     QVector<double> *newestPSD() const;
-    QVector<double> *meanRecord() const;
-    QVector<double> *meanPSD() const;
+    QVector<double> *meanRecord();
+    QVector<double> *meanPSD();
     int  size() const;
     int  uses() const {return nstored;}
     int  samples() const {return nsamples;}
@@ -43,6 +44,7 @@ private:
     QQueue<QVector<double> *> spectra;  ///< The last N power spectra.
     FFTMaster *fftMaster;
     double previous_mean;
+    QMutex lock;
 
     // Analysis of single records
     QVector<double> pulse_rms;

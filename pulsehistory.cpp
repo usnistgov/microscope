@@ -47,11 +47,14 @@ void pulseHistory::clearAllData() {
 void pulseHistory::clearQueue(int keep) {
     if (keep < 0)
         keep = 0;
+    lock.lock();
     while (records.size() > keep) {
         QVector<double> *r = records.dequeue();
         delete r;
     }
+    lock.unlock();
     Q_ASSERT(records.size() <= keep);
+
     clearSpectra(keep);
 }
 
@@ -63,10 +66,12 @@ void pulseHistory::clearQueue(int keep) {
 void pulseHistory::clearSpectra(int keep) {
     if (keep < 0)
         keep = 0;
+    lock.lock();
     while (spectra.size() > keep) {
         QVector<double> *r = spectra.dequeue();
         delete r;
     }
+    lock.unlock();
     Q_ASSERT(spectra.size() <= keep);
 }
 
@@ -88,12 +93,14 @@ void pulseHistory::setDoDFT(bool dft) {
             return;
         if (previous_mean == 0.0)
             previous_mean = (*records[0])[0];
+        lock.lock();
         for (int i=0; i<n; i++) {
             QVector<double> *psd = new QVector<double>;
             QVector<double> *data = records[i];
             const double sampleRate = 1.0;
             fftMaster->computePSD(*data, *psd, sampleRate, WINDOW, previous_mean);
         }
+        lock.unlock();
     } else {
         clearSpectra();
     }
@@ -126,7 +133,7 @@ QVector<double> *pulseHistory::newestPSD() const {
 /// \brief Compute and return the mean of all stored records.
 /// \return
 ///
-QVector<double> *pulseHistory::meanRecord() const {
+QVector<double> *pulseHistory::meanRecord() {
     QVector<double> *last = records.back();
     if (last == NULL) {
         return NULL;
@@ -135,6 +142,7 @@ QVector<double> *pulseHistory::meanRecord() const {
     QVector<double> *result = new QVector<double>(nsamples, 0.0);
 
     int nused = 0;
+    lock.lock();
     for (int i=0; i<records.size(); i++) {
         if (records[i]->size() <= nsamples) {
             for (int j=0; j<nsamples; j++)
@@ -142,6 +150,7 @@ QVector<double> *pulseHistory::meanRecord() const {
             nused++;
         }
     }
+    lock.unlock();
 
     if (nused > 1) {
          for (int j=0; j<nsamples; j++)
@@ -155,7 +164,7 @@ QVector<double> *pulseHistory::meanRecord() const {
 /// \brief pulseHistory::meanPSD
 /// \return
 ///
-QVector<double> *pulseHistory::meanPSD() const {
+QVector<double> *pulseHistory::meanPSD() {
     QVector<double> *last = spectra.back();
     if (last == NULL) {
         return NULL;
@@ -165,6 +174,7 @@ QVector<double> *pulseHistory::meanPSD() const {
     QVector<double> *result = new QVector<double>(nfreq, 0.0);
 
     int nused = 0;
+    lock.lock();
     for (int i=0; i<spectra.size(); i++) {
         if (spectra[i]->size() <= nfreq) {
             for (int j=0; j<nfreq; j++)
@@ -172,6 +182,7 @@ QVector<double> *pulseHistory::meanPSD() const {
             nused++;
         }
     }
+    lock.unlock();
 
     if (nused > 1) {
          for (int j=0; j<nfreq; j++)
@@ -195,19 +206,24 @@ void pulseHistory::insertRecord(QVector<double> *r, int presamples, double dtime
     }
 
     // Now add this record and trim to size.
-    nstored++;
     clearQueue(queueCapacity-1);
+    lock.lock();
+    nstored++;
     records.enqueue(r);
+    lock.unlock();
 
     if (doDFT) {
         clearSpectra(queueCapacity-1);
         const bool WINDOW=true; // always use Hann windowing
         QVector<double> *psd = new QVector<double>();
         fftMaster->computePSD(*r, *psd, 1.0, WINDOW, previous_mean);
+        lock.lock();
         spectra.enqueue(psd);
+        lock.unlock();
     }
 
     // Now compute and store its "analysis" values
+    lock.lock();
     QVector<double> rec = *r;
     double ptmean = 0.0;
     for (int i=0; i<presamples; i++)
@@ -230,6 +246,7 @@ void pulseHistory::insertRecord(QVector<double> *r, int presamples, double dtime
         sumsq += v*v;
     }
     double prms = sqrt(sumsq/(len-presamples-1));
+    lock.unlock();
 
     pulse_average.append(pavg);
     pulse_peak.append(peak);

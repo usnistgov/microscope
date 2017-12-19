@@ -57,7 +57,7 @@ refreshPlots::refreshPlots(int msec_period) :
 
     fftMaster = new FFTMaster;
 
-    const int PULSES_TO_STORE=4;
+    const int PULSES_TO_STORE=8;
     pulseHistories.reserve(INITIAL_TRACES);
     for (int i=0; i<INITIAL_TRACES; i++) {
         pulseHistory *h = new pulseHistory(PULSES_TO_STORE, fftMaster);
@@ -454,11 +454,6 @@ void refreshPlots::setIsFFT(bool fft)
 void refreshPlots::setIsTimeseries(bool ts)
 {
     isTimeseries = ts;
-
-//    struct timeval tv;
-//    gettimeofday(&tv, NULL);
-//    counter_t now=tv.tv_sec;
-//    time_zero = now - now%3600; // Round down to nearest exact hour
 }
 
 
@@ -469,9 +464,12 @@ void refreshPlots::setIsTimeseries(bool ts)
 ///
 void refreshPlots::setAnalysisType(enum analysisFields newType)
 {
+    if (analysisType == newType)
+        return;
+
     analysisType = newType;
     for (int tracenum=0; tracenum < channels.size(); tracenum++) {
-        lastSerial[tracenum] = -1;
+        lastSerial[tracenum] = 0;
 
 //        scratch[tracenum].clear();
 //        histograms[tracenum]->clear();
