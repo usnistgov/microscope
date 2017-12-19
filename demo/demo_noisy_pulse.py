@@ -27,14 +27,14 @@ socket = context.socket(zmq.PUB)
 socket.bind("tcp://*:%s" % port)
 
 t = np.arange(1-presamples, samples-presamples+1, dtype=float)
-pulse = 30000*(np.exp(-t/200.) - np.exp(-t/40)) + 0
+pulse = (np.exp(-t/200.) - np.exp(-t/40)) + 0
 pulse[t<0] = 0
-messagedata = np.asarray(pulse , dtype=np.uint16)
-pulseRecord = {ch:message_definition.DastardPulse(ch, presamples, 2.5e-6, 1./65535) for ch in range(chanmin, chanmax)}
+messagedata = {ch:np.asarray(pulse*(ch+20)*1000+1000*ch, dtype=np.uint16) for ch in range(chanmin, chanmax+1)}
+pulseRecord = {ch:message_definition.DastardPulse(ch, presamples, 2.5e-6, 1./65535) for ch in range(chanmin, chanmax+1)}
 
 while True:
-    channel = random.randrange(1,21)
-    thisdata = np.asarray(1000*channel + messagedata + np.random.random_integers(-500, 500, size=samples), dtype=np.uint16)
+    channel = random.randrange(chanmin, chanmax+1)
+    thisdata = np.asarray(messagedata[channel] + np.random.random_integers(-500, 500, size=samples), dtype=np.uint16)
     message = pulseRecord[channel].pack(thisdata)
     print "chan %d message length %d" % (channel, len(message))
     socket.send(message)
