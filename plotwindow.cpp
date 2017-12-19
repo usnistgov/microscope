@@ -134,6 +134,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
     analysisMenuActionGroup.addAction(ui->actionPulse_mean);
     analysisMenuActionGroup.addAction(ui->actionPulse_max);
     analysisMenuActionGroup.addAction(ui->actionPulse_RMS);
+    analysisMenuActionGroup.addAction(ui->actionBaseline);
     ui->actionPulse_RMS->setChecked(true);
     connect(&analysisMenuActionGroup, SIGNAL(triggered(QAction *)),
             this, SLOT(plotAnalysisFieldChanged(QAction *)));
@@ -967,6 +968,9 @@ void plotWindow::plotTypeChanged(QAction *action)
 
     case PLOTTYPE_TIMESERIES:
         switch (analysisType) {
+        case ANALYSIS_BASELINE:
+            pl->yAxis->setLabel("Pretrigger mean (arbs)");
+            break;
         case ANALYSIS_PULSE_MAX:
             pl->yAxis->setLabel("Pulse max value (arbs)");
             break;
@@ -1077,6 +1081,8 @@ void plotWindow::plotAnalysisFieldChanged(QAction *action)
         analysisType = ANALYSIS_PULSE_MAX;
     } else if (action == ui->actionPulse_RMS) {
         analysisType = ANALYSIS_PULSE_RMS;
+    } else if (action == ui->actionBaseline) {
+        analysisType = ANALYSIS_BASELINE;
     }
 
     // Reset the plot type to be analysis vs time when the user chooses any

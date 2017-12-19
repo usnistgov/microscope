@@ -282,6 +282,9 @@ void refreshPlots::refreshTimeseriesPlots()
         QVector<double> times = pulseHistories[trace]->times();
         QVector<double> ydata;
         switch (analysisType) {
+        case ANALYSIS_BASELINE:
+            ydata = pulseHistories[trace]->baseline();
+            break;
         case ANALYSIS_PULSE_MEAN:
             ydata = pulseHistories[trace]->mean();
             break;

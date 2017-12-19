@@ -252,6 +252,7 @@ void pulseHistory::insertRecord(QVector<double> *r, int presamples, double dtime
     pulse_peak.append(peak);
     pulse_rms.append(prms);
     pulse_time.append(dtime);
+    pulse_baseline.append(ptmean);
 }
 
 

@@ -34,6 +34,7 @@ public:
     QVector<double> &mean() {return pulse_average;}
     QVector<double> &peak() {return pulse_peak;}
     QVector<double> &times() {return pulse_time;}
+    QVector<double> &baseline() {return pulse_baseline;}
 
 private:
     int queueCapacity; ///< How long the records and spectra queues should be.
@@ -51,6 +52,7 @@ private:
     QVector<double> pulse_peak;
     QVector<double> pulse_average;
     QVector<double> pulse_time;
+    QVector<double> pulse_baseline;
 
     void clearQueue(int keep=0);
     void clearSpectra(int keep=0);
