@@ -30,6 +30,8 @@ public:
     void setDoDFT(bool dft);
 
     QVector<double> &rms() {return pulse_rms;}
+    QVector<double> &mean() {return pulse_average;}
+    QVector<double> &peak() {return pulse_peak;}
     QVector<double> &times() {return pulse_time;}
 
 private:

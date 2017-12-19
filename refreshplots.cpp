@@ -32,7 +32,7 @@ refreshPlots::refreshPlots(int msec_period) :
     isFFT(false),
 //    isHistogram(false),
     averaging(false),
-    analysisType(ANALYSIS_PULSE_MAX)
+    analysisType(ANALYSIS_PULSE_RMS)
 {
     // Fill the list of channels to be plotted with the no-plot indicator.
     const int INITIAL_TRACES=8;
@@ -280,11 +280,23 @@ void refreshPlots::refreshTimeseriesPlots()
         lastSerial[trace] = pulseHistories[trace]->uses();
 
         QVector<double> times = pulseHistories[trace]->times();
-        QVector<double> rms = pulseHistories[trace]->rms();
+        QVector<double> ydata;
+        switch (analysisType) {
+        case ANALYSIS_PULSE_MEAN:
+            ydata = pulseHistories[trace]->mean();
+            break;
+        case ANALYSIS_PULSE_MAX:
+            ydata = pulseHistories[trace]->peak();
+            break;
+        case ANALYSIS_PULSE_RMS:
+        default:
+            ydata = pulseHistories[trace]->rms();
+            break;
+        }
 
         int offset = times.size() - numNew;
         QVector<double> x = times.mid(offset);
-        QVector<double> y = rms.mid(offset);
+        QVector<double> y = ydata.mid(offset);
         emit addDataToPlot(trace, x, y);
     }
 }
@@ -458,10 +470,11 @@ void refreshPlots::setIsTimeseries(bool ts)
 void refreshPlots::setAnalysisType(enum analysisFields newType)
 {
     analysisType = newType;
-    for (int trNum=0; trNum < channels.size(); trNum++) {
-        lastSerial[trNum] = -1;
-//        scratch[trNum].clear();
-//        histograms[trNum]->clear();
+    for (int tracenum=0; tracenum < channels.size(); tracenum++) {
+        lastSerial[tracenum] = -1;
+
+//        scratch[tracenum].clear();
+//        histograms[tracenum]->clear();
     }
 }
 

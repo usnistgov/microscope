@@ -131,10 +131,10 @@ plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
             this, SLOT(axisDoubleClicked(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)));
 
     // Make analysis types be exclusive
-    analysisMenuActionGroup.addAction(ui->actionBaseline);
+    analysisMenuActionGroup.addAction(ui->actionPulse_mean);
     analysisMenuActionGroup.addAction(ui->actionPulse_max);
     analysisMenuActionGroup.addAction(ui->actionPulse_RMS);
-    ui->actionPulse_max->setChecked(true);
+    ui->actionPulse_RMS->setChecked(true);
     connect(&analysisMenuActionGroup, SIGNAL(triggered(QAction *)),
             this, SLOT(plotAnalysisFieldChanged(QAction *)));
 
@@ -966,7 +966,19 @@ void plotWindow::plotTypeChanged(QAction *action)
         break;
 
     case PLOTTYPE_TIMESERIES:
-        pl->yAxis->setLabel("Pulse height (arbs)");
+        switch (analysisType) {
+        case ANALYSIS_PULSE_MAX:
+            pl->yAxis->setLabel("Pulse max value (arbs)");
+            break;
+        case ANALYSIS_PULSE_MEAN:
+            pl->yAxis->setLabel("Pulse average value (arbs)");
+            break;
+        case ANALYSIS_PULSE_RMS:
+        default:
+            pl->yAxis->setLabel("Pulse RMS value (arbs)");
+            break;
+        }
+
         pl->xAxis->setLabel("Time (sec since previous hour)");
         pl->xAxis2->setVisible(false);
         scatter = true;
@@ -1059,13 +1071,14 @@ void plotWindow::plotTypeChanged(QAction *action)
 ///
 void plotWindow::plotAnalysisFieldChanged(QAction *action)
 {
-    if (action == ui->actionBaseline) {
-        analysisType = ANALYSIS_BASELINE;
+    if (action == ui->actionPulse_mean) {
+        analysisType = ANALYSIS_PULSE_MEAN;
     } else if (action == ui->actionPulse_max) {
         analysisType = ANALYSIS_PULSE_MAX;
     } else if (action == ui->actionPulse_RMS) {
-        analysisType = ANALYSIS_PUSLE_RMS;
+        analysisType = ANALYSIS_PULSE_RMS;
     }
+
     // Reset the plot type to be analysis vs time when the user chooses any
     // analysis type, because otherwise it's
     // annoying and confusing.  Exception when already in histogram mode.

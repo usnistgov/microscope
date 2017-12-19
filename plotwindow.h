@@ -67,8 +67,9 @@ enum plotTypeComboItems {
 /// \brief The various analysis fields that can be plotted
 ///
 enum analysisFields {
+    ANALYSIS_PULSE_RMS,   ///< Pulse RMS value from baseline
+    ANALYSIS_PULSE_MEAN,  ///< Pulse mean value above baseline
     ANALYSIS_PULSE_MAX,   ///< Pulse peak value above baseline
-    ANALYSIS_PUSLE_RMS,   ///< Pulse RMS value from baseline
     ANALYSIS_BASELINE,    ///< Pulse baseline (pretrigger mean)
     ANALYSIS_INVALID
 };
