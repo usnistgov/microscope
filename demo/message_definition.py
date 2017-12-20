@@ -1,25 +1,36 @@
-import struct
+import struct, time
 import numpy as np
 
 class DastardPulse(object):
     """Represent a single pulse record from DASTARD"""
 
-    def __init__(self, channel, presamples, sampletime, voltsperarb):
-        self.channel = channel
-        self.presamples = presamples
-        self.__dict__.update(locals())
+    version = 0
 
-    def pack(self, data):
+    def __init__(self, channel, presamples, sampletime, voltsperarb):
+        self.__dict__.update(locals())
+        self.serialnumber = 0
+
+    def pack(self, data, trig_time = None, serialnumber = None):
         if data.dtype in (np.int64, np.uint64):
-            wordcode, size = "Q", 8
+            nptype, wordcode, size = "Q", 7, 8
         elif data.dtype in (np.int32, np.uint32):
-            wordcode, size = "L", 4
+            nptype, wordcode, size = "L", 5, 4
         elif data.dtype in (np.int16, np.uint16):
-            wordcode, size = "H", 2
+            nptype, wordcode, size = "H", 3, 2
         elif data.dtype in (np.int8, np.uint8):
-            wordcode, size = "B", 1
+            nptype, wordcode, size = "B", 1, 1
         else:
             raise ValueError("Cannot handle numpy type %s"%data.dtype)
-        fmt = "<lllff%d%s"%(len(data), wordcode)
-        return struct.pack(fmt, self.channel, self.presamples, size,
-                    self.sampletime, self.voltsperarb, *data)
+
+        if trig_time is None:
+            trig_time = np.uint64(time.time()*1e9)
+        if serialnumber is None:
+            serialnumber = self.serialnumber
+        self.serialnumber += size
+
+        fmt = "<HbbllffQQ"#%d%s"%(len(data), nptype)
+        header = struct.pack(fmt, self.channel, self.version, wordcode,
+                   self.presamples, len(data),
+                   self.sampletime, self.voltsperarb,
+                   trig_time, serialnumber)
+        return "".join([header, data.data[:]])

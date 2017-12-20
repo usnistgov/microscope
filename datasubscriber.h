@@ -73,6 +73,8 @@ public:
     float sampletime;
     float voltsperarb;
     int nsamples;
+    uint64_t time_nsec;
+    uint64_t serialnumber;
     const uint16_t *data;
 };
 

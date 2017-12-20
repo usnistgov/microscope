@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
+#include <assert.h>
 #include <QThread>
 #include <QTimer>
 #include <zmq.hpp>
@@ -55,8 +56,9 @@ dataSubscriber::~dataSubscriber() {
 void dataSubscriber::subscribeChannel(int channum) {
     if (subscriber == 0)
         return;
-    const char *filter = reinterpret_cast<char *>(&channum);
-    subscriber->setsockopt(ZMQ_SUBSCRIBE, filter, sizeof(int));
+    uint16_t filternumber = channum;
+    const char *filter = reinterpret_cast<char *>(&filternumber);
+    subscriber->setsockopt(ZMQ_SUBSCRIBE, filter, sizeof(filternumber));
 //    std::cout << "Subscribed chan " << channum << std::endl;
 }
 
@@ -186,16 +188,31 @@ void dataSubscriber::wait(unsigned long time) {
 /// \param message
 ///
 pulseRecord::pulseRecord(const zmq::message_t &message) {
-    const uint32_t * lptr = reinterpret_cast<const uint32_t *>(message.data());
-    channum = lptr[0];
-    presamples = lptr[1];
-    wordsize = lptr[2];
-    sampletime = *reinterpret_cast<const float *>(&lptr[3]);
-    voltsperarb = *reinterpret_cast<const float *>(&lptr[4]);
-    const size_t prefix_size = 3*sizeof(uint32_t) + 2*sizeof(float);
-    nsamples = (message.size()-prefix_size)/wordsize;
-    data = reinterpret_cast<const uint16_t *>(&lptr[5]);
-//    data = new uint16_t[nsamples];
+    const char* msg = reinterpret_cast<const char *>(message.data());
+
+    channum = *reinterpret_cast<const uint16_t *>(&msg[0]);
+    char version = msg[2];
+    assert (version == 0);
+
+    // Ignore word size code for now (assert uint16)
+    char wordsizecode = msg[3];
+    assert (wordsizecode == 3);
+    wordsize = 2;
+
+    presamples = *reinterpret_cast<const uint32_t *>(&msg[4]);
+    nsamples = *reinterpret_cast<const uint32_t *>(&msg[8]);
+
+    sampletime = *reinterpret_cast<const float *>(&msg[12]);
+    voltsperarb = *reinterpret_cast<const float *>(&msg[16]);
+
+    time_nsec = *reinterpret_cast<const uint64_t *>(&msg[20]);
+    serialnumber = *reinterpret_cast<const uint64_t *>(&msg[28]);
+
+    const size_t prefix_size = 36;
+    assert (prefix_size + nsamples*wordsize == message.size());
+    data = reinterpret_cast<const uint16_t *>(&msg[prefix_size]);
+
+    //    data = new uint16_t[nsamples];
 //    memcpy(data, lptr+prefix_size, message.size()-prefix_size);
 }
 
