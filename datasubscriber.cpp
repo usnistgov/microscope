@@ -203,15 +203,13 @@ pulseRecord::pulseRecord(const zmq::message_t &header, const zmq::message_t &pul
     wordsize = 2;
 
     presamples = *reinterpret_cast<const uint32_t *>(&msg[4]);
-    nsamples = *reinterpret_cast<const uint32_t *>(&msg[8]);
+    sampletime = *reinterpret_cast<const float *>(&msg[8]);
+    voltsperarb = *reinterpret_cast<const float *>(&msg[12]);
 
-    sampletime = *reinterpret_cast<const float *>(&msg[12]);
-    voltsperarb = *reinterpret_cast<const float *>(&msg[16]);
+    time_nsec = *reinterpret_cast<const uint64_t *>(&msg[16]);
+    serialnumber = *reinterpret_cast<const uint64_t *>(&msg[24]);
 
-    time_nsec = *reinterpret_cast<const uint64_t *>(&msg[20]);
-    serialnumber = *reinterpret_cast<const uint64_t *>(&msg[28]);
-
-    assert (size_t(nsamples*wordsize) == pulserecord.size());
+    nsamples = pulserecord.size() / wordsize;
     data = reinterpret_cast<const uint16_t *>(pulserecord.data());
 
     //    data = new uint16_t[nsamples];
