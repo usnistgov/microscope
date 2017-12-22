@@ -28,7 +28,7 @@ class DastardPulse(object):
             serialnumber = self.serialnumber
         self.serialnumber += size
 
-        fmt = "<HbbllffQQ"#%d%s"%(len(data), nptype)
+        fmt = "<HbbllffQQ"
         header = struct.pack(fmt, self.channel, self.version, wordcode,
                    self.presamples, len(data),
                    self.sampletime, self.voltsperarb,

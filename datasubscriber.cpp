@@ -129,7 +129,7 @@ void dataSubscriber::process() {
         {static_cast<void *>(*subscriber), 0, ZMQ_POLLIN, 0},
     };
 
-    zmq::message_t update;
+    zmq::message_t header, update;
     while (true) {
         zmq::poll(&pollitems[0], NPOLLITEMS, -1);
 
@@ -149,10 +149,13 @@ void dataSubscriber::process() {
             continue;
         }
 
+        subscriber->recv(&header);
+        assert(header.more());
         subscriber->recv(&update);
-        pulseRecord *pr = new pulseRecord(update);
+        assert( !update.more());
+        pulseRecord *pr = new pulseRecord(header, update);
 
-        std::cout << "Received message of size " << update.size();
+        std::cout << "Received message of size " <<header.size() << "+" << update.size();
         std::cout << " for chan " << pr->channum << " with " << pr->nsamples << "/"
                   << pr->presamples <<" samples/presamples and "
                   << pr->wordsize <<"-byte words: [";
@@ -187,8 +190,8 @@ void dataSubscriber::wait(unsigned long time) {
 /// \brief pulseRecord::pulseRecord
 /// \param message
 ///
-pulseRecord::pulseRecord(const zmq::message_t &message) {
-    const char* msg = reinterpret_cast<const char *>(message.data());
+pulseRecord::pulseRecord(const zmq::message_t &header, const zmq::message_t &pulserecord) {
+    const char* msg = reinterpret_cast<const char *>(header.data());
 
     channum = *reinterpret_cast<const uint16_t *>(&msg[0]);
     char version = msg[2];
@@ -208,9 +211,8 @@ pulseRecord::pulseRecord(const zmq::message_t &message) {
     time_nsec = *reinterpret_cast<const uint64_t *>(&msg[20]);
     serialnumber = *reinterpret_cast<const uint64_t *>(&msg[28]);
 
-    const size_t prefix_size = 36;
-    assert (prefix_size + nsamples*wordsize == message.size());
-    data = reinterpret_cast<const uint16_t *>(&msg[prefix_size]);
+    assert (size_t(nsamples*wordsize) == pulserecord.size());
+    data = reinterpret_cast<const uint16_t *>(pulserecord.data());
 
     //    data = new uint16_t[nsamples];
 //    memcpy(data, lptr+prefix_size, message.size()-prefix_size);
