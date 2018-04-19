@@ -63,7 +63,7 @@ private:
 class pulseRecord {
 
 public:
-    pulseRecord(const zmq::message_t &message);
+    pulseRecord(const zmq::message_t &header, const zmq::message_t &pulsedata);
     ~pulseRecord();
 
 public:

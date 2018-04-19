@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <QThread>
 #include <QTimer>
+#include <string.h>
 #include <zmq.hpp>
 
 #include "microscope.h"
@@ -87,7 +88,7 @@ void dataSubscriber::parseChannelMessage(zmq::message_t &msg) {
 void dataSubscriber::process() {
     subscriber = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
     std::string rpcport = "tcp://localhost:";
-    const long long int pn = 5556; //port();
+    const long long int pn = 5502; //port();
     rpcport += std::to_string(pn);
     std::cout << "Connecting to Server at " << rpcport <<"...";
     try {
@@ -129,7 +130,7 @@ void dataSubscriber::process() {
         {static_cast<void *>(*subscriber), 0, ZMQ_POLLIN, 0},
     };
 
-    zmq::message_t update;
+    zmq::message_t update, pulsedata;
     while (true) {
         zmq::poll(&pollitems[0], NPOLLITEMS, -1);
 
@@ -149,10 +150,16 @@ void dataSubscriber::process() {
             continue;
         }
 
+        // Receive a 2-part message
         subscriber->recv(&update);
-        pulseRecord *pr = new pulseRecord(update);
+        if (!subscriber->getsockopt<int>(ZMQ_RCVMORE)) {
+            std::cerr << "Received a 1-part message" << std::endl;
+            continue;
+        }
+        subscriber->recv(&pulsedata);
 
-        std::cout << "Received message of size " << update.size();
+        pulseRecord *pr = new pulseRecord(update, pulsedata);
+        std::cout << "Received message of size " << update.size() << std::endl;
         std::cout << " for chan " << pr->channum << " with " << pr->nsamples << "/"
                   << pr->presamples <<" samples/presamples and "
                   << pr->wordsize <<"-byte words: [";
@@ -187,9 +194,11 @@ void dataSubscriber::wait(unsigned long time) {
 /// \brief pulseRecord::pulseRecord
 /// \param message
 ///
-pulseRecord::pulseRecord(const zmq::message_t &message) {
-    const char* msg = reinterpret_cast<const char *>(message.data());
+pulseRecord::pulseRecord(const zmq::message_t &header, const zmq::message_t &pulsedata) {
+    const size_t prefix_size = 36;
+    assert (prefix_size <= header.size());
 
+    const char* msg = reinterpret_cast<const char *>(header.data());
     channum = *reinterpret_cast<const uint16_t *>(&msg[0]);
     char version = msg[2];
     assert (version == 0);
@@ -208,12 +217,12 @@ pulseRecord::pulseRecord(const zmq::message_t &message) {
     time_nsec = *reinterpret_cast<const uint64_t *>(&msg[20]);
     serialnumber = *reinterpret_cast<const uint64_t *>(&msg[28]);
 
-    const size_t prefix_size = 36;
-    assert (prefix_size + nsamples*wordsize == message.size());
-    data = reinterpret_cast<const uint16_t *>(&msg[prefix_size]);
+    std::cout << "Samples, presamples, message size: " << nsamples << ", " << presamples << ", "<< header.size() << std::endl;
 
-    //    data = new uint16_t[nsamples];
-//    memcpy(data, lptr+prefix_size, message.size()-prefix_size);
+    assert (nsamples*wordsize == int(pulsedata.size()));
+    data = reinterpret_cast<const uint16_t *>(pulsedata.data());
+//    data = new uint16_t[nsamples];
+//    memcpy(data, pulsedata.data(), pulsedata.size());
 }
 
 pulseRecord::~pulseRecord() {
