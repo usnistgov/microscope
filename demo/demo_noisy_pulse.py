@@ -35,8 +35,8 @@ pulseRecord = {ch:message_definition.DastardPulse(ch, presamples, 2.5e-6, 1./655
 while True:
     channel = random.randrange(chanmin, chanmax+1)
     thisdata = np.asarray(messagedata[channel] + np.random.random_integers(-500, 500, size=samples), dtype=np.uint16)
-    header, pulsebody = pulseRecord[channel].pack(thisdata)
-    print "chan %d message length %d" % (channel, len(pulsebody))
+    header = pulseRecord[channel].packheader(thisdata)
+    print "chan %d message length %d" % (channel, len(thisdata))
     socket.send(header, zmq.SNDMORE)
-    socket.send(pulsebody)
+    socket.send(thisdata.data[:])
     time.sleep(0.1)

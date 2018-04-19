@@ -33,8 +33,8 @@ while True:
     noise = np.random.standard_normal(2+samples)*200
 
     thisdata = np.asarray(10000+1000*channel + noise[:-2]+2*noise[1:-1]+noise[2:], dtype=np.uint16)
-    header, pulsebody = pulseRecord[channel].pack(thisdata)
-    print "chan %d message length %d" % (channel, len(pulsebody))
+    header = pulseRecord[channel].packheader(thisdata)
+    print "chan %d message length %d" % (channel, len(thisdata))
     socket.send(header, zmq.SNDMORE)
-    socket.send(pulsebody)
+    socket.send(thisdata.data[:])
     time.sleep(0.1)

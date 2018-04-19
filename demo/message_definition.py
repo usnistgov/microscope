@@ -10,7 +10,7 @@ class DastardPulse(object):
         self.__dict__.update(locals())
         self.serialnumber = 0
 
-    def pack(self, data, trig_time = None, serialnumber = None):
+    def packheader(self, data, trig_time = None, serialnumber = None):
         if data.dtype in (np.int64, np.uint64):
             nptype, wordcode, size = "Q", 7, 8
         elif data.dtype in (np.int32, np.uint32):
@@ -28,9 +28,9 @@ class DastardPulse(object):
             serialnumber = self.serialnumber
         self.serialnumber += size
 
-        fmt = "<HbbllffQQ"#%d%s"%(len(data), nptype)
+        fmt = "<HbbllffQQ"
         header = struct.pack(fmt, self.channel, self.version, wordcode,
                    self.presamples, len(data),
                    self.sampletime, self.voltsperarb,
                    trig_time, serialnumber)
-        return header, data.data[:]
+        return header

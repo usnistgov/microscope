@@ -29,14 +29,14 @@ socket.bind("tcp://*:%s" % port)
 t = np.arange(1-presamples, samples-presamples+1, dtype=float)
 pulse = (np.exp(-t/200.) - np.exp(-t/40))
 pulse[t<0] = 0
-messagedata = np.asarray(pulse, dtype=np.uint16)
+messagedata = {ch:np.asarray(pulse*(ch+20)*1000+1000*ch, dtype=np.uint16) for ch in range(chanmin, chanmax+1)}
 pulseRecord = {ch:message_definition.DastardPulse(ch, presamples, 2.5e-6, 1./65535) for ch in range(chanmin, chanmax)}
 
 while True:
     channel = random.randrange(1,21)
-    thisdata = 1000*channel + (channel+20)*1000*messagedata
-    header, pulsebody = pulseRecord[channel].pack(thisdata)
-    print "chan %d message length %d" % (channel, len(pulsebody))
+    thisdata = np.asarray(messagedata[channel], dtype=np.uint16)
+    header = pulseRecord[channel].packheader(thisdata)
+    print "chan %d message length %d" % (channel, len(thisdata))
     socket.send(header, zmq.SNDMORE)
-    socket.send(pulsebody)
+    socket.send(thisdata.data[:])
     time.sleep(0.1)
