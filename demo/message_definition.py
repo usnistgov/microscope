@@ -33,4 +33,4 @@ class DastardPulse(object):
                    self.presamples, len(data),
                    self.sampletime, self.voltsperarb,
                    trig_time, serialnumber)
-        return "".join([header, data.data[:]])
+        return header, data.data[:]

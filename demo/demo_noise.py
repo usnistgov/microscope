@@ -17,7 +17,7 @@ import message_definition
 chanmin, chanmax = 1, 25
 samples, presamples = 1000, 200
 
-port = "5556"
+port = "5502"
 if len(sys.argv) > 1:
     port =  sys.argv[1]
     int(port)
@@ -33,7 +33,8 @@ while True:
     noise = np.random.standard_normal(2+samples)*200
 
     thisdata = np.asarray(10000+1000*channel + noise[:-2]+2*noise[1:-1]+noise[2:], dtype=np.uint16)
-    message = pulseRecord[channel].pack(thisdata)
-    print "chan %d message length %d" % (channel, len(message))
-    socket.send(message)
+    header, pulsebody = pulseRecord[channel].pack(thisdata)
+    print "chan %d message length %d" % (channel, len(pulsebody))
+    socket.send(header, zmq.SNDMORE)
+    socket.send(pulsebody)
     time.sleep(0.1)
