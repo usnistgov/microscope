@@ -30,7 +30,9 @@ macx {
   QMAKE_CFLAGS_X86_64 -= -Xarch_x86_64
   QMAKE_CXXFLAGS_X86_64 -= -Xarch_x86_64
   QMAKE_LFLAGS_X86_64 -= -Xarch_x86_64
-  QMAKE_LFLAGS_X86_64 += -L/opt/local/lib
+  QMAKE_CFLAGS += -I/opt/local/include
+  QMAKE_CXXFLAGS += -I/opt/local/include
+  QMAKE_LFLAGS += -L/opt/local/lib
 }
 # end MacPorts only.
 ##################################################
