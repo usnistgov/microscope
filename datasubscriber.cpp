@@ -159,12 +159,12 @@ void dataSubscriber::process() {
         subscriber->recv(&pulsedata);
 
         pulseRecord *pr = new pulseRecord(update, pulsedata);
-        std::cout << "Received message of size " << update.size() << std::endl;
+        std::cout << "Received message of size " << update.size();
         std::cout << " for chan " << pr->channum << " with " << pr->nsamples << "/"
                   << pr->presamples <<" samples/presamples and "
                   << pr->wordsize <<"-byte words: [";
         std::cout << pr->data[0] <<", " << pr->data[1] << "... "
-                  << pr->data[pr->nsamples-1] <<"]"<< pr->sampletime << std::endl;
+                  << pr->data[pr->nsamples-1] <<"] dT="<< pr->sampletime << std::endl;
         int tracenum = window->chan2trace(pr->channum);
         if (tracenum >= 0) {
             if (pr->presamples != presamples || pr->nsamples != nsamples) {
@@ -217,12 +217,8 @@ pulseRecord::pulseRecord(const zmq::message_t &header, const zmq::message_t &pul
     time_nsec = *reinterpret_cast<const uint64_t *>(&msg[20]);
     serialnumber = *reinterpret_cast<const uint64_t *>(&msg[28]);
 
-    std::cout << "Samples, presamples, message size: " << nsamples << ", " << presamples << ", "<< header.size() << std::endl;
-
     assert (nsamples*wordsize == int(pulsedata.size()));
     data = reinterpret_cast<const uint16_t *>(pulsedata.data());
-//    data = new uint16_t[nsamples];
-//    memcpy(data, pulsedata.data(), pulsedata.size());
 }
 
 pulseRecord::~pulseRecord() {
