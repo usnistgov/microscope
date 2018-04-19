@@ -32,24 +32,6 @@ class QStatusBar;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-/// The standard color palette for plotting. Maybe someday this won't be fixed?
-/// I'm using mostly unnamed colors so that I can make them a little darker
-/// the standard ones but not as dark as the dark* ones.
-///
-static const QColor plotStandardColors[]={
-    Qt::black,
-    QColor(180,0,230,255), ///< Purple
-    QColor(0,0,180,255),    ///< Blue
-    QColor(0,190,190,255), ///< Cyan
-    Qt::darkGreen,
-    QColor(205,205,0,255), ///< Gold
-    QColor(255,128,0,255), ///< Orange
-    Qt::red,
-    Qt::gray
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
 /// \brief The various plot types that can be rendered
 ///
 enum plotTypeComboItems {

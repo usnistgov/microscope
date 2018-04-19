@@ -20,6 +20,25 @@
 
 Q_DECLARE_METATYPE(QCPRange)
 
+///////////////////////////////////////////////////////////////////////////////
+/// The standard color palette for plotting. Maybe someday this won't be fixed?
+/// I'm using mostly unnamed colors so that I can make them a little darker
+/// the standard ones but not as dark as the dark* ones.
+///
+static const QColor plotStandardColors[]={
+    Qt::black,
+    QColor(180,0,230,255), ///< Purple
+    QColor(0,0,180,255),    ///< Blue
+    QColor(0,190,190,255), ///< Cyan
+    Qt::darkGreen,
+    QColor(205,205,0,255), ///< Gold
+    QColor(255,128,0,255), ///< Orange
+    Qt::red,
+    Qt::gray
+};
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief Constructor
@@ -59,7 +78,8 @@ plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
     setWindowFlags(Qt::Window);
     setAttribute(Qt::WA_DeleteOnClose); // important!
     ui->setupUi(this);
-    setWindowTitle("Matter data plots");
+    QString title("Microscope: microcalorimeter data plots, version %1.%2.%3");
+    setWindowTitle(title.arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_REALLYMINOR));
 
     // Build layout with the NUM_SPINNERS (8?) channel selection spin boxes
     QGridLayout *chanSpinnersLayout = new QGridLayout(0);
