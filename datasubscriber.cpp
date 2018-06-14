@@ -153,18 +153,18 @@ void dataSubscriber::process() {
         // Receive a 2-part message
         subscriber->recv(&header);
         if (!header.more()) {
-            std::cerr << "Received a 1-part message" << std::endl;
+            std::cerr << "Received an unexpected 1-part message" << std::endl;
             continue;
         }
         subscriber->recv(&pulsedata);
 
         pulseRecord *pr = new pulseRecord(header, pulsedata);
-        std::cout << "Received message of size " << header.size() << "+" << pulsedata.size();
-        std::cout << " for chan " << pr->channum << " with " << pr->nsamples << "/"
-                  << pr->presamples <<" samples/presamples and "
-                  << pr->wordsize <<"-byte words: [";
-        std::cout << pr->data[0] <<", " << pr->data[1] << "... "
-                  << pr->data[pr->nsamples-1] <<"] dT="<< pr->sampletime << std::endl;
+        // std::cout << "Received message of size " << header.size() << "+" << pulsedata.size();
+        // std::cout << " for chan " << pr->channum << " with " << pr->nsamples << "/"
+        //           << pr->presamples <<" samples/presamples and "
+        //           << pr->wordsize <<"-byte words: [";
+        // std::cout << pr->data[0] <<", " << pr->data[1] << "... "
+        //           << pr->data[pr->nsamples-1] <<"] dT="<< pr->sampletime << std::endl;
         int tracenum = window->chan2trace(pr->channum);
         if (tracenum >= 0) {
             if (pr->presamples != presamples || pr->nsamples != nsamples) {
