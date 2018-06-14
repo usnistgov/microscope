@@ -11,10 +11,11 @@
 #include "datasubscriber.h"
 #include "refreshplots.h"
 
-dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin) :
+dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin, std::string tcpsourcein) :
     window(w),
     plotManager(w->refreshPlotsThread),
     zmqcontext(zin),
+    tcpdatasource(tcpsourcein),
     sampletime(1.0),
     nsamples(0),
     presamples(0)
@@ -87,12 +88,9 @@ void dataSubscriber::parseChannelMessage(zmq::message_t &msg) {
 
 void dataSubscriber::process() {
     subscriber = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
-    std::string rpcport = "tcp://localhost:";
-    const long long int pn = 5502; //port();
-    rpcport += std::to_string(pn);
-    std::cout << "Connecting to Server at " << rpcport <<"...";
+    std::cout << "Connecting to Server at " << tcpdatasource <<"...";
     try {
-        subscriber->connect(rpcport.c_str());
+        subscriber->connect(tcpdatasource.c_str());
         std::cout << "done!" << std::endl;
     } catch (zmq::error_t) {
         delete subscriber;

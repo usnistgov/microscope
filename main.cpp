@@ -25,19 +25,22 @@ int main(int argc, char *argv[])
     // You can override the ApplicationName with command-line argument of the
     // exact form -name=MatterB (or -name=whatever). Not the most flexible idea
     // you can imagine, but it's better than nothing.
+    std::string tcpdataport = "tcp://localhost:5502";
     QStringList args = a.arguments();
     for (int i=1; i<args.length(); i++) {
         if (args[i].startsWith("-name=")) {
             QString name(args[i]);
             name = name.remove("-name=");
             QCoreApplication::setApplicationName(name);
+        } else if (args[i].startsWith("tcp:")) {
+            tcpdataport = args[i].toStdString();
         }
-        std::cout << "Application name for QSettings purposes: " << QCoreApplication::applicationName().toStdString() << std::endl;
     }
+    std::cout << "Application name for QSettings purposes: " << QCoreApplication::applicationName().toStdString() << std::endl;
     zmq::context_t zmqcontext;
 
     plotWindow *w = new plotWindow(&zmqcontext);
-    dataSubscriber *sub = new dataSubscriber(w, &zmqcontext);
+    dataSubscriber *sub = new dataSubscriber(w, &zmqcontext, tcpdataport);
 
     zmq::socket_t *killsocket = new zmq::socket_t(zmqcontext, ZMQ_PUB);
     try {

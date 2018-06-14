@@ -16,7 +16,7 @@ class dataSubscriber : public QObject
     Q_OBJECT
 
 public:
-    dataSubscriber(plotWindow *w, zmq::context_t *zmqcontext);
+    dataSubscriber(plotWindow *w, zmq::context_t *zmqcontext, std::string tcpsource);
     ~dataSubscriber();
 
     void wait(unsigned long time=ULONG_MAX);
@@ -49,6 +49,7 @@ private:
     zmq::socket_t *subscriber;
     zmq::socket_t *killsocket;
     zmq::socket_t *chansocket;
+    std::string tcpdatasource;
 
     void subscribeChannel(int channum);
     void unsubscribeChannel(int channum);
