@@ -33,11 +33,11 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin, std::string t
     connect(this, SIGNAL(newSampleTime(double)), plotManager, SLOT(newSampleTime(double)));
     connect(this, SIGNAL(newRecordLengths(int,int)), window, SLOT(newRecordLengths(int,int)));
 
-    connect(this, SIGNAL(newDataToPlot(int, const uint16_t *, int, int)),
-            plotManager, SLOT(receiveNewData(int, const uint16_t *, int, int)));
+//    connect(this, SIGNAL(newDataToPlot(int, const uint16_t *, int, int)),
+//            plotManager, SLOT(receiveNewData(int, const uint16_t *, int, int)));
 
-    //    connect(this, SIGNAL(newDataToPlot(int, const QVector<double>, const QVector<double>)),
-//            plotManager, SLOT(receiveNewData(int,QVector<double>, const QVector<double>)));
+    connect(this, SIGNAL(newDataToPlot(int, QVector<double>*, int)),
+            plotManager, SLOT(receiveNewData(int, QVector<double>*, int)));
 
     myThread->start();
 }
@@ -174,7 +174,8 @@ void dataSubscriber::process() {
                 sampletime = pr->sampletime;
                 emit newSampleTime(sampletime);
             }
-            emit newDataToPlot(tracenum, pr->data, pr->nsamples, pr->presamples);
+            emit newDataToPlot(tracenum, pr->data, pr->presamples);
+            pr->data = NULL; // now the slot that receives it owns that pr's data vector.
         }
         delete pr;
     }
@@ -201,9 +202,10 @@ pulseRecord::pulseRecord(const zmq::message_t &header, const zmq::message_t &pul
     char version = msg[2];
     assert (version == 0);
 
-    // Ignore word size code for now (assert uint16)
+    // Ignore word size code for now (assert uint16 or int16)
     char wordsizecode = msg[3];
-    assert (wordsizecode == 3);
+    assert (wordsizecode == 3 || wordsizecode == 2);
+    bool issigned = (wordsizecode == 2);
     wordsize = 2;
 
     presamples = *reinterpret_cast<const uint32_t *>(&msg[4]);
@@ -216,9 +218,19 @@ pulseRecord::pulseRecord(const zmq::message_t &header, const zmq::message_t &pul
     serialnumber = *reinterpret_cast<const uint64_t *>(&msg[28]);
 
     assert (nsamples*wordsize == int(pulsedata.size()));
-    data = reinterpret_cast<const uint16_t *>(pulsedata.data());
+    const uint16_t *u16data = reinterpret_cast<const uint16_t *>(pulsedata.data());
+    const int16_t *i16data = reinterpret_cast<const int16_t *>(pulsedata.data());
+
+    data = new QVector<double>;
+    data->resize(nsamples);
+    if (issigned) {
+        for (int i=0; i<nsamples; i++)
+            (*data)[i] = i16data[i];
+    } else {
+        for (int i=0; i<nsamples; i++)
+            (*data)[i] = u16data[i];
+    }
 }
 
 pulseRecord::~pulseRecord() {
-//    delete[] data;
 }

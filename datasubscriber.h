@@ -3,6 +3,7 @@
 
 #include <zmq.hpp>
 #include <QObject>
+#include <QVector>
 
 class QThread;
 class plotWindow;
@@ -30,11 +31,8 @@ signals:
     void newRecordLengths(int,int);
 
     /// Signal that a data vector is ready to plot
-    void newDataToPlot(int channum, const uint16_t *data, int nsamp, int presamples);
+    void newDataToPlot(int channum, QVector<double> *data, int presamples);
 
-//    /// Signal that a y vs x pair of QVectors are ready to plot
-//    void newDataToPlot(int channum, const QVector<double> &xdata,
-//                       const QVector<double> &ydata);
 
 public slots:
     /// Slot to call when it's time to terminate this thread.
@@ -76,7 +74,7 @@ public:
     int nsamples;
     uint64_t time_nsec;
     uint64_t serialnumber;
-    const uint16_t *data;
+    QVector<double> *data;
 };
 
 

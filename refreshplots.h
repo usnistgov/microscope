@@ -88,7 +88,7 @@ signals:
 
 public slots:
     virtual void workQuantum(void);
-    void receiveNewData(int tracenum, const uint16_t *data, int length, int presamples);
+    void receiveNewData(int tracenum, QVector<double> *data, int presamples);
     void toggledAveraging(bool doAvg);
     void toggledDFTing(bool dft);
     void newSampleTime(double);

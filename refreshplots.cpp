@@ -85,19 +85,15 @@ refreshPlots::~refreshPlots()
 /// \param data
 /// \param length
 ///
-void refreshPlots::receiveNewData(int tracenum, const uint16_t *data, int length,
+void refreshPlots::receiveNewData(int tracenum, QVector<double> *data,
                                   int presamples) {
     if (tracenum < 0 || tracenum >= pulseHistories.size())
         return;
 
-    QVector<double> *rec = new QVector<double>(length);
-    for (int i=0; i<length; i++)
-        (*rec)[i]= data[i];
-
     struct timeval now;
     gettimeofday(&now, NULL);
     double dt = now.tv_sec-time_zero.tv_sec + now.tv_usec*1e-6;
-    pulseHistories[tracenum]->insertRecord(rec, presamples, dt);
+    pulseHistories[tracenum]->insertRecord(data, presamples, dt);
 }
 
 
