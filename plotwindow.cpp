@@ -364,11 +364,12 @@ void plotWindow::newPlotTrace(int tracenum, const QVector<double> &data)
 {
 
     // The x-axis trivially plots integers 0 to N-1.
-    // Make sure we have a vector long enough to do that.
+    // Make sure we have a vector of that length.
     int nsamples = data.size();
-    if (sampleIndex.size() < nsamples) {
-        int start = sampleIndex.size();
-        sampleIndex.resize(nsamples);
+    int si_size = sampleIndex.size();
+    sampleIndex.resize(nsamples);
+    if (si_size < nsamples) {
+        int start = si_size;
         for (int i=start; i<nsamples; i++)
             sampleIndex[i] = i;
     }
