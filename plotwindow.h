@@ -86,10 +86,6 @@ public:
 
 public slots:
     void updateQuickSelect(int nrows, int ncols);
-    void newPlotTrace(int tracenum, const uint16_t *data, int nsamples);
-    void newPlotTrace(int tracenum, const uint32_t *data, int nsamples);
-    void newPlotTrace(int tracenum, const int16_t *data, int nsamples);
-    void newPlotTrace(int tracenum, const int32_t *data, int nsamples);
     void newPlotTrace(int tracenum, const QVector<double> &data);
     void newPlotTrace(int tracenum, const QVector<double> &xdata,
                       const QVector<double> &data);

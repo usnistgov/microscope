@@ -295,69 +295,6 @@ void plotWindow::closeEvent(QCloseEvent *event)
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief Render a plot onto a given trace number.
 /// \param tracenum  Which trace (color) this is.
-/// \param data      The raw data vector
-/// \param nsamples  The length of the raw data
-///
-void plotWindow::newPlotTrace(int tracenum, const uint16_t *data, int nsamples)
-{
-    QVector<double> tdata, ddata;
-    tdata.resize(nsamples);
-    ddata.resize(nsamples);
-    for (int i=0; i<nsamples; i++) {
-        tdata[i] = i-num_presamples;
-        ddata[i] = double(data[i]);
-    }
-    newPlotTrace(tracenum, tdata, ddata);
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-/// \brief Render a plot onto a given trace number.
-/// \param tracenum  Which trace (color) this is.
-/// \param data      The raw data vector
-/// \param nsamples  The length of the raw data
-///
-void plotWindow::newPlotTrace(int tracenum, const uint32_t *data, int nsamples)
-{
-    QVector<double> ddata;
-    ddata.resize(nsamples);
-    for (int i=0; i<nsamples; i++)
-        ddata[i] = double(data[i]);
-    newPlotTrace(tracenum, ddata);
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-/// \brief Render a plot onto a given trace number.
-/// \param tracenum  Which trace (color) this is.
-/// \param data      The raw data vector
-/// \param nsamples  The length of the raw data
-///
-void plotWindow::newPlotTrace(int tracenum, const int16_t *data, int nsamples)
-{
-    newPlotTrace(tracenum, reinterpret_cast <const uint16_t *>(data), nsamples);
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-/// \brief Render a plot onto a given trace number.
-/// \param tracenum  Which trace (color) this is.
-/// \param data      The raw data vector
-/// \param nsamples  The length of the raw data
-///
-void plotWindow::newPlotTrace(int tracenum, const int32_t *data, int nsamples)
-{
-    newPlotTrace(tracenum, reinterpret_cast <const uint32_t *>(data), nsamples);
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-/// \brief Render a plot onto a given trace number.
-/// \param tracenum  Which trace (color) this is.
 /// \param data      The raw data vector for the y-axis
 ///
 void plotWindow::newPlotTrace(int tracenum, const QVector<double> &data)
