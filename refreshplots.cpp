@@ -15,7 +15,7 @@
 #include "fftcomputer.h"
 #include "periodicupdater.h"
 #include "pulsehistory.h"
-#include "pulserecord.h"
+#include "refreshplots.h"
 
 
 
@@ -233,6 +233,7 @@ void refreshPlots::refreshSpectrumPlots()
         }
         if (record == NULL)
             continue;
+        std::cout << "trace " << trace << " has " << record << std::endl;
 
         const int nfreq = record->size();
         const double freq_step = 1e3/(ms_per_sample * pulseHistories[trace]->samples());
@@ -242,20 +243,19 @@ void refreshPlots::refreshSpectrumPlots()
                 frequencies[i] = i * freq_step;
             last_freq_step = freq_step;
         }
+        freqRec = pulseRecord(&frequencies);
 
-        pulseRecord xrec = pulseRecord(&frequencies);
         if (isPSD) {
             pulseRecord yrec = pulseRecord(record);
-            emit newDataToPlot(trace, &xrec, &yrec);
+            emit newDataToPlot(trace, &freqRec, &yrec);
         } else {
             QVector<double> fft(nfreq);
             for (int i=0; i<nfreq; i++) {
                 fft[i] = sqrt((*record)[i]);
             }
             pulseRecord yrec = pulseRecord(&fft);
-            emit newDataToPlot(trace, &xrec, &yrec);
+            emit newDataToPlot(trace, &freqRec, &yrec);
         }
-        xrec.data = NULL; // don't try to delete the frequencies object!
     }
 }
 

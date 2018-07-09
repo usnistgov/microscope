@@ -10,6 +10,7 @@ public:
     pulseRecord(const zmq::message_t &header, const zmq::message_t &pulsedata);
     pulseRecord(const pulseRecord &pr);
     pulseRecord(const QVector<double> *data);
+    pulseRecord();
     ~pulseRecord();
 
 public:

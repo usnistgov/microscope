@@ -63,6 +63,20 @@ pulseRecord::pulseRecord(const QVector<double> *data_in) {
         (*data)[i] = data_in->at(i);
 }
 
+pulseRecord::pulseRecord() :
+    channum(-1),
+    presamples(0),
+    wordsize(2),
+    sampletime(0.),
+    voltsperarb(.0001),
+    nsamples(0),
+    time_nsec(0),
+    serialnumber(0),
+    data(NULL) {
+    ;
+}
+
+
 
 pulseRecord::~pulseRecord() {
     delete data;

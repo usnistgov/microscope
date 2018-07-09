@@ -13,11 +13,12 @@
 #include <vector>
 #include "periodicupdater.h"
 #include "plotwindow.h"
+#include "pulserecord.h"
 
 class plotWindow;
 class pulseHistory;
 class FFTMaster;
-class pulseRecord;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief The Histogram class histograms data with fixed, equal bin spacings.
@@ -112,6 +113,7 @@ private:
     bool doingDFT;                    ///< Do we do DFT of data?
     enum analysisFields analysisType; ///< What analysis field to plot?
     struct timeval time_zero;         ///< In a timeseries, what time is plotted as t=0?
+    pulseRecord freqRec;              ///< A frequency record for plotting
 
     QVector<pulseHistory *> pulseHistories;
     FFTMaster *fftMaster;
