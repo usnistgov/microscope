@@ -3,6 +3,8 @@
 
 #include <ctime>
 #include "pulsehistory.h"
+#include "datasubscriber.h"
+#include "pulserecord.h"
 #include "fftcomputer.h"
 
 ///
@@ -49,8 +51,8 @@ void pulseHistory::clearQueue(int keep) {
         keep = 0;
     lock.lock();
     while (records.size() > keep) {
-        QVector<double> *r = records.dequeue();
-        delete r;
+        pulseRecord *pr = records.dequeue();
+        delete pr;
     }
     lock.unlock();
     Q_ASSERT(records.size() <= keep);
@@ -87,18 +89,18 @@ void pulseHistory::setDoDFT(bool dft) {
     const bool WINDOW=true; // always use Hann windowing
 
     if (dft) {
-        // run DFT on all data
+        // run DFT on all data already in queue
         int n = records.size();
         if (n <= 0)
             return;
         if (previous_mean == 0.0)
-            previous_mean = (*records[0])[0];
+            previous_mean = records[0]->data[0];
         lock.lock();
         for (int i=0; i<n; i++) {
             QVector<double> *psd = new QVector<double>;
-            QVector<double> *data = records[i];
             const double sampleRate = 1.0;
-            fftMaster->computePSD(*data, *psd, sampleRate, WINDOW, previous_mean);
+            fftMaster->computePSD(records[i]->data, *psd, sampleRate, WINDOW, previous_mean);
+            spectra.append(psd);
         }
         lock.unlock();
     } else {
@@ -111,7 +113,7 @@ void pulseHistory::setDoDFT(bool dft) {
 /// \brief Return the most recently stored record.
 /// \return
 ///
-QVector<double> *pulseHistory::newestRecord() const {
+pulseRecord *pulseHistory::newestRecord() const {
     if (records.isEmpty())
         return NULL;
     return records.back();
@@ -119,7 +121,7 @@ QVector<double> *pulseHistory::newestRecord() const {
 
 
 ///
-/// \brief Return the most recently stored record.
+/// \brief Return the most recently stored power spectrum.
 /// \return
 ///
 QVector<double> *pulseHistory::newestPSD() const {
@@ -133,20 +135,20 @@ QVector<double> *pulseHistory::newestPSD() const {
 /// \brief Compute and return the mean of all stored records.
 /// \return
 ///
-QVector<double> *pulseHistory::meanRecord() {
-    QVector<double> *last = records.back();
+pulseRecord *pulseHistory::meanRecord() {
+    pulseRecord *last = records.back();
     if (last == NULL) {
         return NULL;
     }
 
-    QVector<double> *result = new QVector<double>(nsamples, 0.0);
+    QVector<double> *mean = new QVector<double>(nsamples, 0.0);
 
     int nused = 0;
     lock.lock();
     for (int i=0; i<records.size(); i++) {
-        if (records[i]->size() <= nsamples) {
+        if (records[i]->nsamples <= nsamples) {
             for (int j=0; j<nsamples; j++)
-                (*result)[j] += (*records[i])[j];
+                (*mean)[j] += records[i]->data[j];
             nused++;
         }
     }
@@ -154,8 +156,12 @@ QVector<double> *pulseHistory::meanRecord() {
 
     if (nused > 1) {
          for (int j=0; j<nsamples; j++)
-            (*result)[j] /= nused;
+            (*mean)[j] /= nused;
     }
+    pulseRecord *result = new pulseRecord(*last);
+    result->data = *mean;
+    // delete?
+    delete mean;
     return result;
 }
 
@@ -171,14 +177,16 @@ QVector<double> *pulseHistory::meanPSD() {
     }
 
     int nfreq = last->size();
-    QVector<double> *result = new QVector<double>(nfreq, 0.0);
+    mean_psd.resize(nfreq);
+    for (int i=0; i<nfreq; i++)
+        mean_psd[i] = 0;
 
     int nused = 0;
     lock.lock();
     for (int i=0; i<spectra.size(); i++) {
-        if (spectra[i]->size() <= nfreq) {
+        if (spectra[i]->size() == nfreq) {
             for (int j=0; j<nfreq; j++)
-                (*result)[j] += (*spectra[i])[j];
+                mean_psd[j] += (*spectra[i])[j];
             nused++;
         }
     }
@@ -186,9 +194,9 @@ QVector<double> *pulseHistory::meanPSD() {
 
     if (nused > 1) {
          for (int j=0; j<nfreq; j++)
-            (*result)[j] /= nused;
+            mean_psd[j] /= nused;
     }
-    return result;
+    return &mean_psd;
 }
 
 
@@ -196,10 +204,10 @@ QVector<double> *pulseHistory::meanPSD() {
 /// \brief Insert a single triggered record into storage.
 /// \param r  The record to store
 ///
-void pulseHistory::insertRecord(QVector<double> *r, int presamples, double dtime) {
+void pulseHistory::insertRecord(pulseRecord *pr) {
 
     // If this record is not the same length as the others, clear out the others.
-    const int len = r->size();
+    const int len = pr->nsamples;
     if (len != nsamples) {
         nsamples = len;
         clearAllData();
@@ -209,14 +217,14 @@ void pulseHistory::insertRecord(QVector<double> *r, int presamples, double dtime
     clearQueue(queueCapacity-1);
     lock.lock();
     nstored++;
-    records.enqueue(r);
+    records.enqueue(pr);
     lock.unlock();
 
     if (doDFT) {
         clearSpectra(queueCapacity-1);
         const bool WINDOW=true; // always use Hann windowing
         QVector<double> *psd = new QVector<double>();
-        fftMaster->computePSD(*r, *psd, 1.0, WINDOW, previous_mean);
+        fftMaster->computePSD(pr->data, *psd, 1.0, WINDOW, previous_mean);
         lock.lock();
         spectra.enqueue(psd);
         lock.unlock();
@@ -224,34 +232,34 @@ void pulseHistory::insertRecord(QVector<double> *r, int presamples, double dtime
 
     // Now compute and store its "analysis" values
     lock.lock();
-    QVector<double> rec = *r;
+    QVector<double> rec = pr->data;
     double ptmean = 0.0;
-    for (int i=0; i<presamples; i++)
+    for (int i=0; i<pr->presamples; i++)
         ptmean += rec[i];
-    ptmean /= presamples;
+    ptmean /= pr->presamples;
 
     double pavg = 0.0;
     double peak = 0.0;
-    for (int i=presamples+1; i<len; i++) {
+    for (int i=pr->presamples+1; i<len; i++) {
         pavg += rec[i];
         if (rec[i] > peak)
             peak = rec[i];
     }
-    pavg = pavg/(len-presamples-1) - ptmean;
+    pavg = pavg/(len-pr->presamples-1) - ptmean;
     peak -= ptmean;
 
     double sumsq = 0.0;
-    for (int i=presamples+1; i<len; i++) {
+    for (int i=pr->presamples+1; i<len; i++) {
         double v = rec[i]-ptmean;
         sumsq += v*v;
     }
-    double prms = sqrt(sumsq/(len-presamples-1));
+    double prms = sqrt(sumsq/(len-pr->presamples-1));
     lock.unlock();
 
     pulse_average.append(pavg);
     pulse_peak.append(peak);
     pulse_rms.append(prms);
-    pulse_time.append(dtime);
+    pulse_time.append(pr->dtime);
     pulse_baseline.append(ptmean);
 }
 

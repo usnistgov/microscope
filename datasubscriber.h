@@ -8,6 +8,7 @@
 class QThread;
 class plotWindow;
 class refreshPlots;
+class pulseRecord;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Object to run in a private thread,
@@ -31,7 +32,7 @@ signals:
     void newRecordLengths(int,int);
 
     /// Signal that a data vector is ready to plot
-    void newDataToPlot(int channum, QVector<double> *data, int presamples);
+    void newDataToPlot(int channum, pulseRecord *pr);
 
 
 public slots:
@@ -56,25 +57,6 @@ private:
     double sampletime;
     int nsamples;
     int presamples;
-};
-
-
-class pulseRecord {
-
-public:
-    pulseRecord(const zmq::message_t &header, const zmq::message_t &pulsedata);
-    ~pulseRecord();
-
-public:
-    int channum;
-    int presamples;
-    int wordsize;
-    float sampletime;
-    float voltsperarb;
-    int nsamples;
-    uint64_t time_nsec;
-    uint64_t serialnumber;
-    QVector<double> *data;
 };
 
 

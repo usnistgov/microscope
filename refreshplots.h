@@ -13,10 +13,12 @@
 #include <vector>
 #include "periodicupdater.h"
 #include "plotwindow.h"
+#include "pulserecord.h"
 
 class plotWindow;
 class pulseHistory;
 class FFTMaster;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief The Histogram class histograms data with fixed, equal bin spacings.
@@ -76,11 +78,11 @@ public:
 
 signals:
     /// Signal that a QVector is ready to plot
-    void newDataToPlot(int channum, const QVector<double> &data);
+    void newDataToPlot(int channum, const pulseRecord *pr);
 
     /// Signal that a y vs x pair of QVectors are ready to plot
-    void newDataToPlot(int channum, const QVector<double> &xdata,
-                       const QVector<double> &ydata);
+    void newDataToPlot(int channum, const pulseRecord *xdata,
+                       const pulseRecord *ydata);
 
     /// Signal that additional data in an (y vs x) pair of QVectors are ready to plot
     void addDataToPlot(int channum, const QVector<double> &xdata,
@@ -88,7 +90,7 @@ signals:
 
 public slots:
     virtual void workQuantum(void);
-    void receiveNewData(int tracenum, QVector<double> *data, int presamples);
+    void receiveNewData(int tracenum, pulseRecord *pr);
     void toggledAveraging(bool doAvg);
     void toggledDFTing(bool dft);
     void newSampleTime(double);
@@ -99,6 +101,7 @@ public slots:
 
 private:
     double ms_per_sample;             ///< Scaling from sample # to ms.
+    double last_freq_step;            ///< Frequency steps used last plot
     QVector<int> channels;            ///< The channel for each trace [0,N-1]
     QVector<int> lastSerial;          ///< The serial # of last record plotted (one per trace).
     bool plottingPaused;              ///< Is this refresher paused?
@@ -113,7 +116,9 @@ private:
 
     QVector<pulseHistory *> pulseHistories;
     FFTMaster *fftMaster;
-    QVector<double> frequencies;
+    QVector<double> frequencies;      ///< A vector of frequency coordinates
+    pulseRecord freqRec;              ///< A frequency record for plotting
+    pulseRecord yrec;                 ///< A record for plotting PSD/FFT data on y axis
 
     void refreshSpectrumPlots(void);
     void refreshStandardPlots(void);

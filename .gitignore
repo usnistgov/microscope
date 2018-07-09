@@ -7,3 +7,4 @@ microscope
 microscope.pro.user
 Makefile
 .DS_Store
+.qmake.stash

@@ -45,7 +45,8 @@ SOURCES += main.cpp\
     refreshplots.cpp \
     datasubscriber.cpp \
     pulsehistory.cpp \
-    fftcomputer.cpp
+    fftcomputer.cpp \
+    pulserecord.cpp
 
 HEADERS  += plotwindow.h \
     periodicupdater.h \
@@ -55,7 +56,8 @@ HEADERS  += plotwindow.h \
     datasubscriber.h \
     microscope.h \
     pulsehistory.h \
-    fftcomputer.h
+    fftcomputer.h \
+    pulserecord.h
 
 FORMS    +=  plotwindow.ui
 

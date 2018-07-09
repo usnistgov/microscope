@@ -36,7 +36,6 @@ int main(int argc, char *argv[])
             tcpdataport = args[i].toStdString();
         }
     }
-    std::cout << "Application name for QSettings purposes: " << QCoreApplication::applicationName().toStdString() << std::endl;
     zmq::context_t zmqcontext;
 
     plotWindow *w = new plotWindow(&zmqcontext);
