@@ -94,13 +94,12 @@ void pulseHistory::setDoDFT(bool dft) {
         if (n <= 0)
             return;
         if (previous_mean == 0.0)
-            previous_mean = records[0]->data->at(0);
+            previous_mean = records[0]->data[0];
         lock.lock();
         for (int i=0; i<n; i++) {
             QVector<double> *psd = new QVector<double>;
-            QVector<double> *data = records[i]->data;
             const double sampleRate = 1.0;
-            fftMaster->computePSD(*data, *psd, sampleRate, WINDOW, previous_mean);
+            fftMaster->computePSD(records[i]->data, *psd, sampleRate, WINDOW, previous_mean);
             spectra.append(psd);
         }
         lock.unlock();
@@ -150,7 +149,7 @@ pulseRecord *pulseHistory::meanRecord() {
     for (int i=0; i<records.size(); i++) {
         if (records[i]->nsamples <= nsamples) {
             for (int j=0; j<nsamples; j++)
-                (*mean)[j] += records[i]->data->at(j);
+                (*mean)[j] += records[i]->data[j];
             nused++;
         }
     }
@@ -161,7 +160,9 @@ pulseRecord *pulseHistory::meanRecord() {
             (*mean)[j] /= nused;
     }
     pulseRecord *result = new pulseRecord(*last);
-    result->data = mean;
+    result->data = *mean;
+    // delete?
+    delete mean;
     return result;
 }
 
@@ -224,7 +225,7 @@ void pulseHistory::insertRecord(pulseRecord *pr) {
         clearSpectra(queueCapacity-1);
         const bool WINDOW=true; // always use Hann windowing
         QVector<double> *psd = new QVector<double>();
-        fftMaster->computePSD(*pr->data, *psd, 1.0, WINDOW, previous_mean);
+        fftMaster->computePSD(pr->data, *psd, 1.0, WINDOW, previous_mean);
         lock.lock();
         spectra.enqueue(psd);
         lock.unlock();
@@ -232,7 +233,7 @@ void pulseHistory::insertRecord(pulseRecord *pr) {
 
     // Now compute and store its "analysis" values
     lock.lock();
-    QVector<double> rec = *pr->data;
+    QVector<double> rec = pr->data;
     double ptmean = 0.0;
     for (int i=0; i<pr->presamples; i++)
         ptmean += rec[i];

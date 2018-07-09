@@ -23,7 +23,7 @@ public:
     uint64_t time_nsec;
     uint64_t serialnumber;
     double dtime;  // when it happened for timeseries plots
-    QVector<double> *data;
+    QVector<double> data;
 };
 
 

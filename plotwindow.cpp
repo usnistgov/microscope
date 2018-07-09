@@ -304,7 +304,7 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *ydata)
 
     // The x-axis trivially plots integers 0 to N-1.
     // Make sure we have a vector of that length.
-    int nsamples = ydata->data->size();
+    int nsamples = ydata->data.size();
     int si_size = sampleIndex.size();
     sampleIndex.resize(nsamples);
     if (si_size < nsamples) {
@@ -313,7 +313,7 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *ydata)
             sampleIndex[i] = i;
     }
     pulseRecord *xdata = new pulseRecord(*ydata);
-    xdata->data = &sampleIndex;
+    xdata->data = sampleIndex;
     newPlotTrace(tracenum, xdata, ydata);
 }
 
@@ -332,27 +332,19 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *xdata,
         std::cout<<"xdata is null" << std::endl;
         return;
     }
-    if (xdata->data == NULL) {
-        std::cout<<"xdata->data is null" << std::endl;
-        return;
-    }
-    std::cout << "xdata->data->size()=" << xdata->data->size() << std::endl;
+    std::cout << "xdata->data->size()=" << xdata->data.size() << std::endl;
     if (ydata == NULL) {
         std::cout<<"ydata is null" << std::endl;
         return;
     }
-    if (ydata->data == NULL) {
-        std::cout<<"ydata->data is null" << std::endl;
-        return;
-    }
-    std::cout << "ydata->data->size()=" << ydata->data->size() << std::endl;
+    std::cout << "ydata->data->size()=" << ydata->data.size() << std::endl;
     std::cout << "All data QVectors are non-null" << std::endl;
 
     // Convert y and (if err-vs-FB) sometimes x data to physical units.
     if (!preferYaxisRawUnits) {
-        const int N = ydata->data->size();
+        const int N = ydata->data.size();
 
-        QVector<double> scaled_data(*ydata->data);
+        QVector<double> scaled_data(ydata->data);
 
         // Scale the data by the appropriate physical/raw ratio.
         double phys_per_raw = ydata->voltsperarb * 1000; // *1000 for mV instead of V
@@ -364,7 +356,7 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *xdata,
         switch (plotType) {
             case PLOTTYPE_ERRVSFB:
             {
-            QVector<double> scaled_xdata(*xdata->data);
+            QVector<double> scaled_xdata(xdata->data);
                 for (int i=0; i<N; i++)
                     scaled_xdata[i] *= xdata->voltsperarb * 1000;
                 graph->setData(scaled_xdata, scaled_data);
@@ -375,14 +367,14 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *xdata,
                 for (int i=0; i<N-1; i++)
                     scaled_data[i] = scaled_data[i+1]-scaled_data[i];
                 scaled_data[N-1] = scaled_data[N-2];
-                graph->setData(*xdata->data, scaled_data);
+                graph->setData(xdata->data, scaled_data);
                 break;
 
             case PLOTTYPE_STANDARD:
             case PLOTTYPE_FFT:
             case PLOTTYPE_PSD:
             default:
-                graph->setData(*xdata->data, scaled_data);
+                graph->setData(xdata->data, scaled_data);
                 break;
         }
 
@@ -392,16 +384,16 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *xdata,
 
     // No raw->physical scaling. Handle time derivative plots
     if (plotType == PLOTTYPE_DERIVATIVE) {
-        const int N = ydata->data->size();
-        QVector<double> derivdata(*ydata->data);
+        const int N = ydata->data.size();
+        QVector<double> derivdata(ydata->data);
         for (int i=0; i<N-1; i++)
             derivdata[i] = derivdata[i+1] - derivdata[i];
         derivdata[N-1] = derivdata[N-2];
-        graph->setData(*xdata->data, derivdata);
+        graph->setData(xdata->data, derivdata);
     } else
-        graph->setData(*xdata->data, *ydata->data);
-    std::cout << "X, y data size: " << xdata->data->size() << "," << ydata->data->size() << std::endl;
-    std::cout << "Values: " << xdata->data->at(0) << " " << xdata->data->at(1) << std::endl;
+        graph->setData(xdata->data, ydata->data);
+    std::cout << "X, y data size: " << xdata->data.size() << "," << ydata->data.size() << std::endl;
+    std::cout << "Values: " << xdata->data[0] << " " << xdata->data[1] << std::endl;
     rescalePlots(graph);
     updateXAxisRange(ui->plot->xAxis->range());
 }

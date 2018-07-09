@@ -32,14 +32,13 @@ pulseRecord::pulseRecord(const zmq::message_t &header, const zmq::message_t &pul
     const uint16_t *u16data = reinterpret_cast<const uint16_t *>(pulsedata.data());
     const int16_t *i16data = reinterpret_cast<const int16_t *>(pulsedata.data());
 
-    data = new QVector<double>;
-    data->resize(nsamples);
+    data.resize(nsamples);
     if (issigned) {
         for (int i=0; i<nsamples; i++)
-            (*data)[i] = i16data[i];
+            data[i] = i16data[i];
     } else {
         for (int i=0; i<nsamples; i++)
-            (*data)[i] = u16data[i];
+            data[i] = u16data[i];
     }
 }
 
@@ -66,8 +65,8 @@ pulseRecord::pulseRecord(const QVector<double> &data_in) :
     time_nsec(0),
     serialnumber(0),
     dtime(1e9),
-    data(NULL) {
-    data = new QVector<double>(data_in);
+    data(data_in) {
+    ;
 }
 
 pulseRecord::pulseRecord() :
@@ -80,13 +79,13 @@ pulseRecord::pulseRecord() :
     time_nsec(0),
     serialnumber(0),
     dtime(1e9),
-    data(NULL) {
-    data = new QVector<double>();
+    data() {
+    ;
 }
 
 
 
 pulseRecord::~pulseRecord() {
-    delete data;
+    ;
 }
 
