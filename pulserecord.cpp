@@ -58,7 +58,7 @@ pulseRecord::pulseRecord(const pulseRecord &pr) {
 
 pulseRecord::pulseRecord(const QVector<double> *data_in) {
     nsamples = data_in->size();
-    data = new QVector<double>;
+    data = new QVector<double>(nsamples);
     for (int i=0; i<nsamples; i++)
         (*data)[i] = data_in->at(i);
 }
