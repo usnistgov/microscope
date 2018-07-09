@@ -56,19 +56,18 @@ pulseRecord::pulseRecord(const pulseRecord &pr) {
     data = pr.data;
 }
 
-pulseRecord::pulseRecord(const QVector<double> *data_in) :
+pulseRecord::pulseRecord(const QVector<double> &data_in) :
     channum(-2),
     presamples(0),
     wordsize(2),
     sampletime(0.),
     voltsperarb(.0001),
-    nsamples(data_in->size()),
+    nsamples(data_in.size()),
     time_nsec(0),
     serialnumber(0),
+    dtime(1e9),
     data(NULL) {
-    data = new QVector<double>(nsamples);
-    for (int i=0; i<nsamples; i++)
-        (*data)[i] = data_in->at(i);
+    data = new QVector<double>(data_in);
 }
 
 pulseRecord::pulseRecord() :
@@ -80,8 +79,9 @@ pulseRecord::pulseRecord() :
     nsamples(0),
     time_nsec(0),
     serialnumber(0),
+    dtime(1e9),
     data(NULL) {
-    ;
+    data = new QVector<double>();
 }
 
 

@@ -113,11 +113,11 @@ private:
     bool doingDFT;                    ///< Do we do DFT of data?
     enum analysisFields analysisType; ///< What analysis field to plot?
     struct timeval time_zero;         ///< In a timeseries, what time is plotted as t=0?
-    pulseRecord freqRec;              ///< A frequency record for plotting
 
     QVector<pulseHistory *> pulseHistories;
     FFTMaster *fftMaster;
-    QVector<double> frequencies;
+    QVector<double> frequencies;      ///< A vector of frequency coordinates
+    pulseRecord freqRec;              ///< A frequency record for plotting
 
     void refreshSpectrumPlots(void);
     void refreshStandardPlots(void);

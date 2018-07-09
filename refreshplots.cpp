@@ -243,17 +243,18 @@ void refreshPlots::refreshSpectrumPlots()
                 frequencies[i] = i * freq_step;
             last_freq_step = freq_step;
         }
-        freqRec = pulseRecord(&frequencies);
+        freqRec = pulseRecord(frequencies);
+        std::cout << "freqRec->data, size" << freqRec.data << " " << freqRec.data->size() << std::endl;
 
         if (isPSD) {
-            pulseRecord yrec = pulseRecord(record);
+            pulseRecord yrec = pulseRecord(*record);
             emit newDataToPlot(trace, &freqRec, &yrec);
         } else {
             QVector<double> fft(nfreq);
             for (int i=0; i<nfreq; i++) {
                 fft[i] = sqrt((*record)[i]);
             }
-            pulseRecord yrec = pulseRecord(&fft);
+            pulseRecord yrec = pulseRecord(fft);
             emit newDataToPlot(trace, &freqRec, &yrec);
         }
     }
