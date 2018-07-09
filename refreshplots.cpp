@@ -27,6 +27,7 @@
 refreshPlots::refreshPlots(int msec_period) :
     periodicUpdater(msec_period),
     ms_per_sample(1),
+    last_freq_step(0.0),
     plottingPaused(false),
     ErrVsFeedback(false),
     isPSD(false),
@@ -224,7 +225,7 @@ void refreshPlots::refreshSpectrumPlots()
             continue;
         lastSerial[trace] = pulseHistories[trace]->uses();
 
-        QVector<double> *record;
+        const QVector<double> *record;
         if (averaging) {
             record = pulseHistories[trace]->meanPSD();
         } else {
@@ -234,11 +235,12 @@ void refreshPlots::refreshSpectrumPlots()
             continue;
 
         const int nfreq = record->size();
-        if (nfreq != frequencies.size()) {
+        const double freq_step = 1e3/(ms_per_sample * pulseHistories[trace]->samples());
+        if (nfreq != frequencies.size() || freq_step != last_freq_step) {
             frequencies.resize(nfreq);
-            const double scaling = 1e3/(ms_per_sample * pulseHistories[trace]->samples());
             for (int i=0; i<nfreq; i++)
-                frequencies[i] = i * scaling;
+                frequencies[i] = i * freq_step;
+            last_freq_step = freq_step;
         }
 
         pulseRecord xrec = pulseRecord(&frequencies);
@@ -253,8 +255,7 @@ void refreshPlots::refreshSpectrumPlots()
             pulseRecord yrec = pulseRecord(&fft);
             emit newDataToPlot(trace, &xrec, &yrec);
         }
-        if (averaging)
-            delete record;
+        xrec.data = NULL; // don't try to delete the frequencies object!
     }
 }
 

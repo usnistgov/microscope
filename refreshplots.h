@@ -100,6 +100,7 @@ public slots:
 
 private:
     double ms_per_sample;             ///< Scaling from sample # to ms.
+    double last_freq_step;            ///< Frequency steps used last plot
     QVector<int> channels;            ///< The channel for each trace [0,N-1]
     QVector<int> lastSerial;          ///< The serial # of last record plotted (one per trace).
     bool plottingPaused;              ///< Is this refresher paused?
