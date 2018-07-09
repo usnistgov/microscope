@@ -54,6 +54,7 @@ private:
     QVector<double> pulse_average;
     QVector<double> pulse_time;
     QVector<double> pulse_baseline;
+    QVector<double> mean_psd;
 
     void clearQueue(int keep=0);
     void clearSpectra(int keep=0);

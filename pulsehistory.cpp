@@ -176,14 +176,16 @@ QVector<double> *pulseHistory::meanPSD() {
     }
 
     int nfreq = last->size();
-    QVector<double> *result = new QVector<double>(nfreq, 0.0);
+    mean_psd.resize(nfreq);
+    for (int i=0; i<nfreq; i++)
+        mean_psd[i] = 0;
 
     int nused = 0;
     lock.lock();
     for (int i=0; i<spectra.size(); i++) {
-        if (spectra[i]->size() <= nfreq) {
+        if (spectra[i]->size() == nfreq) {
             for (int j=0; j<nfreq; j++)
-                (*result)[j] += (*spectra[i])[j];
+                mean_psd[j] += (*spectra[i])[j];
             nused++;
         }
     }
@@ -191,9 +193,9 @@ QVector<double> *pulseHistory::meanPSD() {
 
     if (nused > 1) {
          for (int j=0; j<nfreq; j++)
-            (*result)[j] /= nused;
+            mean_psd[j] /= nused;
     }
-    return result;
+    return &mean_psd;
 }
 
 
