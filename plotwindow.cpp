@@ -296,7 +296,8 @@ void plotWindow::closeEvent(QCloseEvent *event)
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief Render a plot onto a given trace number.
 /// \param tracenum  Which trace (color) this is.
-/// \param pr        The raw data vector for the y-axis
+/// \param ydata     The raw data vector for the y-axis
+/// The x-axis data will be assumed.
 ///
 void plotWindow::newPlotTrace(int tracenum, const pulseRecord *ydata)
 {
@@ -321,7 +322,7 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *ydata)
 /// \brief Render a plot onto a given trace number.
 /// \param tracenum  Which trace (color) this is.
 /// \param xdata     The raw data vector for the x-axis
-/// \param data      The raw data vector for the y-axis
+/// \param ydata     The raw data vector for the y-axis
 ///
 void plotWindow::newPlotTrace(int tracenum, const pulseRecord *xdata,
                               const pulseRecord *ydata)
@@ -330,7 +331,7 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *xdata,
 
     // Convert y and (if err-vs-FB) sometimes x data to physical units.
     if (!preferYaxisRawUnits) {
-        const int N=ydata->data->size();
+        const int N = ydata->data->size();
 
         QVector<double> scaled_data(N);
 
@@ -372,10 +373,10 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *xdata,
 
     // No raw->physical scaling. Handle time derivative plots
     if (plotType == PLOTTYPE_DERIVATIVE) {
-        const int N=ydata->data->size();
-        QVector<double> derivdata(N);
+        const int N = ydata->data->size();
+        QVector<double> derivdata(*ydata->data);
         for (int i=0; i<N-1; i++)
-            derivdata[i] = derivdata[i+1]-derivdata[i];
+            derivdata[i] = derivdata[i+1] - derivdata[i];
         derivdata[N-1] = derivdata[N-2];
         graph->setData(*xdata->data, derivdata);
     } else
