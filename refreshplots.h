@@ -17,6 +17,7 @@
 class plotWindow;
 class pulseHistory;
 class FFTMaster;
+class pulseRecord;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief The Histogram class histograms data with fixed, equal bin spacings.
@@ -76,11 +77,11 @@ public:
 
 signals:
     /// Signal that a QVector is ready to plot
-    void newDataToPlot(int channum, const QVector<double> &data);
+    void newDataToPlot(int channum, const pulseRecord *pr);
 
     /// Signal that a y vs x pair of QVectors are ready to plot
-    void newDataToPlot(int channum, const QVector<double> &xdata,
-                       const QVector<double> &ydata);
+    void newDataToPlot(int channum, const pulseRecord *xdata,
+                       const pulseRecord *ydata);
 
     /// Signal that additional data in an (y vs x) pair of QVectors are ready to plot
     void addDataToPlot(int channum, const QVector<double> &xdata,
@@ -88,7 +89,7 @@ signals:
 
 public slots:
     virtual void workQuantum(void);
-    void receiveNewData(int tracenum, QVector<double> *data, int presamples);
+    void receiveNewData(int tracenum, pulseRecord *pr);
     void toggledAveraging(bool doAvg);
     void toggledDFTing(bool dft);
     void newSampleTime(double);

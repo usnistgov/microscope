@@ -15,6 +15,7 @@
 #include "fftcomputer.h"
 #include "periodicupdater.h"
 #include "pulsehistory.h"
+#include "pulserecord.h"
 
 
 
@@ -85,15 +86,13 @@ refreshPlots::~refreshPlots()
 /// \param data
 /// \param length
 ///
-void refreshPlots::receiveNewData(int tracenum, QVector<double> *data,
-                                  int presamples) {
+void refreshPlots::receiveNewData(int tracenum, pulseRecord *pr) {
     if (tracenum < 0 || tracenum >= pulseHistories.size())
         return;
-
     struct timeval now;
     gettimeofday(&now, NULL);
-    double dt = now.tv_sec-time_zero.tv_sec + now.tv_usec*1e-6;
-    pulseHistories[tracenum]->insertRecord(data, presamples, dt);
+    pr->dtime = now.tv_sec-time_zero.tv_sec + now.tv_usec*1e-6;
+    pulseHistories[tracenum]->insertRecord(pr);
 }
 
 
@@ -197,14 +196,14 @@ void refreshPlots::refreshStandardPlots()
 
 
         if (averaging) {
-            QVector<double> *mean = pulseHistories[trace]->meanRecord();
+            pulseRecord *mean = pulseHistories[trace]->meanRecord();
             if (mean != NULL)
-                emit newDataToPlot(trace, *mean);
+                emit newDataToPlot(trace, mean);
             delete mean;
         } else {
-            QVector<double> *record = pulseHistories[trace]->newestRecord();
+            pulseRecord *record = pulseHistories[trace]->newestRecord();
             if (record != NULL)
-                emit newDataToPlot(trace, *record);
+                emit newDataToPlot(trace, record);
         }
     }
 }
@@ -243,14 +242,17 @@ void refreshPlots::refreshSpectrumPlots()
                 frequencies[i] = i * scaling;
         }
 
+        pulseRecord xrec = pulseRecord(&frequencies);
         if (isPSD) {
-            emit newDataToPlot(trace, frequencies, *record);
+            pulseRecord yrec = pulseRecord(record);
+            emit newDataToPlot(trace, &xrec, &yrec);
         } else {
             QVector<double> fft(nfreq);
             for (int i=0; i<nfreq; i++) {
                 fft[i] = sqrt((*record)[i]);
             }
-            emit newDataToPlot(trace, frequencies, fft);
+            pulseRecord yrec = pulseRecord(&fft);
+            emit newDataToPlot(trace, &xrec, &yrec);
         }
         if (averaging)
             delete record;

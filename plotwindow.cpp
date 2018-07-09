@@ -4,6 +4,7 @@
 ///
 
 #include <iostream>
+#include "pulserecord.h"
 #include "plotwindow.h"
 #include "refreshplots.h"
 #include "ui_plotwindow.h"
@@ -253,10 +254,10 @@ void plotWindow::startRefresh(void) {
     refreshPlotsThread = new refreshPlots(PLOTPERIOD_MSEC);
 
     // This connection is how the traces in the plots will be updated
-    connect(refreshPlotsThread, SIGNAL(newDataToPlot(int, const QVector<double> &)),
-            this, SLOT(newPlotTrace(int, const QVector<double> &)));
-    connect(refreshPlotsThread, SIGNAL(newDataToPlot(int, const QVector<double> &, const QVector<double> &)),
-            this, SLOT(newPlotTrace(int, const QVector<double> &, const QVector<double> &)));
+    connect(refreshPlotsThread, SIGNAL(newDataToPlot(int, const pulseRecord *)),
+            this, SLOT(newPlotTrace(int, const pulseRecord *)));
+    connect(refreshPlotsThread, SIGNAL(newDataToPlot(int, const pulseRecord *, const pulseRecord *)),
+            this, SLOT(newPlotTrace(int, const pulseRecord *, const pulseRecord *)));
     connect(refreshPlotsThread, SIGNAL(addDataToPlot(int, const QVector<double> &, const QVector<double> &)),
             this, SLOT(addPlotData(int, const QVector<double> &, const QVector<double> &)));
     connect(ui->averageTraces, SIGNAL(toggled(bool)), refreshPlotsThread, SLOT(toggledAveraging(bool)));
@@ -295,14 +296,14 @@ void plotWindow::closeEvent(QCloseEvent *event)
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief Render a plot onto a given trace number.
 /// \param tracenum  Which trace (color) this is.
-/// \param data      The raw data vector for the y-axis
+/// \param pr        The raw data vector for the y-axis
 ///
-void plotWindow::newPlotTrace(int tracenum, const QVector<double> &data)
+void plotWindow::newPlotTrace(int tracenum, const pulseRecord *ydata)
 {
 
     // The x-axis trivially plots integers 0 to N-1.
     // Make sure we have a vector of that length.
-    int nsamples = data.size();
+    int nsamples = ydata->data->size();
     int si_size = sampleIndex.size();
     sampleIndex.resize(nsamples);
     if (si_size < nsamples) {
@@ -310,7 +311,9 @@ void plotWindow::newPlotTrace(int tracenum, const QVector<double> &data)
         for (int i=start; i<nsamples; i++)
             sampleIndex[i] = i;
     }
-    newPlotTrace(tracenum, sampleIndex, data);
+    pulseRecord *xdata = new pulseRecord(*ydata);
+    xdata->data = &sampleIndex;
+    newPlotTrace(tracenum, xdata, ydata);
 }
 
 
@@ -320,38 +323,30 @@ void plotWindow::newPlotTrace(int tracenum, const QVector<double> &data)
 /// \param xdata     The raw data vector for the x-axis
 /// \param data      The raw data vector for the y-axis
 ///
-void plotWindow::newPlotTrace(int tracenum, const QVector<double> &xdata,
-                              const QVector<double> &data)
+void plotWindow::newPlotTrace(int tracenum, const pulseRecord *xdata,
+                              const pulseRecord *ydata)
 {
     QCPGraph *graph = ui->plot->graph(tracenum);
 
     // Convert y and (if err-vs-FB) sometimes x data to physical units.
     if (!preferYaxisRawUnits) {
-        const int N=data.size();
+        const int N=ydata->data->size();
 
-        QVector<double> scaled_data;
-        scaled_data.resize(N);
-        double phys_per_raw;
-        const int cnum = selectedChannel[tracenum];
+        QVector<double> scaled_data(N);
 
         // Scale the data by the appropriate physical/raw ratio.
-        // Use Error units if (1) this channel is an error one or (2) it's an Err vs FB plot.
-        if (cnum%2 == 0 || plotType == PLOTTYPE_ERRVSFB)
-            phys_per_raw = phys_per_avgErr;
-        else
-            phys_per_raw = phys_per_rawFB;
+        double phys_per_raw = ydata->voltsperarb;
         if (plotType == PLOTTYPE_PSD)
-            phys_per_raw = phys_per_raw*phys_per_raw;
+            phys_per_raw *= phys_per_raw;
         for (int i=0; i<N; i++)
-            scaled_data[i] = data[i] * phys_per_raw;
+            scaled_data[i] = ydata->data->at(i) * phys_per_raw;
 
         switch (plotType) {
             case PLOTTYPE_ERRVSFB:
             {
-                QVector<double> scaled_xdata;
-                scaled_xdata.resize(N);
+            QVector<double> scaled_xdata(N);
                 for (int i=0; i<N; i++)
-                    scaled_xdata[i] = xdata[i] * phys_per_rawFB;
+                    scaled_xdata[i] = xdata->data->at(i)* xdata->voltsperarb;
                 graph->setData(scaled_xdata, scaled_data);
                 break;
             }
@@ -360,14 +355,14 @@ void plotWindow::newPlotTrace(int tracenum, const QVector<double> &xdata,
                 for (int i=0; i<N-1; i++)
                     scaled_data[i] = scaled_data[i+1]-scaled_data[i];
                 scaled_data[N-1] = scaled_data[N-2];
-                graph->setData(xdata, scaled_data);
+                graph->setData(*xdata->data, scaled_data);
                 break;
 
             case PLOTTYPE_STANDARD:
             case PLOTTYPE_FFT:
             case PLOTTYPE_PSD:
             default:
-                graph->setData(xdata, scaled_data);
+                graph->setData(*xdata->data, scaled_data);
                 break;
         }
 
@@ -377,14 +372,14 @@ void plotWindow::newPlotTrace(int tracenum, const QVector<double> &xdata,
 
     // No raw->physical scaling. Handle time derivative plots
     if (plotType == PLOTTYPE_DERIVATIVE) {
-        const int N=data.size();
-        QVector<double> derivdata( data );
+        const int N=ydata->data->size();
+        QVector<double> derivdata(N);
         for (int i=0; i<N-1; i++)
             derivdata[i] = derivdata[i+1]-derivdata[i];
         derivdata[N-1] = derivdata[N-2];
-        graph->setData(xdata, derivdata);
+        graph->setData(*xdata->data, derivdata);
     } else
-        graph->setData(xdata, data);
+        graph->setData(*xdata->data, *ydata->data);
     rescalePlots(graph);
     updateXAxisRange(ui->plot->xAxis->range());
 }

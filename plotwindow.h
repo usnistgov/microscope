@@ -26,6 +26,7 @@ class plotWindow;
 }
 
 class refreshPlots;
+class pulseRecord;
 class QSpinBox;
 class QMouseEvent;
 class QStatusBar;
@@ -86,9 +87,9 @@ public:
 
 public slots:
     void updateQuickSelect(int nrows, int ncols);
-    void newPlotTrace(int tracenum, const QVector<double> &data);
-    void newPlotTrace(int tracenum, const QVector<double> &xdata,
-                      const QVector<double> &data);
+    void newPlotTrace(int tracenum, const pulseRecord *ydata);
+    void newPlotTrace(int tracenum, const pulseRecord *xdata,
+                      const pulseRecord *ydata);
     void addPlotData(int tracenum, const QVector<double> &xdata,
                       const QVector<double> &data);
     void newSampleTime(double);

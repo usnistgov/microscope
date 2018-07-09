@@ -6,6 +6,7 @@
 #include <QMutex>
 
 class FFTMaster;
+class pulseRecord;
 
 ///
 /// \brief An object to store a brief history of pulse records.
@@ -19,11 +20,11 @@ class pulseHistory
 public:
     pulseHistory(int capacity, FFTMaster *master);
 
-    void insertRecord(QVector<double> *r, int presamples, double dtime);
+    void insertRecord(pulseRecord *pr);
     void clearAllData();
-    QVector<double> *newestRecord() const;
+    pulseRecord *newestRecord() const;
+    pulseRecord *meanRecord();
     QVector<double> *newestPSD() const;
-    QVector<double> *meanRecord();
     QVector<double> *meanPSD();
     int  size() const;
     int  uses() const {return nstored;}
@@ -41,7 +42,7 @@ private:
     int nsamples;      ///< How many samples are in the currently stored records.
     int nstored;       ///< How many records have been stored ever.
     bool doDFT;        ///< Whether we are actively doing DFTs on each record.
-    QQueue<QVector<double> *> records;  ///< The last N pulse records.
+    QQueue<pulseRecord *> records;  ///< The last N pulse records.
     QQueue<QVector<double> *> spectra;  ///< The last N power spectra.
     FFTMaster *fftMaster;
     double previous_mean;
