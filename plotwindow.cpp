@@ -333,21 +333,21 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *xdata,
     if (!preferYaxisRawUnits) {
         const int N = ydata->data->size();
 
-        QVector<double> scaled_data(N);
+        QVector<double> scaled_data(*ydata->data);
 
         // Scale the data by the appropriate physical/raw ratio.
         double phys_per_raw = ydata->voltsperarb * 1000; // *1000 for mV instead of V
         if (plotType == PLOTTYPE_PSD)
             phys_per_raw *= phys_per_raw;
         for (int i=0; i<N; i++)
-            scaled_data[i] = ydata->data->at(i) * phys_per_raw;
+            scaled_data[i] *= phys_per_raw;
 
         switch (plotType) {
             case PLOTTYPE_ERRVSFB:
             {
-            QVector<double> scaled_xdata(N);
+            QVector<double> scaled_xdata(*xdata->data);
                 for (int i=0; i<N; i++)
-                    scaled_xdata[i] = xdata->data->at(i) * xdata->voltsperarb * 1000;
+                    scaled_xdata[i] *= xdata->voltsperarb * 1000;
                 graph->setData(scaled_xdata, scaled_data);
                 break;
             }
