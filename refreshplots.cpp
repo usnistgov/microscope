@@ -247,14 +247,14 @@ void refreshPlots::refreshSpectrumPlots()
         std::cout << "freqRec->data, size" << freqRec.data << " " << freqRec.data->size() << std::endl;
 
         if (isPSD) {
-            pulseRecord yrec = pulseRecord(*record);
+            yrec = pulseRecord(*record);
             emit newDataToPlot(trace, &freqRec, &yrec);
         } else {
             QVector<double> fft(nfreq);
             for (int i=0; i<nfreq; i++) {
                 fft[i] = sqrt((*record)[i]);
             }
-            pulseRecord yrec = pulseRecord(fft);
+            yrec = pulseRecord(fft);
             emit newDataToPlot(trace, &freqRec, &yrec);
         }
     }

@@ -118,6 +118,7 @@ private:
     FFTMaster *fftMaster;
     QVector<double> frequencies;      ///< A vector of frequency coordinates
     pulseRecord freqRec;              ///< A frequency record for plotting
+    pulseRecord yrec;                 ///< A record for plotting PSD/FFT data on y axis
 
     void refreshSpectrumPlots(void);
     void refreshStandardPlots(void);
