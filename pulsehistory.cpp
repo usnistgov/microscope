@@ -89,7 +89,7 @@ void pulseHistory::setDoDFT(bool dft) {
     const bool WINDOW=true; // always use Hann windowing
 
     if (dft) {
-        // run DFT on all data
+        // run DFT on all data already in queue
         int n = records.size();
         if (n <= 0)
             return;
@@ -101,6 +101,7 @@ void pulseHistory::setDoDFT(bool dft) {
             QVector<double> *data = records[i]->data;
             const double sampleRate = 1.0;
             fftMaster->computePSD(*data, *psd, sampleRate, WINDOW, previous_mean);
+            spectra.append(psd);
         }
         lock.unlock();
     } else {
@@ -121,7 +122,7 @@ pulseRecord *pulseHistory::newestRecord() const {
 
 
 ///
-/// \brief Return the most recently stored record.
+/// \brief Return the most recently stored power spectrum.
 /// \return
 ///
 QVector<double> *pulseHistory::newestPSD() const {

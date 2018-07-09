@@ -194,7 +194,6 @@ void refreshPlots::refreshStandardPlots()
             continue;
         lastSerial[trace] = pulseHistories[trace]->uses();
 
-
         if (averaging) {
             pulseRecord *mean = pulseHistories[trace]->meanRecord();
             if (mean != NULL)
