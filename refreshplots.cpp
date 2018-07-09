@@ -233,7 +233,6 @@ void refreshPlots::refreshSpectrumPlots()
         }
         if (record == NULL)
             continue;
-        std::cout << "trace " << trace << " has " << record << std::endl;
 
         const int nfreq = record->size();
         const double freq_step = 1e3/(ms_per_sample * pulseHistories[trace]->samples());
@@ -244,7 +243,6 @@ void refreshPlots::refreshSpectrumPlots()
             last_freq_step = freq_step;
         }
         freqRec = pulseRecord(frequencies);
-        std::cout << "freqRec->data, size" << freqRec.data << " " << freqRec.data->size() << std::endl;
 
         if (isPSD) {
             yrec = pulseRecord(*record);

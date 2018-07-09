@@ -226,6 +226,5 @@ void FFTMaster::computePSD(QVector<double> &data, QVector<double> &psd, double s
 //    // Will need to keep track of the order they were added, so delete the oldest.
 
     computer->computePSD(data, psd, sampleRate, useWindow, mean);
-    std::cout << "computePSD returned; last value: " << psd[psd.size()-1] << std::endl;
 }
 

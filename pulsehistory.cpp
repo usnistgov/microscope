@@ -125,7 +125,6 @@ pulseRecord *pulseHistory::newestRecord() const {
 /// \return
 ///
 QVector<double> *pulseHistory::newestPSD() const {
-    std::cout << "newestPSD sees queue of size " << spectra.size() <<std::endl;
     if (spectra.isEmpty())
         return NULL;
     return spectra.back();

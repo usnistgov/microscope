@@ -328,17 +328,6 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *xdata,
                               const pulseRecord *ydata)
 {
     QCPGraph *graph = ui->plot->graph(tracenum);
-    if (xdata == NULL) {
-        std::cout<<"xdata is null" << std::endl;
-        return;
-    }
-    std::cout << "xdata->data->size()=" << xdata->data.size() << std::endl;
-    if (ydata == NULL) {
-        std::cout<<"ydata is null" << std::endl;
-        return;
-    }
-    std::cout << "ydata->data->size()=" << ydata->data.size() << std::endl;
-    std::cout << "All data QVectors are non-null" << std::endl;
 
     // Convert y and (if err-vs-FB) sometimes x data to physical units.
     if (!preferYaxisRawUnits) {
@@ -392,8 +381,6 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *xdata,
         graph->setData(xdata->data, derivdata);
     } else
         graph->setData(xdata->data, ydata->data);
-    std::cout << "X, y data size: " << xdata->data.size() << "," << ydata->data.size() << std::endl;
-    std::cout << "Values: " << xdata->data[0] << " " << xdata->data[1] << std::endl;
     rescalePlots(graph);
     updateXAxisRange(ui->plot->xAxis->range());
 }
