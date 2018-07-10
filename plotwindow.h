@@ -108,9 +108,9 @@ signals:
 private:
     Ui::plotWindow *ui;                   ///< The underlying GUI form built in Qt Designer
     const static int NUM_TRACES=8;        ///< How many plot curves have their own channel selector
-    QVector<QSpinBox *> spinners;     ///< The spin boxes that control which channels are plotted
-    QVector<int> quickSelectErrChan1; ///< The lowest channel # signified by each comboBox range
-    QVector<int> quickSelectErrChan2; ///< The highest channel # signified by each comboBox range
+    QVector<QSpinBox *> spinners;         ///< The spin boxes that control which channels are plotted
+    QVector<int> quickSelectErrChan1;     ///< The lowest channel # signified by each comboBox range
+    QVector<int> quickSelectErrChan2;     ///< The highest channel # signified by each comboBox range
     QVector<int> selectedChannel;         ///< The channel number currently chosen in each spin box
     QActionGroup plotMenuActionGroup;     ///< Object that keeps plot type choices exclusive.
     QActionGroup analysisMenuActionGroup; ///< Object that keeps analysis choices exclusive.
@@ -118,18 +118,16 @@ private:
     QActionGroup yaxisUnitsActionGroup;   ///< Object that keeps y-axis units choices exclusive.
     QSettings *matterSettings;            ///< Store program settings.
 
-    int nrows;    ///< Number of rows in the current array.
-    int ncols;    ///< Number of columns in the current array.
-    QVector<double>  sampleIndex;        ///< Temporary object to hold [0,1,...]
-    enum plotTypeComboItems plotType;    ///< Current plot style
-    enum analysisFields analysisType;    ///< Current type of analysis to plot (histo/timeseries)
-    double ms_per_sample;                ///< Scaling from sample # to ms.
-    int num_presamples;                  ///< Number of pretrigger samples
-    int num_samples;                     ///< Number of samples in a record
-    bool preferVisibleMinMaxRange;       ///< Whether user wants min/max/range boxes visible
-    bool preferYaxisRawUnits;            ///< Whether user wants raw units on y axis
-    double phys_per_rawFB;               ///< Multiply raw feedback data by this to get physical units
-    double phys_per_avgErr;              ///< Multiply mean error data by this to get physical units
+    int nrows;                            ///< Number of rows in the current microcal array.
+    int ncols;                            ///< Number of columns in the current microcal array.
+    QVector<double>  sampleIndex;         ///< Temporary object to hold [-nPre,1-nPre,...N-2-nPre]
+    enum plotTypeComboItems plotType;     ///< Current plot style
+    enum analysisFields analysisType;     ///< Current type of analysis to plot (histo/timeseries)
+    double ms_per_sample;                 ///< Scaling from sample # to ms.
+    int num_presamples;                   ///< Number of pretrigger samples
+    int num_samples;                      ///< Number of samples in a record
+    bool preferVisibleMinMaxRange;        ///< Whether user wants min/max/range boxes visible
+    bool preferYaxisRawUnits;             ///< Whether user wants raw units on y axis
     zmq::context_t *zmqcontext;
     zmq::socket_t *chansocket;
 

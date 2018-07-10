@@ -54,13 +54,11 @@ plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
     analysisMenuActionGroup(this),
     axisMenuActionGroup(this),
     yaxisUnitsActionGroup(this),
-    sampleIndex(),
+    sampleIndex(1, 0.0),
     plotType(PLOTTYPE_STANDARD),
     analysisType(ANALYSIS_PULSE_MAX),
     ms_per_sample(1),
     num_presamples(0),
-    phys_per_rawFB(1000.0/16384.),
-    phys_per_avgErr(1000.0/4096.),
     zmqcontext(context_in)
 {
     nrows = 24; //client->nMuxRows();
@@ -302,15 +300,19 @@ void plotWindow::closeEvent(QCloseEvent *event)
 void plotWindow::newPlotTrace(int tracenum, const pulseRecord *ydata)
 {
 
-    // The x-axis trivially plots integers 0 to N-1.
-    // Make sure we have a vector of that length.
-    int nsamples = ydata->data.size();
-    int si_size = sampleIndex.size();
+    // The x-axis plots integers -pre to N-1-pre.
+    // Make sure we have a vector of that length, properly initialized.
+    const int nsamples = ydata->data.size();
+    const int pre = ydata->presamples;
+    const int si_size = sampleIndex.size();
     sampleIndex.resize(nsamples);
-    if (si_size < nsamples) {
+    if (sampleIndex[0] != -pre) {
+        for (int i=0; i<nsamples; i++)
+            sampleIndex[i] = i-pre;
+    } else if (si_size < nsamples) {
         int start = si_size;
         for (int i=start; i<nsamples; i++)
-            sampleIndex[i] = i;
+            sampleIndex[i] = i-pre;
     }
     pulseRecord *xdata = new pulseRecord(*ydata);
     xdata->data = sampleIndex;
