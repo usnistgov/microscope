@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("Microscope");
 
     // You can override the ApplicationName with command-line argument of the
-    // exact form -name=MatterB (or -name=whatever). Not the most flexible idea
+    // exact form -name=MicroscopeB (or -name=whatever). Not the most flexible idea
     // you can imagine, but it's better than nothing.
     std::string tcpdataport = "tcp://localhost:5502";
     QStringList args = a.arguments();

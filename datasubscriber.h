@@ -29,8 +29,6 @@ signals:
 
     void newSampleTime(double);
 
-    void newRecordLengths(int,int);
-
     /// Signal that a data vector is ready to plot
     void newDataToPlot(int channum, pulseRecord *pr);
 
@@ -55,8 +53,6 @@ private:
     void parseChannelMessage(zmq::message_t &);
 
     double sampletime;
-    int nsamples;
-    int presamples;
 };
 
 

@@ -22,9 +22,9 @@
 Q_DECLARE_METATYPE(QCPRange)
 
 ///////////////////////////////////////////////////////////////////////////////
-/// The standard color palette for plotting. Maybe someday this won't be fixed?
+/// The standard color palette for plotting. Maybe someday this won't be const?
 /// I'm using mostly unnamed colors so that I can make them a little darker
-/// the standard ones but not as dark as the dark* ones.
+/// than the standard named colors but not as dark as the dark* ones.
 ///
 static const QColor plotStandardColors[]={
     Qt::black,
@@ -58,10 +58,12 @@ plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
     plotType(PLOTTYPE_STANDARD),
     analysisType(ANALYSIS_PULSE_MAX),
     ms_per_sample(1),
-    num_presamples(0),
     zmqcontext(context_in)
 {
-    nrows = 24; //client->nMuxRows();
+    // TODO: figure out how many rows and columns are in the actual data.
+    // Unlike matter, we can't just ask the client object. Has to go in packet
+    // headers or...? Oh! It could be a command-line argument.
+    nrows = 30; //client->nMuxRows();
     ncols = 8; //client->nMuxCols();
 
     chansocket = new zmq::socket_t(*zmqcontext, ZMQ_PUB);
@@ -73,14 +75,13 @@ plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
         chansocket = NULL;
     }
 
-
     setWindowFlags(Qt::Window);
     setAttribute(Qt::WA_DeleteOnClose); // important!
     ui->setupUi(this);
     QString title("Microscope: microcalorimeter data plots, version %1.%2.%3");
     setWindowTitle(title.arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_REALLYMINOR));
 
-    // Build layout with the NUM_SPINNERS (8?) channel selection spin boxes
+    // Build layout with the NUM_TRACES (8?) channel selection spin boxes
     QGridLayout *chanSpinnersLayout = new QGridLayout(0);
     chanSpinnersLayout->setSpacing(3);
     ui->chanSelectLayout->insertLayout(1, chanSpinnersLayout);
@@ -170,7 +171,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
     connect(&yaxisUnitsActionGroup, SIGNAL(triggered(QAction*)),
             this, SLOT(yaxisUnitsChanged(QAction*)));
 
-    // Set up the plot object (which already exists)
+    // Set up the plot object
     QCustomPlot *pl = ui->plot;
     pl->setNotAntialiasedElements(QCP::aePlottables);
     pl->setInteraction(QCP::iRangeDrag, true);
@@ -184,7 +185,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
 
     qRegisterMetaType<QCPRange>();
 
-    // make left and bottom axes always transfer their ranges to right and top axes:
+    // Set up top x axis; always transfer range from bottom to top axis, with fixed scale ratio
     pl->xAxis2->setLabel("Time (ms)");
     pl->xAxis2->setVisible(true);
     pl->xAxis2->setScaleRatio(pl->xAxis, ms_per_sample);
@@ -208,10 +209,10 @@ plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
     xAxisLog(ui->xLogCheckBox->isChecked());
     yAxisLog(ui->yLogCheckBox->isChecked());
 
-    // Restore relevant settings
-    matterSettings = new QSettings();
-    preferVisibleMinMaxRange = matterSettings->value("plots/visibleMinMaxRange",false).toBool();
-    preferYaxisRawUnits = matterSettings->value("plots/yaxisRawUnits", true).toBool();
+    // Restore relevant settings.
+    mscopeSettings = new QSettings();
+    preferVisibleMinMaxRange = mscopeSettings->value("plots/visibleMinMaxRange",false).toBool();
+    preferYaxisRawUnits = mscopeSettings->value("plots/yaxisRawUnits", true).toBool();
 
     if (preferVisibleMinMaxRange)
         ui->actionShow_edit_ranges->trigger();
@@ -251,18 +252,18 @@ void plotWindow::startRefresh(void) {
     const int PLOTPERIOD_MSEC=500;
     refreshPlotsThread = new refreshPlots(PLOTPERIOD_MSEC);
 
-    // This connection is how the traces in the plots will be updated
+    // These connections are how the traces in the plots will be updated.
     connect(refreshPlotsThread, SIGNAL(newDataToPlot(int, const pulseRecord *)),
             this, SLOT(newPlotTrace(int, const pulseRecord *)));
     connect(refreshPlotsThread, SIGNAL(newDataToPlot(int, const pulseRecord *, const pulseRecord *)),
             this, SLOT(newPlotTrace(int, const pulseRecord *, const pulseRecord *)));
     connect(refreshPlotsThread, SIGNAL(addDataToPlot(int, const QVector<double> &, const QVector<double> &)),
             this, SLOT(addPlotData(int, const QVector<double> &, const QVector<double> &)));
+
     connect(ui->averageTraces, SIGNAL(toggled(bool)), refreshPlotsThread, SLOT(toggledAveraging(bool)));
     connect(this, SIGNAL(doDFT(bool)), refreshPlotsThread, SLOT(toggledDFTing(bool)));
 
-    connect(ui->clearDataButton, SIGNAL(clicked()),
-            refreshPlotsThread, SLOT(clearStoredData()));
+    connect(ui->clearDataButton, SIGNAL(clicked()), refreshPlotsThread, SLOT(clearStoredData()));
 }
 
 
@@ -292,7 +293,7 @@ void plotWindow::closeEvent(QCloseEvent *event)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-/// \brief Render a plot onto a given trace number.
+/// \brief Render a plot onto a given trace number with implied x-axis.
 /// \param tracenum  Which trace (color) this is.
 /// \param ydata     The raw data vector for the y-axis
 /// The x-axis data will be assumed.
@@ -314,14 +315,14 @@ void plotWindow::newPlotTrace(int tracenum, const pulseRecord *ydata)
         for (int i=start; i<nsamples; i++)
             sampleIndex[i] = i-pre;
     }
-    pulseRecord *xdata = new pulseRecord(*ydata);
-    xdata->data = sampleIndex;
-    newPlotTrace(tracenum, xdata, ydata);
+    pulseRecord xdata = pulseRecord(*ydata);
+    xdata.data = sampleIndex;
+    newPlotTrace(tracenum, &xdata, ydata);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-/// \brief Render a plot onto a given trace number.
+/// \brief Render a plot onto a given trace number with specified x-axis.
 /// \param tracenum  Which trace (color) this is.
 /// \param xdata     The raw data vector for the x-axis
 /// \param ydata     The raw data vector for the y-axis
@@ -416,18 +417,18 @@ void plotWindow::rescalePlots(QCPGraph *graph)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-/// \brief Render a plot onto a given trace number.
+/// \brief Add data values to a given trace number, as for time series plots.
 /// \param tracenum  Which trace (color) this is.
 /// \param xdata     The raw data vector for the x-axis
-/// \param data      The raw data vector for the y-axis
+/// \param ydata     The raw data vector for the y-axis
 ///
 void plotWindow::addPlotData(int tracenum, const QVector<double> &xdata,
-                              const QVector<double> &data)
+                              const QVector<double> &ydata)
 {
-    if (xdata.size() == 0 && data.size() == 0)
+    if (xdata.size() == 0 && ydata.size() == 0)
         return;
     QCPGraph *graph = ui->plot->graph(tracenum);
-    graph->addData(xdata, data);
+    graph->addData(xdata, ydata);
     /// \todo Will need a way to remove data after there's too much. see graph->removeDataBefore()
     rescalePlots(graph);
 }
@@ -443,25 +444,6 @@ void plotWindow::newSampleTime(double dt)
     if (dt*1000. == ms_per_sample)
         return;
     ms_per_sample = dt*1000.;
-    updateXAxisRange(ui->plot->xAxis->range());
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-/// \brief Slot to be informed that the record length or pretrig length has changed.
-///
-/// Currently we don't use the record length, but here it is anyway.
-///
-/// \param nsamp     Number of samples in a record
-/// \param npresamp  Number of pre-trigger samples
-///
-void plotWindow::newRecordLengths(int nsamp, int npresamp)
-{
-    if (num_presamples == npresamp)
-        return;
-    num_presamples = npresamp;
-    num_samples = nsamp;
     updateXAxisRange(ui->plot->xAxis->range());
 }
 
@@ -1068,7 +1050,7 @@ void plotWindow::yaxisUnitsChanged(QAction *action)
         return;
 
     // Save this choice so that future windows can be brought up in this state again.
-    matterSettings->setValue("plots/yaxisRawUnits", preferYaxisRawUnits);
+    mscopeSettings->setValue("plots/yaxisRawUnits", preferYaxisRawUnits);
     plotTypeChanged( plotMenuActionGroup.checkedAction() );
     ui->plot->replot();
 }
@@ -1091,7 +1073,7 @@ void plotWindow::axisRangeVisibleChanged(QAction *action)
         return;
 
     // Save this choice so that future windows can be brought up in this state again.
-    matterSettings->setValue("plots/visibleMinMaxRange", preferVisibleMinMaxRange);
+    mscopeSettings->setValue("plots/visibleMinMaxRange", preferVisibleMinMaxRange);
 }
 
 

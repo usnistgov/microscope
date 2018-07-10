@@ -93,7 +93,6 @@ public slots:
     void addPlotData(int tracenum, const QVector<double> &xdata,
                       const QVector<double> &data);
     void newSampleTime(double);
-    void newRecordLengths(int,int);
 
 signals:
     /// Signal that one trace->channel correspondence has changed.
@@ -116,16 +115,14 @@ private:
     QActionGroup analysisMenuActionGroup; ///< Object that keeps analysis choices exclusive.
     QActionGroup axisMenuActionGroup;     ///< Object that keeps axis choices exclusive.
     QActionGroup yaxisUnitsActionGroup;   ///< Object that keeps y-axis units choices exclusive.
-    QSettings *matterSettings;            ///< Store program settings.
+    QSettings *mscopeSettings;            ///< Store program settings.
 
     int nrows;                            ///< Number of rows in the current microcal array.
     int ncols;                            ///< Number of columns in the current microcal array.
-    QVector<double>  sampleIndex;         ///< Temporary object to hold [-nPre,1-nPre,...N-2-nPre]
+    QVector<double>  sampleIndex;         ///< Object to hold [-nPre,1-nPre,...N-2-nPre]
     enum plotTypeComboItems plotType;     ///< Current plot style
     enum analysisFields analysisType;     ///< Current type of analysis to plot (histo/timeseries)
     double ms_per_sample;                 ///< Scaling from sample # to ms.
-    int num_presamples;                   ///< Number of pretrigger samples
-    int num_samples;                      ///< Number of samples in a record
     bool preferVisibleMinMaxRange;        ///< Whether user wants min/max/range boxes visible
     bool preferYaxisRawUnits;             ///< Whether user wants raw units on y axis
     zmq::context_t *zmqcontext;

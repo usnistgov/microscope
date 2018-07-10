@@ -17,9 +17,7 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin, std::string t
     plotManager(w->refreshPlotsThread),
     zmqcontext(zin),
     tcpdatasource(tcpsourcein),
-    sampletime(1.0),
-    nsamples(0),
-    presamples(0)
+    sampletime(1.0)
 {
     myThread = new QThread;
     moveToThread(myThread);
@@ -32,7 +30,6 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin, std::string t
 
     connect(this, SIGNAL(newSampleTime(double)), window, SLOT(newSampleTime(double)));
     connect(this, SIGNAL(newSampleTime(double)), plotManager, SLOT(newSampleTime(double)));
-    connect(this, SIGNAL(newRecordLengths(int,int)), window, SLOT(newRecordLengths(int,int)));
 
     connect(this, SIGNAL(newDataToPlot(int, pulseRecord *)),
             plotManager, SLOT(receiveNewData(int, pulseRecord *)));
@@ -163,11 +160,6 @@ void dataSubscriber::process() {
         //           << pr->data[pr->nsamples-1] <<"] dT="<< pr->sampletime << std::endl;
         int tracenum = window->chan2trace(pr->channum);
         if (tracenum >= 0) {
-            if (pr->presamples != presamples || pr->nsamples != nsamples) {
-                presamples = pr->presamples;
-                nsamples = pr->nsamples;
-                emit newRecordLengths(nsamples, presamples);
-            }
             if (pr->sampletime != sampletime) {
                 sampletime = pr->sampletime;
                 emit newSampleTime(sampletime);
