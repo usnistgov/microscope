@@ -255,7 +255,7 @@ void refreshPlots::refreshSpectrumPlots()
             for (int i=0; i<nfreq; i++) {
                 fft[i] = sqrt((*psdData)[i]);
             }
-            emit newDataToPlot(trace, frequencies, *psdData, 1.0, mVPerArb);
+            emit newDataToPlot(trace, frequencies, fft, 1.0, mVPerArb);
         }
     }
 }
