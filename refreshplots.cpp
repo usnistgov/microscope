@@ -198,12 +198,12 @@ void refreshPlots::refreshStandardPlots()
         if (averaging) {
             pulseRecord *mean = pulseHistories[trace]->meanRecord();
             if (mean != NULL)
-                emit newDataToPlot(trace, mean);
+                emit newDataToPlot(trace, mean->data, mean->presamples, mean->voltsperarb*1000);
             delete mean;
         } else {
             pulseRecord *record = pulseHistories[trace]->newestRecord();
             if (record != NULL)
-                emit newDataToPlot(trace, record);
+                emit newDataToPlot(trace, record->data, record->presamples, record->voltsperarb*1000);
         }
     }
 }
@@ -225,16 +225,16 @@ void refreshPlots::refreshSpectrumPlots()
             continue;
         lastSerial[trace] = pulseHistories[trace]->uses();
 
-        const QVector<double> *record;
+        const QVector<double> *psdData;
         if (averaging) {
-            record = pulseHistories[trace]->meanPSD();
+            psdData = pulseHistories[trace]->meanPSD();
         } else {
-            record = pulseHistories[trace]->newestPSD();
+            psdData = pulseHistories[trace]->newestPSD();
         }
-        if (record == NULL)
+        if (psdData == NULL)
             continue;
 
-        const int nfreq = record->size();
+        const int nfreq = psdData->size();
         const double freq_step = 1e3/(ms_per_sample * pulseHistories[trace]->samples());
         if (nfreq != frequencies.size() || freq_step != last_freq_step) {
             frequencies.resize(nfreq);
@@ -242,18 +242,20 @@ void refreshPlots::refreshSpectrumPlots()
                 frequencies[i] = i * freq_step;
             last_freq_step = freq_step;
         }
-        freqRec = pulseRecord(frequencies);
+
+        double mVPerArb = 1.0;
+        pulseRecord *pr = pulseHistories[trace]->newestRecord();
+        if (pr != NULL)
+            mVPerArb = 1000 * pr->voltsperarb;
 
         if (isPSD) {
-            yrec = pulseRecord(*record);
-            emit newDataToPlot(trace, &freqRec, &yrec);
+            emit newDataToPlot(trace, frequencies, *psdData, 1.0, mVPerArb*mVPerArb);
         } else {
             QVector<double> fft(nfreq);
             for (int i=0; i<nfreq; i++) {
-                fft[i] = sqrt((*record)[i]);
+                fft[i] = sqrt((*psdData)[i]);
             }
-            yrec = pulseRecord(fft);
-            emit newDataToPlot(trace, &freqRec, &yrec);
+            emit newDataToPlot(trace, frequencies, *psdData, 1.0, mVPerArb);
         }
     }
 }
@@ -363,7 +365,7 @@ void refreshPlots::refreshTimeseriesPlots()
 //        QVector<double> xqv(0);
 //        QVector<double> yqv(0);
 //        hist->getContents(xqv, yqv);
-//        emit newDataToPlot(trace, xqv, yqv);
+//        emit newDataToPlot(trace, xqv, yqv, 1.0, 1.0);
 //    }
 //}
 

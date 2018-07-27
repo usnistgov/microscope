@@ -78,11 +78,11 @@ public:
 
 signals:
     /// Signal that a QVector is ready to plot
-    void newDataToPlot(int channum, const pulseRecord *pr);
+    void newDataToPlot(int channum, const QVector<double> &ydata, int pre, double mVPerArb);
 
     /// Signal that a y vs x pair of QVectors are ready to plot
-    void newDataToPlot(int channum, const pulseRecord *xdata,
-                       const pulseRecord *ydata);
+    void newDataToPlot(int channum, const QVector<double> &xdata,
+                       const QVector<double> &ydata, double xmVPerArb, double ymVPerArb);
 
     /// Signal that additional data in an (y vs x) pair of QVectors are ready to plot
     void addDataToPlot(int channum, const QVector<double> &xdata,
