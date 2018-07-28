@@ -87,9 +87,9 @@ public:
 
 public slots:
     void updateQuickSelect(int nrows, int ncols);
-    void newPlotTrace(int tracenum, const pulseRecord *ydata);
-    void newPlotTrace(int tracenum, const pulseRecord *xdata,
-                      const pulseRecord *ydata);
+    void newPlotTrace(int tracenum, const QVector<double> &ydata, int pre, double mVPerArb);
+    void newPlotTrace(int tracenum, const QVector<double> &xdata,
+                      const QVector<double> &ydata, double xmVPerArb, double ymVPerArb);
     void addPlotData(int tracenum, const QVector<double> &xdata,
                       const QVector<double> &data);
     void newSampleTime(double);
