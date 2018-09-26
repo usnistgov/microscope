@@ -21,7 +21,7 @@ To proceed, you will need to have installed:
 On an Ubuntu 16.04 system, this can be accomplished by a command along these lines:
 
 ```
-sudo apt-get install gcc make git qt4-default qt4-qmake libczmq-dev libzmqpp-dev
+sudo apt-get install gcc make git qt4-default qt4-qmake libczmq-dev libzmqpp-dev libfftw3-dev
 # And if you want to work on the program, you probably also want:
 sudo apt-get install qtcreator qtchooser
 ```
