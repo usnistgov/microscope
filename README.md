@@ -31,17 +31,6 @@ sudo apt-get install qtcreator qtchooser
 ```text
 git clone https://github.com/usnistgov/microscope
 cd microscope
-qmake
-make
-./microscope
-```
-
-We still have some confusing issues about Qt4 vs Qt5. If you're on an Ubuntu machine
-that has both versions of Qt, then you might need to clarify that you want Qt4.
-
-```text
-git clone https://github.com/usnistgov/microscope
-cd microscope
 qmake-qt4
 make
 ./microscope
