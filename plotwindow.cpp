@@ -63,8 +63,8 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
     // TODO: figure out how many rows and columns are in the actual data.
     // Unlike matter, we can't just ask the client object. Has to go in packet
     // headers or...? Oh! It could be a command-line argument.
-    nrows = 30; //client->nMuxRows();
-    ncols = 8; //client->nMuxCols();
+    nrows = opt->rows;
+    ncols = opt->cols;
 
     chansocket = new zmq::socket_t(*zmqcontext, ZMQ_PUB);
     try {
