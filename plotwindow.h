@@ -15,10 +15,24 @@
 #include <QActionGroup>
 #include <QColor>
 #include <QSettings>
+#include <QString>
 #include <QVector>
 #include <QWidget>
 #include "qcustomplot.h"
 #include  <zmq.hpp>
+
+class options {
+public:
+    QString appname;
+    QString rname;
+    QString cname;
+    int rows;
+    int cols;
+    bool tdm;
+    bool failed;
+
+    options();
+};
 
 
 namespace Ui {
@@ -78,7 +92,7 @@ class plotWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit plotWindow(zmq::context_t *zmqcontext, QWidget *parent = 0);
+    explicit plotWindow(zmq::context_t *zmqcontext, options *opt, QWidget *parent = 0);
     ~plotWindow();
 
     int chan2trace(int channum);

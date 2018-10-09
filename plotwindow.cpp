@@ -46,7 +46,7 @@ static const QColor plotStandardColors[]={
 /// \param client_in Client object that will supply the data.
 /// \param parent    Qt parent widget
 ///
-plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
+plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent) :
     QMainWindow(parent),
     refreshPlotsThread(NULL),
     ui(new Ui::plotWindow),
@@ -78,8 +78,8 @@ plotWindow::plotWindow(zmq::context_t *context_in, QWidget *parent) :
     setWindowFlags(Qt::Window);
     setAttribute(Qt::WA_DeleteOnClose); // important!
     ui->setupUi(this);
-    QString title("Microscope: microcalorimeter data plots, version %1.%2.%3");
-    setWindowTitle(title.arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_REALLYMINOR));
+    QString title("%1: microcalorimeter data plots, version %2.%3.%4");
+    setWindowTitle(title.arg(opt->appname).arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_REALLYMINOR));
 
     // Build layout with the NUM_TRACES (8?) channel selection spin boxes
     QGridLayout *chanSpinnersLayout = new QGridLayout(0);
