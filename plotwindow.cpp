@@ -60,9 +60,8 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
     ms_per_sample(1),
     zmqcontext(context_in)
 {
-    // TODO: figure out how many rows and columns are in the actual data.
-    // Unlike matter, we can't just ask the client object. Has to go in packet
-    // headers or...? Oh! It could be a command-line argument.
+    // How many rows and columns are in the actual data:
+    // set via a command-line argument.
     nrows = opt->rows;
     ncols = opt->cols;
 
@@ -137,6 +136,14 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
     vp->insertItem(AXIS_POLICY_AUTO, "X range auto");
     vp->insertItem(AXIS_POLICY_EXPANDING, "X range expands");
     vp->insertItem(AXIS_POLICY_FIXED, "X range fixed");
+
+    // Is this an err/FB (TDM) system?
+    if (! opt->tdm) {
+        ui->quickErrComboBox->hide();
+        ui->quickErrLabel->hide();
+        ui->quickFBLabel->setText("Quick select Chan");
+        ui->actionErr_vs_FB->setDisabled(true);
+    }
 
     // Signal-slot connections
     connect(ui->quickChanEdit, SIGNAL(textChanged()),
