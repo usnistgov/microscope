@@ -553,12 +553,13 @@ void plotWindow::updateQuickTypeFromErr(int index)
     if (c1<1)
         return;
 
-    QString quicktext;
-    for (int i=0; i<NUM_TRACES && c1<=c2; i++) {
-        quicktext.append(QString("e%1,").arg(c1++));
+    for (int i=0; i<spinners.size() && c1<=c2; i++) {
+        spinners[i]->setValue(c1++);
     }
-    ui->quickChanEdit->setText(quicktext);
+    for (int i=0; i<checkers.size(); i++)
+        checkers[i]->setChecked(true);
     ui->quickFBComboBox->setCurrentIndex(0);
+    updateQuickTypeText();
 }
 
 
@@ -577,12 +578,13 @@ void plotWindow::updateQuickTypeFromFB(int index)
     if (c1<1)
         return;
 
-    QString quicktext;
-    for (int i=0; i<NUM_TRACES && c1<=c2; i++) {
-        quicktext.append(QString("%1,").arg(c1++));
+    for (int i=0; i<spinners.size() && c1<=c2; i++) {
+        spinners[i]->setValue(c1++);
     }
-    ui->quickChanEdit->setText(quicktext);
+    for (int i=0; i<checkers.size(); i++)
+        checkers[i]->setChecked(false);
     ui->quickErrComboBox->setCurrentIndex(0);
+    updateQuickTypeText();
 }
 
 
@@ -607,7 +609,9 @@ void plotWindow::updateQuickTypeText(void)
         }
     }
     text.chop(1); // remove trailing comma
-    ui->quickChanEdit->setPlainText(text);
+    QString existingText = ui->quickChanEdit->toPlainText();
+    if (text != existingText)
+        ui->quickChanEdit->setPlainText(text);
 }
 
 
@@ -656,8 +660,6 @@ void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
 ///
 void plotWindow::channelChanged(int newChan)
 {
-    ui->quickFBComboBox->setCurrentIndex(0);
-    ui->quickErrComboBox->setCurrentIndex(0);
     QSpinBox *box = static_cast<QSpinBox *>(sender());
     for (int i=0; i<spinners.size(); i++) {
         if (spinners[i] == box) {
@@ -669,7 +671,6 @@ void plotWindow::channelChanged(int newChan)
                     newStreamIndex++;
             }
             subscribeStream(i, newStreamIndex);
-            updateQuickTypeText();
             refreshPlotsThread->changedChannel(i, newStreamIndex);
             QCPGraph *graph = ui->plot->graph(i);
             QVector<double> empty;
@@ -691,8 +692,11 @@ void plotWindow::channelChanged(int newChan)
 ///
 void plotWindow::errStateChanged(bool checked)
 {
-    ui->quickFBComboBox->setCurrentIndex(0);
-    ui->quickErrComboBox->setCurrentIndex(0);
+    if (checked)
+        ui->quickFBComboBox->setCurrentIndex(0);
+    else
+        ui->quickErrComboBox->setCurrentIndex(0);
+
     QCheckBox *box = static_cast<QCheckBox *>(sender());
     for (int i=0; i<checkers.size(); i++) {
         if (checkers[i] == box) {
