@@ -60,16 +60,16 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
     ms_per_sample(1),
     zmqcontext(context_in)
 {
-    // TODO: figure out how many rows and columns are in the actual data.
-    // Unlike matter, we can't just ask the client object. Has to go in packet
-    // headers or...? Oh! It could be a command-line argument.
+    // How many rows and columns are in the actual data:
+    // set via a command-line argument.
     nrows = opt->rows;
     ncols = opt->cols;
+    int nsensors = nrows * ncols;
+    hasErr = opt->tdm;
 
     chansocket = new zmq::socket_t(*zmqcontext, ZMQ_PUB);
     try {
         chansocket->bind(CHANSUBPORT);
-        std::cout << "chansocket publisher connected" << std::endl;
     } catch (zmq::error_t) {
         delete chansocket;
         chansocket = NULL;
@@ -87,7 +87,6 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
     ui->chanSelectLayout->insertLayout(1, chanSpinnersLayout);
 
     for (int i=0; i<NUM_TRACES; i++) {
-
         // Make a label whose color matches our color list
         QString channame("Curve %1");
         QLabel *label = new QLabel(channame.arg(char('A'+i)), this);
@@ -102,17 +101,26 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
         label->setPalette(palette);
 
         QSpinBox *box = new QSpinBox(this);
-        box->setRange(-1, 999);
+        box->setRange(0, nsensors);
         box->setSpecialValueText("--");
-        box->setValue(-1);\
+        box->setValue(0);
         box->setPrefix("Ch ");
         box->setAlignment(Qt::AlignRight);
         spinners.append(box);
-        selectedChannel.append(-1);
+        streamIndex.append(-1);
         connect(box, SIGNAL(valueChanged(int)), this, SLOT(channelChanged(int)));
 
         chanSpinnersLayout->addWidget(label, i, 0);
         chanSpinnersLayout->addWidget(box, i, 1);
+
+        if (opt->tdm) {
+            QCheckBox *check = new QCheckBox(this);
+            QString tt = QString("Curve %1 use error signal").arg(char('A'+i));
+            check->setToolTip(tt);
+            checkers.append(check);
+            connect(check, SIGNAL(toggled(bool)), this, SLOT(errStateChanged(bool)));
+            chanSpinnersLayout->addWidget(check, i, 2);
+        }
     }
 
     // Plot type: make the menu choices be exclusive.
@@ -137,6 +145,14 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
     vp->insertItem(AXIS_POLICY_AUTO, "X range auto");
     vp->insertItem(AXIS_POLICY_EXPANDING, "X range expands");
     vp->insertItem(AXIS_POLICY_FIXED, "X range fixed");
+
+    // Is this an err/FB (TDM) system?
+    if (! hasErr) {
+        ui->quickErrComboBox->hide();
+        ui->quickErrLabel->hide();
+        ui->quickFBLabel->setText("Quick select Chan");
+        ui->actionErr_vs_FB->setDisabled(true);
+    }
 
     // Signal-slot connections
     connect(ui->quickChanEdit, SIGNAL(textChanged()),
@@ -235,9 +251,9 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief The trace number where this channel is now being plotted (or -1 if none).
 ///
-int plotWindow::chan2trace(int channum) {
+int plotWindow::streamnum2trace(int streamnum) {
     for (int i=0; i<NUM_TRACES; i++) {
-        if (channum == selectedChannel[i])
+        if (streamnum == streamIndex[i])
             return i;
     }
     return -1;
@@ -460,15 +476,22 @@ void plotWindow::updateSpinners(void)
         return;
 
     int spin_id = 0;
-    QStringList::const_iterator pstr;
-    for (spin_id = 0, pstr=splitText.constBegin();
-         pstr != splitText.constEnd(); pstr++) {
+    QStringList::iterator pstr;
+    for (spin_id = 0, pstr=splitText.begin();
+         pstr != splitText.end(); pstr++) {
         if (spin_id >= NUM_TRACES)
             break;
         bool ok;
+        bool isErr = false;
+        if (pstr->at(0) == 'e') {
+            isErr = true;
+            pstr->remove(0, 1);
+        }
         int i = pstr->toInt(&ok, 10);
         if (!ok)
-            i = -1;
+            i = 0;
+        if (hasErr)
+            checkers[spin_id]->setChecked(isErr);
         spinners[spin_id++]->setValue(i);
     }
 }
@@ -482,10 +505,12 @@ void plotWindow::updateSpinners(void)
 ///
 void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
 {
-    quickSelectErrChan1.clear();
-    quickSelectErrChan2.clear();
-    quickSelectErrChan1.append(-1);
-    quickSelectErrChan2.append(-1);
+    quickSelectChanMin.clear();
+    quickSelectChanMax.clear();
+    quickSelectChanMin.append(-1);
+    quickSelectChanMax.append(-1);
+    quickSelectFBTexts.append(QString(""));
+    quickSelectErrTexts.append(QString(""));
     ui->quickFBComboBox->clear();
     ui->quickErrComboBox->clear();
     ui->quickFBComboBox->addItem("");
@@ -501,16 +526,30 @@ void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
 
     for (int c=0; c<ncols; c++)
         for (int e=0; e<entries_per_column; e++) {
-            QString text("Col %1: ch %2-%3");
-            int c2 = 2*c*nrows+2*e*entries_per_label;
-            int c3 = c2+2*entries_per_label-2;
+            QString text("%1 %2-%3 (col %4)");
+            int c2 = c*nrows+e*entries_per_label + 1;
+            int c3 = c2+entries_per_label - 1;
             // Don't let the last channel in the list be selected from column c+1!
-            if (c3 >= 2*(c+1)*nrows)
-                c3 = 2*(c+1)*nrows - 2;
-            quickSelectErrChan1.append(c2);
-            quickSelectErrChan2.append(c3);
-            ui->quickFBComboBox->addItem(text.arg(c).arg(c2+1).arg(c3+1));
-            ui->quickErrComboBox->addItem(text.arg(c).arg(c2).arg(c3));
+            if (c3 > (c+1)*nrows)
+                c3 = (c+1)*nrows;
+            quickSelectChanMin.append(c2);
+            quickSelectChanMax.append(c3);
+            QString fb, err;
+            for (int i=c2; i<=c3; i++) {
+                fb.append(QString("%1,").arg(i));
+                err.append(QString("e%1,").arg(i));
+            }
+            fb.chop(1);  // remove trailing comma
+            err.chop(1);
+            // Pad to length 8
+            for (int i=0; i<NUM_TRACES-(c3-c2+1); i++) {
+                fb.append(",-");
+                err.append(",-");
+            }
+            quickSelectFBTexts.append(fb);
+            quickSelectErrTexts.append(err);
+            ui->quickFBComboBox->addItem(text.arg("Ch").arg(c2).arg(c3).arg(c));
+            ui->quickErrComboBox->addItem(text.arg("Err").arg(c2).arg(c3).arg(c));
         }
 }
 
@@ -524,18 +563,7 @@ void plotWindow::updateQuickTypeFromErr(int index)
 {
     if (index <= 0)
         return;
-
-    int c1 = quickSelectErrChan1[index];
-    int c2 = quickSelectErrChan2[index];
-    if (c1<0)
-        return;
-
-    for (int i=0; i<NUM_TRACES && c1<=c2; i++) {
-        spinners[i]->setValue(c1);
-        c1 += 2;
-    }
-    ui->quickFBComboBox->setCurrentIndex(0);
-    updateQuickTypeText();
+    ui->quickChanEdit->setPlainText(quickSelectErrTexts[index]);
 }
 
 
@@ -548,18 +576,7 @@ void plotWindow::updateQuickTypeFromFB(int index)
 {
     if (index <= 0)
         return;
-
-    int c1 = quickSelectErrChan1[index]+1;
-    int c2 = quickSelectErrChan2[index]+1;
-    if (c1<0)
-        return;
-
-    for (int i=0; i<NUM_TRACES && c1<=c2; i++) {
-        spinners[i]->setValue(c1);
-        c1 += 2;
-    }
-    ui->quickErrComboBox->setCurrentIndex(0);
-    updateQuickTypeText();
+    ui->quickChanEdit->setPlainText(quickSelectFBTexts[index]);
 }
 
 
@@ -574,15 +591,73 @@ void plotWindow::updateQuickTypeText(void)
     for (QVector<QSpinBox *>::iterator box=spinners.begin();
          box != spinners.end(); box++) {
         int c = (*box)->value();
-        if (c>=0)
-            text += QString("%1,").arg(c);
-        else
+        if (c>0) {
+            if ((*box)->text().startsWith("Err"))
+                text += QString("e%1,").arg(c);
+            else
+                text += QString("%1,").arg(c);
+        } else {
             text += "-,";
+        }
     }
     text.chop(1); // remove trailing comma
-    ui->quickChanEdit->setPlainText(text);
+    QString existingText = ui->quickChanEdit->toPlainText();
+    if (text != existingText) {
+        ui->quickChanEdit->setPlainText(text);
+        for (int i=1; i<quickSelectFBTexts.size(); i++) {
+            if (text == quickSelectFBTexts[i]) {
+                ui->quickFBComboBox->setCurrentIndex(i);
+                ui->quickErrComboBox->setCurrentIndex(0);
+                return;
+            }
+        }
+        for (int i=1; i<quickSelectErrTexts.size(); i++) {
+            if (text == quickSelectErrTexts[i]) {
+                ui->quickErrComboBox->setCurrentIndex(i);
+                ui->quickFBComboBox->setCurrentIndex(0);
+                return;
+            }
+        }
+        ui->quickFBComboBox->setCurrentIndex(0);
+        ui->quickErrComboBox->setCurrentIndex(0);
+    }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+/// \brief Set up to subscribe to a new stream.
+///
+/// \param tracenum  The trace number on the plot window.
+/// \param newStreamIndex The streamIndex to subscribe to.
+///
+void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
+    int oldStreamIndex = streamIndex[tracenum];
+    streamIndex[tracenum] = newStreamIndex;
+//    std::cout << "Trace " << tracenum << " index: " << oldStreamIndex << "->" <<
+//                 newStreamIndex << std::endl;
+
+    // Signal to dataSubscriber
+    if (newStreamIndex >= 0) {
+        char text[50];
+        snprintf(text, 50, "add %d", newStreamIndex);
+        zmq::message_t msg(text, strlen(text));
+        chansocket->send(msg);
+    }
+
+    // Now unsubscribe the previous channel, first checking that it's not
+    // on the list of streams still being used (by another trace).
+    for (int j=0; j<streamIndex.size(); j++) {
+        if (oldStreamIndex == streamIndex[j]) {
+            return;
+        }
+    }
+    if (oldStreamIndex >= 0) {
+        char text[50];
+        snprintf(text, 50, "rem %d", oldStreamIndex);
+        zmq::message_t msg(text, strlen(text));
+        chansocket->send(msg);
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -594,27 +669,63 @@ void plotWindow::updateQuickTypeText(void)
 ///
 void plotWindow::channelChanged(int newChan)
 {
-    QSpinBox *box = (QSpinBox *)sender();
+    QSpinBox *box = static_cast<QSpinBox *>(sender());
     for (int i=0; i<spinners.size(); i++) {
         if (spinners[i] == box) {
-            int oldChan = selectedChannel[i];
-            selectedChannel[i] = newChan;
-            refreshPlotsThread->changedChannel(i, newChan);
+            bool isErr = false;
+            int newStreamIndex = newChan - 1;
+            if (hasErr) {
+                newStreamIndex *= 2;
+                isErr = checkers[i]->isChecked();
+                if (!isErr)
+                    newStreamIndex++;
+            }
+            subscribeStream(i, newStreamIndex);
+            updateQuickTypeText();
+            refreshPlotsThread->changedChannel(i, newStreamIndex);
             QCPGraph *graph = ui->plot->graph(i);
             QVector<double> empty;
             graph->setData(empty, empty);
+            return;
+        }
+    }
+    std::cout << "Failed plotWindow::channelChanged" <<std::endl;
+}
 
-            // Signal to dataSubscriber
-            char text[50];
-            snprintf(text, 50, "add %d", newChan);
-            zmq::message_t msg(text, strlen(text));
-            chansocket->send(msg);
-            if (oldChan >= 0) {
-                // TODO: check that oldChan is not on another spinner.
-                snprintf(text, 50, "rem %d", oldChan);
-                zmq::message_t msg(text, strlen(text));
-                chansocket->send(msg);
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// \brief Slot when one of the error-state-choosing check boxes changes value.
+///
+/// This method must identify which check box it was, using Qt sender().
+///
+/// \param newChan  The new channel
+///
+void plotWindow::errStateChanged(bool checked)
+{
+    QCheckBox *box = static_cast<QCheckBox *>(sender());
+    for (int i=0; i<checkers.size(); i++) {
+        if (checkers[i] == box) {
+            int oldStreamIndex = streamIndex[i];
+            int newStreamIndex = oldStreamIndex - oldStreamIndex % 2;
+            if (!checked)
+                newStreamIndex++;
+            if (newStreamIndex == oldStreamIndex)
+                return;
+
+            QSpinBox *sb = spinners[i];
+            if (checked) {
+                sb->setPrefix("Err ");
+            } else{
+                sb->setPrefix("Ch ");
             }
+
+            subscribeStream(i, newStreamIndex);
+            updateQuickTypeText();
+            refreshPlotsThread->changedChannel(i, newStreamIndex);
+            QCPGraph *graph = ui->plot->graph(i);
+            QVector<double> empty;
+            graph->setData(empty, empty);
             return;
         }
     }
@@ -952,26 +1063,20 @@ void plotWindow::plotTypeChanged(QAction *action)
     if (is_xvsy) {
         for (int i=0; i<spinners.size(); i++) {
             QSpinBox *box = spinners[i];
-            int idx = box->value();
-            if (idx %2 == 0) {
-                box->setValue(idx+1);
-                selectedChannel[i] = idx+1;
-            }
-            box->setRange(-1, 480-1); // TODO
-//            box->setRange(-1, client->nDataStreams()-1);
-            box->setSingleStep(2);
+            box->setPrefix("Ch ");
+            checkers[i]->setChecked(false);
+        }
+        for (int i=0; i<checkers.size(); i++) {
+            checkers[i]->setEnabled(false);
         }
         ui->quickErrComboBox->setCurrentIndex(0);
         ui->quickErrComboBox->setEnabled(false);
         updateQuickTypeText();
     } else {
-        for (int i=0; i<spinners.size(); i++) {
-            QSpinBox *box = spinners[i];
-            box->setRange(-1, 480-1); // TODO
-//            box->setRange(-1, client->nDataStreams()-1);
-            box->setSingleStep(1);
+        for (int i=0; i<checkers.size(); i++) {
+            checkers[i]->setEnabled(hasErr);
         }
-        ui->quickErrComboBox->setEnabled(true);
+        ui->quickErrComboBox->setEnabled(hasErr);
     }
 
     if (scatter) {
@@ -1176,3 +1281,8 @@ void plotWindow::savePlot()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
+void plotWindow::terminate() {
+    std::cout << "We are terminating the plot window" << std::endl;
+    close();
+}

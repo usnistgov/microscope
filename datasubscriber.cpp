@@ -16,6 +16,9 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin, std::string t
     window(w),
     plotManager(w->refreshPlotsThread),
     zmqcontext(zin),
+    subscriber(NULL),
+    killsocket(NULL),
+    chansocket(NULL),
     tcpdatasource(tcpsourcein),
     sampletime(1.0)
 {
@@ -24,6 +27,8 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin, std::string t
 
     // Do the same to the thread, except deleteLater happens when THREAD (not this) is finished.
     connect(myThread, SIGNAL(started()), this, SLOT(process()));
+
+    connect(this, SIGNAL(failed()), w, SLOT(close()));
     connect(this, SIGNAL(finished()), myThread, SLOT(quit()));
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(myThread, SIGNAL(finished()), myThread, SLOT(deleteLater()));
@@ -91,6 +96,7 @@ void dataSubscriber::process() {
         delete subscriber;
         subscriber = NULL;
         std::cout << "failed!" << std::endl;
+        emit failed();
         return;
     }
 
@@ -98,10 +104,10 @@ void dataSubscriber::process() {
     try {
         killsocket->connect(KILLPORT);
         killsocket->setsockopt(ZMQ_SUBSCRIBE, "Quit", 4);
-        std::cout << "killsocket subscriber connected" << std::endl;
     } catch (zmq::error_t) {
         delete killsocket;
         killsocket = NULL;
+        emit failed();
         return;
     }
 
@@ -109,10 +115,10 @@ void dataSubscriber::process() {
     try {
         chansocket->connect(CHANSUBPORT);
         chansocket->setsockopt(ZMQ_SUBSCRIBE, "", 0);
-        std::cout << "chansocket subscriber connected" << std::endl;
     } catch (zmq::error_t) {
         delete chansocket;
         chansocket = NULL;
+        emit failed();
         return;
     }
 
@@ -158,7 +164,7 @@ void dataSubscriber::process() {
         //           << pr->wordsize <<"-byte words: [";
         // std::cout << pr->data[0] <<", " << pr->data[1] << "... "
         //           << pr->data[pr->nsamples-1] <<"] dT="<< pr->sampletime << std::endl;
-        int tracenum = window->chan2trace(pr->channum);
+        int tracenum = window->streamnum2trace(pr->channum);
         if (tracenum >= 0) {
             if (pr->sampletime != sampletime) {
                 sampletime = pr->sampletime;

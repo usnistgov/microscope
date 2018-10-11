@@ -13,6 +13,7 @@
 #include <vector>
 #include <QAction>
 #include <QActionGroup>
+#include <QCheckBox>
 #include <QColor>
 #include <QSettings>
 #include <QString>
@@ -95,7 +96,7 @@ public:
     explicit plotWindow(zmq::context_t *zmqcontext, options *opt, QWidget *parent = 0);
     ~plotWindow();
 
-    int chan2trace(int channum);
+    int streamnum2trace(int streamnum);
 
     refreshPlots *refreshPlotsThread;    ///< Thread to periodically update traces.
 
@@ -122,9 +123,12 @@ private:
     Ui::plotWindow *ui;                   ///< The underlying GUI form built in Qt Designer
     const static int NUM_TRACES=8;        ///< How many plot curves have their own channel selector
     QVector<QSpinBox *> spinners;         ///< The spin boxes that control which channels are plotted
-    QVector<int> quickSelectErrChan1;     ///< The lowest channel # signified by each comboBox range
-    QVector<int> quickSelectErrChan2;     ///< The highest channel # signified by each comboBox range
-    QVector<int> selectedChannel;         ///< The channel number currently chosen in each spin box
+    QVector<QCheckBox *> checkers;        ///< The check boxes that control which traces are error traces
+    QVector<int> quickSelectChanMin;      ///< The lowest channel # signified by each comboBox range
+    QVector<int> quickSelectChanMax;      ///< The highest channel # signified by each comboBox range
+    QVector<QString> quickSelectFBTexts;  ///< The text signified by each comboBox range
+    QVector<QString> quickSelectErrTexts; ///< The text signified by each comboBox range
+    QVector<int> streamIndex;             ///< The data stream index that selectedChannel corresponds to
     QActionGroup plotMenuActionGroup;     ///< Object that keeps plot type choices exclusive.
     QActionGroup analysisMenuActionGroup; ///< Object that keeps analysis choices exclusive.
     QActionGroup axisMenuActionGroup;     ///< Object that keeps axis choices exclusive.
@@ -139,12 +143,14 @@ private:
     double ms_per_sample;                 ///< Scaling from sample # to ms.
     bool preferVisibleMinMaxRange;        ///< Whether user wants min/max/range boxes visible
     bool preferYaxisRawUnits;             ///< Whether user wants raw units on y axis
+    bool hasErr;                          ///< Whether this source has error/FB channels
     zmq::context_t *zmqcontext;
     zmq::socket_t *chansocket;
 
     void startRefresh();
     void rescalePlots(QCPGraph *);
     void closeEvent(QCloseEvent *);
+    void subscribeStream(int tracenum, int newStreamIndex);
 
 private slots:
     void updateSpinners(void);
@@ -152,6 +158,7 @@ private slots:
     void updateQuickTypeFromFB(int);
     void updateQuickTypeText();
     void channelChanged(int);
+    void errStateChanged(bool);
     void pausePressed(bool);
     void yAxisLog(bool);
     void xAxisLog(bool);
@@ -171,6 +178,7 @@ private slots:
     void yaxisUnitsChanged(QAction *action);
     void axisDoubleClicked(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*);
     void savePlot(void);
+    void terminate(void);
 };
 
 #endif // PLOTWINDOW_H
