@@ -1056,13 +1056,16 @@ void plotWindow::plotTypeChanged(QAction *action)
             box->setPrefix("Ch ");
             checkers[i]->setChecked(false);
         }
+        for (int i=0; i<checkers.size(); i++) {
+            checkers[i]->setEnabled(false);
+        }
         ui->quickErrComboBox->setCurrentIndex(0);
         ui->quickErrComboBox->setEnabled(false);
         updateQuickTypeText();
     } else {
-//        for (int i=0; i<spinners.size(); i++) {
-//            QSpinBox *box = spinners[i];
-//        }
+        for (int i=0; i<checkers.size(); i++) {
+            checkers[i]->setEnabled(hasErr);
+        }
         ui->quickErrComboBox->setEnabled(hasErr);
     }
 
