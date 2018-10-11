@@ -505,10 +505,12 @@ void plotWindow::updateSpinners(void)
 ///
 void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
 {
-    quickSelectErrChan1.clear();
-    quickSelectErrChan2.clear();
-    quickSelectErrChan1.append(-1);
-    quickSelectErrChan2.append(-1);
+    quickSelectChanMin.clear();
+    quickSelectChanMax.clear();
+    quickSelectChanMin.append(-1);
+    quickSelectChanMax.append(-1);
+    quickSelectFBTexts.append(QString(""));
+    quickSelectErrTexts.append(QString(""));
     ui->quickFBComboBox->clear();
     ui->quickErrComboBox->clear();
     ui->quickFBComboBox->addItem("");
@@ -530,8 +532,22 @@ void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
             // Don't let the last channel in the list be selected from column c+1!
             if (c3 > (c+1)*nrows)
                 c3 = (c+1)*nrows;
-            quickSelectErrChan1.append(c2);
-            quickSelectErrChan2.append(c3);
+            quickSelectChanMin.append(c2);
+            quickSelectChanMax.append(c3);
+            QString fb, err;
+            for (int i=c2; i<=c3; i++) {
+                fb.append(QString("%1,").arg(i));
+                err.append(QString("e%1,").arg(i));
+            }
+            fb.chop(1);  // remove trailing comma
+            err.chop(1);
+            // Pad to length 8
+            for (int i=0; i<NUM_TRACES-(c3-c2+1); i++) {
+                fb.append(",-");
+                err.append(",-");
+            }
+            quickSelectFBTexts.append(fb);
+            quickSelectErrTexts.append(err);
             ui->quickFBComboBox->addItem(text.arg("Ch").arg(c2).arg(c3).arg(c));
             ui->quickErrComboBox->addItem(text.arg("Err").arg(c2).arg(c3).arg(c));
         }
@@ -547,19 +563,7 @@ void plotWindow::updateQuickTypeFromErr(int index)
 {
     if (index <= 0)
         return;
-
-    int c1 = quickSelectErrChan1[index];
-    int c2 = quickSelectErrChan2[index];
-    if (c1<1)
-        return;
-
-    for (int i=0; i<spinners.size() && c1<=c2; i++) {
-        spinners[i]->setValue(c1++);
-    }
-    for (int i=0; i<checkers.size(); i++)
-        checkers[i]->setChecked(true);
-    ui->quickFBComboBox->setCurrentIndex(0);
-    updateQuickTypeText();
+    ui->quickChanEdit->setPlainText(quickSelectErrTexts[index]);
 }
 
 
@@ -572,19 +576,7 @@ void plotWindow::updateQuickTypeFromFB(int index)
 {
     if (index <= 0)
         return;
-
-    int c1 = quickSelectErrChan1[index];
-    int c2 = quickSelectErrChan2[index];
-    if (c1<1)
-        return;
-
-    for (int i=0; i<spinners.size() && c1<=c2; i++) {
-        spinners[i]->setValue(c1++);
-    }
-    for (int i=0; i<checkers.size(); i++)
-        checkers[i]->setChecked(false);
-    ui->quickErrComboBox->setCurrentIndex(0);
-    updateQuickTypeText();
+    ui->quickChanEdit->setPlainText(quickSelectFBTexts[index]);
 }
 
 
@@ -610,8 +602,25 @@ void plotWindow::updateQuickTypeText(void)
     }
     text.chop(1); // remove trailing comma
     QString existingText = ui->quickChanEdit->toPlainText();
-    if (text != existingText)
+    if (text != existingText) {
         ui->quickChanEdit->setPlainText(text);
+        for (int i=1; i<quickSelectFBTexts.size(); i++) {
+            if (text == quickSelectFBTexts[i]) {
+                ui->quickFBComboBox->setCurrentIndex(i);
+                ui->quickErrComboBox->setCurrentIndex(0);
+                return;
+            }
+        }
+        for (int i=1; i<quickSelectErrTexts.size(); i++) {
+            if (text == quickSelectErrTexts[i]) {
+                ui->quickErrComboBox->setCurrentIndex(i);
+                ui->quickFBComboBox->setCurrentIndex(0);
+                return;
+            }
+        }
+        ui->quickFBComboBox->setCurrentIndex(0);
+        ui->quickErrComboBox->setCurrentIndex(0);
+    }
 }
 
 
@@ -663,14 +672,16 @@ void plotWindow::channelChanged(int newChan)
     QSpinBox *box = static_cast<QSpinBox *>(sender());
     for (int i=0; i<spinners.size(); i++) {
         if (spinners[i] == box) {
+            bool isErr = false;
             int newStreamIndex = newChan - 1;
             if (hasErr) {
                 newStreamIndex *= 2;
-                bool isErr = checkers[i]->isChecked();
+                isErr = checkers[i]->isChecked();
                 if (!isErr)
                     newStreamIndex++;
             }
             subscribeStream(i, newStreamIndex);
+            updateQuickTypeText();
             refreshPlotsThread->changedChannel(i, newStreamIndex);
             QCPGraph *graph = ui->plot->graph(i);
             QVector<double> empty;
@@ -692,11 +703,6 @@ void plotWindow::channelChanged(int newChan)
 ///
 void plotWindow::errStateChanged(bool checked)
 {
-    if (checked)
-        ui->quickFBComboBox->setCurrentIndex(0);
-    else
-        ui->quickErrComboBox->setCurrentIndex(0);
-
     QCheckBox *box = static_cast<QCheckBox *>(sender());
     for (int i=0; i<checkers.size(); i++) {
         if (checkers[i] == box) {

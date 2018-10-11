@@ -124,8 +124,10 @@ private:
     const static int NUM_TRACES=8;        ///< How many plot curves have their own channel selector
     QVector<QSpinBox *> spinners;         ///< The spin boxes that control which channels are plotted
     QVector<QCheckBox *> checkers;        ///< The check boxes that control which traces are error traces
-    QVector<int> quickSelectErrChan1;     ///< The lowest channel # signified by each comboBox range
-    QVector<int> quickSelectErrChan2;     ///< The highest channel # signified by each comboBox range
+    QVector<int> quickSelectChanMin;      ///< The lowest channel # signified by each comboBox range
+    QVector<int> quickSelectChanMax;      ///< The highest channel # signified by each comboBox range
+    QVector<QString> quickSelectFBTexts;  ///< The text signified by each comboBox range
+    QVector<QString> quickSelectErrTexts; ///< The text signified by each comboBox range
     QVector<int> streamIndex;             ///< The data stream index that selectedChannel corresponds to
     QActionGroup plotMenuActionGroup;     ///< Object that keeps plot type choices exclusive.
     QActionGroup analysisMenuActionGroup; ///< Object that keeps analysis choices exclusive.
