@@ -3,11 +3,12 @@
 
 #ifndef VERSION_MAJOR
 #define VERSION_MAJOR 0       ///< Major version #
-#define VERSION_MINOR 0       ///< Minor version #
-#define VERSION_REALLYMINOR 3 ///< Version release #
+#define VERSION_MINOR 1       ///< Minor version #
+#define VERSION_REALLYMINOR 0 ///< Version release #
 #endif
 /*
 
+  0.1.0 2018-10 Joe Fowler. Handle TDM/non-TDM separately via command-line args.
   0.0.3 2018-07 Joe Fowler. Fix double-free crashes.
   0.0.2 2018-07 Joe Fowler. Remove unneeded code left from matter.
   0.0.1 2018-07 Joe Fowler. Working towards Dastard 0.1

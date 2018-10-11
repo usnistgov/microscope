@@ -158,7 +158,7 @@ void dataSubscriber::process() {
         //           << pr->wordsize <<"-byte words: [";
         // std::cout << pr->data[0] <<", " << pr->data[1] << "... "
         //           << pr->data[pr->nsamples-1] <<"] dT="<< pr->sampletime << std::endl;
-        int tracenum = window->chan2trace(pr->channum);
+        int tracenum = window->streamnum2trace(pr->channum);
         if (tracenum >= 0) {
             if (pr->sampletime != sampletime) {
                 sampletime = pr->sampletime;
