@@ -176,6 +176,7 @@ private slots:
     void yaxisUnitsChanged(QAction *action);
     void axisDoubleClicked(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*);
     void savePlot(void);
+    void terminate(void);
 };
 
 #endif // PLOTWINDOW_H

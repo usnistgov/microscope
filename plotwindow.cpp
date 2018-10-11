@@ -1268,3 +1268,8 @@ void plotWindow::savePlot()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
+void plotWindow::terminate() {
+    std::cout << "We are terminating the plot window" << std::endl;
+    close();
+}

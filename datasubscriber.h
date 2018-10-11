@@ -27,6 +27,9 @@ signals:
     /// Signal emitted when this object completes (i.e., its destructor is called)
     void finished(void);
 
+    /// Signal emitted when this object fails to run (e.g., cannot reach host)
+    void failed(void);
+
     void newSampleTime(double);
 
     /// Signal that a data vector is ready to plot

@@ -16,6 +16,9 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin, std::string t
     window(w),
     plotManager(w->refreshPlotsThread),
     zmqcontext(zin),
+    subscriber(NULL),
+    killsocket(NULL),
+    chansocket(NULL),
     tcpdatasource(tcpsourcein),
     sampletime(1.0)
 {
@@ -24,6 +27,8 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin, std::string t
 
     // Do the same to the thread, except deleteLater happens when THREAD (not this) is finished.
     connect(myThread, SIGNAL(started()), this, SLOT(process()));
+
+    connect(this, SIGNAL(failed()), w, SLOT(close()));
     connect(this, SIGNAL(finished()), myThread, SLOT(quit()));
     connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
     connect(myThread, SIGNAL(finished()), myThread, SLOT(deleteLater()));
@@ -91,6 +96,7 @@ void dataSubscriber::process() {
         delete subscriber;
         subscriber = NULL;
         std::cout << "failed!" << std::endl;
+        emit failed();
         return;
     }
 
@@ -101,6 +107,7 @@ void dataSubscriber::process() {
     } catch (zmq::error_t) {
         delete killsocket;
         killsocket = NULL;
+        emit failed();
         return;
     }
 
@@ -111,6 +118,7 @@ void dataSubscriber::process() {
     } catch (zmq::error_t) {
         delete chansocket;
         chansocket = NULL;
+        emit failed();
         return;
     }
 
