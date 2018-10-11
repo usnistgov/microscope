@@ -32,13 +32,17 @@ options *processOptions(int argc, char *argv[])
         { "rows", required_argument, NULL, 'r'},
         { "columns", required_argument, NULL, 'c'},
         { "no-error-channel", no_argument, NULL, 'n'},
+        { "help", no_argument, NULL, 'h'},
         { NULL, 0, NULL, 0 }
     };
 
     int ch;
     QString name;
-    while ((ch = getopt_long(argc, argv, "na:r:c:", longopts, 0)) != -1) {
+    while ((ch = getopt_long(argc, argv, "hna:r:c:", longopts, 0)) != -1) {
         switch (ch) {
+        case 'h':
+            Opt->failed = true;
+            return Opt;
         case 'n':
             Opt->tdm = false;
             break;
@@ -65,8 +69,11 @@ options *processOptions(int argc, char *argv[])
 
 
 void usage() {
-    std::cerr << "Usage: microscope [--no-error-channel/-n] [--appname AppName/-a AppName]\n"
-                 "       -c8 -r28 tcp://localhost:5502" << std::endl;
+    std::cerr << "Usage: microscope [options] -c8 -r28 tcp://localhost:5502\n"
+              << "Options include:\n"
+              << "     -h, --help              Print this help message\n"
+              << "     -n, --no-error-channel  This is a non-TDM system and has no error channels\n"
+              << "     -a, --appname AppName   Change the app name on the window title bar\n" << std::endl;
 }
 
 

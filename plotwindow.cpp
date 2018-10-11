@@ -70,7 +70,6 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
     chansocket = new zmq::socket_t(*zmqcontext, ZMQ_PUB);
     try {
         chansocket->bind(CHANSUBPORT);
-        std::cout << "chansocket publisher connected" << std::endl;
     } catch (zmq::error_t) {
         delete chansocket;
         chansocket = NULL;

@@ -98,7 +98,6 @@ void dataSubscriber::process() {
     try {
         killsocket->connect(KILLPORT);
         killsocket->setsockopt(ZMQ_SUBSCRIBE, "Quit", 4);
-        std::cout << "killsocket subscriber connected" << std::endl;
     } catch (zmq::error_t) {
         delete killsocket;
         killsocket = NULL;
@@ -109,7 +108,6 @@ void dataSubscriber::process() {
     try {
         chansocket->connect(CHANSUBPORT);
         chansocket->setsockopt(ZMQ_SUBSCRIBE, "", 0);
-        std::cout << "chansocket subscriber connected" << std::endl;
     } catch (zmq::error_t) {
         delete chansocket;
         chansocket = NULL;
