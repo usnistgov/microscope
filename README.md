@@ -59,7 +59,7 @@ forever. It will point to the executable file and continue to point at any file
 that replaces it by the same name in the same directory:
 
 ```
-sudo ln -s microscope /usr/local/bin
+sudo ln -s /home/pcuser/microscope/microscope /usr/local/bin/
 ```
 
 **Check that it worked** Now change to an arbitrary directory and make sure you can 
