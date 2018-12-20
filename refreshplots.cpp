@@ -59,7 +59,7 @@ refreshPlots::refreshPlots(int msec_period) :
 
     fftMaster = new FFTMaster;
 
-    const int PULSES_TO_STORE=8;
+    const int PULSES_TO_STORE=50;
     pulseHistories.reserve(INITIAL_TRACES);
     for (int i=0; i<INITIAL_TRACES; i++) {
         pulseHistory *h = new pulseHistory(PULSES_TO_STORE, fftMaster);
