@@ -29,6 +29,8 @@ macx {
   QMAKE_LINK = /opt/local/bin/g++
   QMAKE_CFLAGS_X86_64 -= -Xarch_x86_64
   QMAKE_CXXFLAGS_X86_64 -= -Xarch_x86_64
+  QMAKE_CXXFLAGS -= -stdlib=libc++
+  QMAKE_LFLAGS -= -stdlib=libc++
   QMAKE_LFLAGS_X86_64 -= -Xarch_x86_64
   QMAKE_CFLAGS += -I/opt/local/include
   QMAKE_CXXFLAGS += -I/opt/local/include
