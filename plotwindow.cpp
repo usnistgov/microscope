@@ -227,7 +227,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
 
     // Restore relevant settings.
     mscopeSettings = new QSettings();
-    preferVisibleMinMaxRange = mscopeSettings->value("plots/visibleMinMaxRange",true).toBool();
+    preferVisibleMinMaxRange = mscopeSettings->value("plots/visibleMinMaxRange",false).toBool();
     preferYaxisRawUnits = mscopeSettings->value("plots/yaxisRawUnits", true).toBool();
 
     if (preferVisibleMinMaxRange)
