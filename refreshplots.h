@@ -92,6 +92,7 @@ public slots:
     virtual void workQuantum(void);
     void receiveNewData(int tracenum, pulseRecord *pr);
     void toggledAveraging(bool doAvg);
+    void nAverageChanged(int);
     void toggledDFTing(bool dft);
     void newSampleTime(double);
 
@@ -110,6 +111,7 @@ private:
     bool isFFT;                       ///< Are we plotting FFT (sqrt of PSD)?
     bool isTimeseries;                ///< Are we plotting a timeseries?
     bool averaging;                   ///< Do we average stored data before plotting
+    int  nAverage;                    ///< How many traces to average when we average?
     bool doingDFT;                    ///< Do we do DFT of data?
     enum analysisFields analysisType; ///< What analysis field to plot?
     struct timeval time_zero;         ///< In a timeseries, what time is plotted as t=0?

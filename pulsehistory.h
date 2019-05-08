@@ -23,9 +23,9 @@ public:
     void insertRecord(pulseRecord *pr);
     void clearAllData();
     pulseRecord *newestRecord() const;
-    pulseRecord *meanRecord();
+    pulseRecord *meanRecord(int);
     QVector<double> *newestPSD() const;
-    QVector<double> *meanPSD();
+    QVector<double> *meanPSD(int);
     int  size() const;
     int  uses() const {return nstored;}
     int  samples() const {return nsamples;}

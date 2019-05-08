@@ -31,7 +31,7 @@ void pulseHistory::clearAllData() {
     pulse_rms.clear();
     pulse_time.clear();
 
-    const int RESERVE=32; // reserve space for this many values
+    const int RESERVE=32; // reserve space for this many values (can max averages be larger than this?)
     pulse_average.reserve(RESERVE);
     pulse_peak.reserve(RESERVE);
     pulse_rms.reserve(RESERVE);
@@ -135,7 +135,7 @@ QVector<double> *pulseHistory::newestPSD() const {
 /// \brief Compute and return the mean of all stored records.
 /// \return
 ///
-pulseRecord *pulseHistory::meanRecord() {
+pulseRecord *pulseHistory::meanRecord(int nAverage) {
     pulseRecord *last = records.back();
     if (last == NULL) {
         return NULL;
@@ -145,7 +145,7 @@ pulseRecord *pulseHistory::meanRecord() {
 
     int nused = 0;
     lock.lock();
-    for (int i=0; i<records.size(); i++) {
+    for (int i=0; (i<records.size() && i<nAverage); i++) {
         if (records[i]->nsamples <= nsamples) {
             for (int j=0; j<nsamples; j++)
                 (*mean)[j] += records[i]->data[j];
@@ -160,7 +160,6 @@ pulseRecord *pulseHistory::meanRecord() {
     }
     pulseRecord *result = new pulseRecord(*last);
     result->data = *mean;
-    // delete?
     delete mean;
     return result;
 }
@@ -170,7 +169,7 @@ pulseRecord *pulseHistory::meanRecord() {
 /// \brief pulseHistory::meanPSD
 /// \return
 ///
-QVector<double> *pulseHistory::meanPSD() {
+QVector<double> *pulseHistory::meanPSD(int nAverage) {
     QVector<double> *last = spectra.back();
     if (last == NULL) {
         return NULL;
@@ -183,7 +182,7 @@ QVector<double> *pulseHistory::meanPSD() {
 
     int nused = 0;
     lock.lock();
-    for (int i=0; i<spectra.size(); i++) {
+    for (int i=0; (i<spectra.size() && i<nAverage); i++) {
         if (spectra[i]->size() == nfreq) {
             for (int j=0; j<nfreq; j++)
                 mean_psd[j] += (*spectra[i])[j];

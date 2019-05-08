@@ -277,8 +277,8 @@ void plotWindow::startRefresh(void) {
             this, SLOT(addPlotData(int, const QVector<double> &, const QVector<double> &)));
 
     connect(ui->averageTraces, SIGNAL(toggled(bool)), refreshPlotsThread, SLOT(toggledAveraging(bool)));
+    connect(ui->spinBox_nAverage, SIGNAL(valueChanged(int)), refreshPlotsThread, SLOT(nAverageChanged(int)));
     connect(this, SIGNAL(doDFT(bool)), refreshPlotsThread, SLOT(toggledDFTing(bool)));
-
     connect(ui->clearDataButton, SIGNAL(clicked()), refreshPlotsThread, SLOT(clearStoredData()));
 }
 
@@ -691,6 +691,7 @@ void plotWindow::channelChanged(int newChan)
     }
     std::cout << "Failed plotWindow::channelChanged" <<std::endl;
 }
+
 
 
 
