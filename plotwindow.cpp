@@ -227,7 +227,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
 
     // Restore relevant settings.
     mscopeSettings = new QSettings();
-    preferVisibleMinMaxRange = mscopeSettings->value("plots/visibleMinMaxRange",false).toBool();
+    preferVisibleMinMaxRange = mscopeSettings->value("plots/visibleMinMaxRange",true).toBool();
     preferYaxisRawUnits = mscopeSettings->value("plots/yaxisRawUnits", true).toBool();
 
     if (preferVisibleMinMaxRange)
@@ -277,8 +277,8 @@ void plotWindow::startRefresh(void) {
             this, SLOT(addPlotData(int, const QVector<double> &, const QVector<double> &)));
 
     connect(ui->averageTraces, SIGNAL(toggled(bool)), refreshPlotsThread, SLOT(toggledAveraging(bool)));
+    connect(ui->spinBox_nAverage, SIGNAL(valueChanged(int)), refreshPlotsThread, SLOT(nAverageChanged(int)));
     connect(this, SIGNAL(doDFT(bool)), refreshPlotsThread, SLOT(toggledDFTing(bool)));
-
     connect(ui->clearDataButton, SIGNAL(clicked()), refreshPlotsThread, SLOT(clearStoredData()));
 }
 
@@ -691,6 +691,7 @@ void plotWindow::channelChanged(int newChan)
     }
     std::cout << "Failed plotWindow::channelChanged" <<std::endl;
 }
+
 
 
 

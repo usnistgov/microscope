@@ -34,6 +34,7 @@ refreshPlots::refreshPlots(int msec_period) :
     isFFT(false),
 //    isHistogram(false),
     averaging(false),
+    nAverage(16), // matches the initial value of spinBox_nAverage in QtDesigner
     analysisType(ANALYSIS_PULSE_RMS)
 {
     // Fill the list of channels to be plotted with the no-plot indicator.
@@ -59,10 +60,13 @@ refreshPlots::refreshPlots(int msec_period) :
 
     fftMaster = new FFTMaster;
 
-    const int PULSES_TO_STORE=8;
+    const int PULSES_TO_STORE_AKA_MAX_AVERAGES=128;
+    // needs to match:
+    // RESERVE in pulsehistory.cpp line 34, not totally sure
+    // spinBox_nAverage maximum value, set in QtDesigner as of May 2019
     pulseHistories.reserve(INITIAL_TRACES);
     for (int i=0; i<INITIAL_TRACES; i++) {
-        pulseHistory *h = new pulseHistory(PULSES_TO_STORE, fftMaster);
+        pulseHistory *h = new pulseHistory(PULSES_TO_STORE_AKA_MAX_AVERAGES, fftMaster);
         pulseHistories.append(h);
     }
 }
@@ -123,6 +127,16 @@ void refreshPlots::toggledAveraging(bool doAvg) {
     // Make every plot "expire" by marking it as old.
     for (int trace=0; trace<channels.size(); trace++)
         lastSerial[trace] = -1;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// \brief Slot when nAverage changes
+/// \param nAverage   The new number of traces to average
+void refreshPlots::nAverageChanged(int new_nAverage)
+{
+    nAverage = new_nAverage;
+    return;
 }
 
 
@@ -196,7 +210,7 @@ void refreshPlots::refreshStandardPlots()
         lastSerial[trace] = pulseHistories[trace]->uses();
 
         if (averaging) {
-            pulseRecord *mean = pulseHistories[trace]->meanRecord();
+            pulseRecord *mean = pulseHistories[trace]->meanRecord(nAverage);
             if (mean != NULL)
                 emit newDataToPlot(trace, mean->data, mean->presamples, mean->voltsperarb*1000);
             delete mean;
@@ -227,7 +241,7 @@ void refreshPlots::refreshSpectrumPlots()
 
         const QVector<double> *psdData;
         if (averaging) {
-            psdData = pulseHistories[trace]->meanPSD();
+            psdData = pulseHistories[trace]->meanPSD(nAverage);
         } else {
             psdData = pulseHistories[trace]->newestPSD();
         }
