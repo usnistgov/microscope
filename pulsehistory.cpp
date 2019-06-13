@@ -136,9 +136,9 @@ QVector<double> *pulseHistory::newestPSD() const {
 /// \return
 ///
 pulseRecord *pulseHistory::meanRecord(int nAverage) {
-    pulseRecord *last = records.back();
-    if (last == NULL) {
-        return NULL;
+    pulseRecord *last = newestRecord();
+    if (last == nullptr) {
+        return nullptr;
     }
 
     QVector<double> *mean = new QVector<double>(nsamples, 0.0);
@@ -170,9 +170,9 @@ pulseRecord *pulseHistory::meanRecord(int nAverage) {
 /// \return
 ///
 QVector<double> *pulseHistory::meanPSD(int nAverage) {
-    QVector<double> *last = spectra.back();
-    if (last == NULL) {
-        return NULL;
+    QVector<double> *last = spectra.newestPSD();
+    if (last == nullptr) {
+        return nullptr;
     }
 
     int nfreq = last->size();
