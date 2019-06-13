@@ -38,10 +38,12 @@ public:
     QVector<double> &baseline() {return pulse_baseline;}
 
 private:
-    int queueCapacity; ///< How long the records and spectra queues should be.
-    int nsamples;      ///< How many samples are in the currently stored records.
-    int nstored;       ///< How many records have been stored ever.
-    bool doDFT;        ///< Whether we are actively doing DFTs on each record.
+    int queueCapacity;   ///< How long the records and spectra queues should be.
+    int analysisHardCap; ///< How many analyzed values may be stored.
+    int analysisSoftCap; ///< How many analyzed values will be saved after hitting the hard cap.
+    int nsamples;        ///< How many samples are in the currently stored records.
+    int nstored;         ///< How many records have been stored ever.
+    bool doDFT;          ///< Whether we are actively doing DFTs on each record.
     QQueue<pulseRecord *> records;  ///< The last N pulse records.
     QQueue<QVector<double> *> spectra;  ///< The last N power spectra.
     FFTMaster *fftMaster;

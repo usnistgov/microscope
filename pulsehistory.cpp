@@ -13,6 +13,8 @@
 ///
 pulseHistory::pulseHistory(int capacity, FFTMaster *master) :
     queueCapacity(capacity),
+    analysisHardCap(20000),
+    analysisSoftCap(16000),
     nsamples(0),
     nstored(0),
     doDFT(false),
@@ -31,14 +33,15 @@ void pulseHistory::clearAllData() {
     pulse_rms.clear();
     pulse_time.clear();
 
-    const int RESERVE=32; // reserve space for this many values--a memory optimization tactic
+    const int RESERVE=analysisHardCap; // reserve space for this many values--a memory optimization tactic
+    // Note that the QVector::reserve statements do NOT set a hard limit on the QVector size, but only a
+    // hint to the QVector memory manager.
     pulse_average.reserve(RESERVE);
     pulse_peak.reserve(RESERVE);
     pulse_rms.reserve(RESERVE);
     pulse_time.reserve(RESERVE);
 
     clearQueue();
-    clearSpectra();
 }
 
 
@@ -252,6 +255,14 @@ void pulseHistory::insertRecord(pulseRecord *pr) {
     double prms = sqrt(sumsq/(len-pr->presamples-1));
     lock.unlock();
 
+    if (pulse_average.size() >= analysisHardCap) {
+        const int nval_to_remove = analysisHardCap - analysisSoftCap;
+        pulse_average.remove(0, nval_to_remove);
+        pulse_peak.remove(0, nval_to_remove);
+        pulse_rms.remove(0, nval_to_remove);
+        pulse_time.remove(0, nval_to_remove);
+        pulse_baseline.remove(0, nval_to_remove);
+    }
     pulse_average.append(pavg);
     pulse_peak.append(peak);
     pulse_rms.append(prms);
