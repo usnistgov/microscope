@@ -20,7 +20,7 @@ options::options() :
     tdm(true),
     failed(false)
 {
-  ;
+
 }
 
 options *processOptions(int argc, char *argv[])
@@ -28,17 +28,17 @@ options *processOptions(int argc, char *argv[])
     options *Opt = new(options);
 
     static struct option longopts[] = {
-        { "appname", required_argument, NULL, 'a'},
-        { "rows", required_argument, NULL, 'r'},
-        { "columns", required_argument, NULL, 'c'},
-        { "no-error-channel", no_argument, NULL, 'n'},
-        { "help", no_argument, NULL, 'h'},
-        { NULL, 0, NULL, 0 }
+        { "appname", required_argument, nullptr, 'a'},
+        { "rows", required_argument, nullptr, 'r'},
+        { "columns", required_argument, nullptr, 'c'},
+        { "no-error-channel", no_argument, nullptr, 'n'},
+        { "help", no_argument, nullptr, 'h'},
+        { nullptr, 0, nullptr, 0 }
     };
 
     int ch;
     QString name;
-    while ((ch = getopt_long(argc, argv, "hna:r:c:", longopts, 0)) != -1) {
+    while ((ch = getopt_long(argc, argv, "hna:r:c:", longopts, nullptr)) != -1) {
         switch (ch) {
         case 'h':
             Opt->failed = true;
@@ -111,9 +111,9 @@ int main(int argc, char *argv[])
     zmq::socket_t *killsocket = new zmq::socket_t(zmqcontext, ZMQ_PUB);
     try {
        killsocket->bind(KILLPORT);
-    } catch (zmq::error_t) {
+    } catch (zmq::error_t&) {
         delete killsocket;
-        killsocket = NULL;
+        killsocket = nullptr;
         std::cerr << "Could not bind a socket to " << KILLPORT << std::endl;
         return 0;
     }

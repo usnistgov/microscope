@@ -43,9 +43,9 @@ either even or odd N: the input and output arrays are the same length.
 /// \brief FFTComputer::FFTComputer
 ///
 FFTComputer::FFTComputer() :
-    fftIn(NULL),
-    fftOut(NULL),
-    window(NULL),
+    fftIn(nullptr),
+    fftOut(nullptr),
+    window(nullptr),
     plan_made(false)
 {
 }
@@ -62,8 +62,9 @@ void FFTComputer::prepare(int length_in) {
 
     // allocate space for the various arrays
     window = new double[length];
-    fftIn = (double*) fftw_malloc(sizeof(double) * length);
-    fftOut = (double*) fftw_malloc(sizeof(double) * length);
+    unsigned long malloc_requirement = sizeof(double) * static_cast<unsigned long>(length);
+    fftIn = static_cast<double *>(fftw_malloc(malloc_requirement));
+    fftOut = static_cast<double *>(fftw_malloc(malloc_requirement));
 
     // create a new plan (a function from the fftw3 library)
     plan = fftw_plan_r2r_1d(

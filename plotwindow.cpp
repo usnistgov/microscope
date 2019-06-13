@@ -48,7 +48,7 @@ static const QColor plotStandardColors[]={
 ///
 plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent) :
     QMainWindow(parent),
-    refreshPlotsThread(NULL),
+    refreshPlotsThread(nullptr),
     ui(new Ui::plotWindow),
     plotMenuActionGroup(this),
     analysisMenuActionGroup(this),
@@ -70,9 +70,9 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
     chansocket = new zmq::socket_t(*zmqcontext, ZMQ_PUB);
     try {
         chansocket->bind(CHANSUBPORT);
-    } catch (zmq::error_t) {
+    } catch (zmq::error_t&) {
         delete chansocket;
-        chansocket = NULL;
+        chansocket = nullptr;
     }
 
     setWindowFlags(Qt::Window);
@@ -82,7 +82,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
     setWindowTitle(title.arg(opt->appname).arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_REALLYMINOR));
 
     // Build layout with the NUM_TRACES (8?) channel selection spin boxes
-    QGridLayout *chanSpinnersLayout = new QGridLayout(0);
+    QGridLayout *chanSpinnersLayout = new QGridLayout(nullptr);
     chanSpinnersLayout->setSpacing(3);
     ui->chanSelectLayout->insertLayout(1, chanSpinnersLayout);
 
@@ -302,7 +302,7 @@ plotWindow::~plotWindow()
 void plotWindow::closeEvent(QCloseEvent *event)
 {
     delete refreshPlotsThread;
-    refreshPlotsThread = NULL;
+    refreshPlotsThread = nullptr;
     QMainWindow::closeEvent(event);
 }
 
@@ -322,7 +322,7 @@ void plotWindow::newPlotTrace(int tracenum, const QVector<double> &ydata, int pr
     const int nsamples = ydata.size();
     const int si_size = sampleIndex.size();
     sampleIndex.resize(nsamples);
-    if (sampleIndex[0] != -pre) {
+    if (static_cast<int>(sampleIndex[0]) != -pre) {
         for (int i=0; i<nsamples; i++)
             sampleIndex[i] = i-pre;
     } else if (si_size < nsamples) {
@@ -449,7 +449,7 @@ void plotWindow::addPlotData(int tracenum, const QVector<double> &xdata,
 ///
 void plotWindow::newSampleTime(double dt)
 {
-    if (dt*1000. == ms_per_sample)
+    if (approx_equal(dt*1000., ms_per_sample, 1e-5))
         return;
     ms_per_sample = dt*1000.;
     updateXAxisRange(ui->plot->xAxis->range());

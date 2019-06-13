@@ -13,6 +13,7 @@
 #include <math.h>
 
 #include "fftcomputer.h"
+#include "microscope.h"
 #include "periodicupdater.h"
 #include "pulsehistory.h"
 #include "refreshplots.h"
@@ -48,7 +49,7 @@ refreshPlots::refreshPlots(int msec_period) :
         lastSerial[i] = -1;
 
     // Let plots have time-zero reference of now, rounded down to next exact hour
-    gettimeofday(&time_zero, NULL);
+    gettimeofday(&time_zero, nullptr);
     time_zero.tv_usec = 0;
     time_zero.tv_sec -= time_zero.tv_sec%3600;
 
@@ -95,7 +96,7 @@ void refreshPlots::receiveNewData(int tracenum, pulseRecord *pr) {
     if (tracenum < 0 || tracenum >= pulseHistories.size())
         return;
     struct timeval now;
-    gettimeofday(&now, NULL);
+    gettimeofday(&now, nullptr);
     pr->dtime = now.tv_sec-time_zero.tv_sec + now.tv_usec*1e-6;
     pulseHistories[tracenum]->insertRecord(pr);
 }
@@ -107,7 +108,7 @@ void refreshPlots::receiveNewData(int tracenum, pulseRecord *pr) {
 ///
 void refreshPlots::newSampleTime(double dt)
 {
-    if (dt*1000. == ms_per_sample)
+    if (approx_equal(dt*1000., ms_per_sample, 1e-5))
         return;
     ms_per_sample = dt*1000.;
     frequencies.clear();
@@ -211,13 +212,13 @@ void refreshPlots::refreshStandardPlots()
 
         if (averaging) {
             pulseRecord *mean = pulseHistories[trace]->meanRecord(nAverage);
-            if (mean != NULL)
-                emit newDataToPlot(trace, mean->data, mean->presamples, mean->voltsperarb*1000);
+            if (mean != nullptr)
+                emit newDataToPlot(trace, mean->data, mean->presamples, mean->voltsperarb*1000.);
             delete mean;
         } else {
             pulseRecord *record = pulseHistories[trace]->newestRecord();
-            if (record != NULL)
-                emit newDataToPlot(trace, record->data, record->presamples, record->voltsperarb*1000);
+            if (record != nullptr)
+                emit newDataToPlot(trace, record->data, record->presamples, record->voltsperarb*1000.);
         }
     }
 }
@@ -245,12 +246,12 @@ void refreshPlots::refreshSpectrumPlots()
         } else {
             psdData = pulseHistories[trace]->newestPSD();
         }
-        if (psdData == NULL)
+        if (psdData == nullptr)
             continue;
 
         const int nfreq = psdData->size();
         const double freq_step = 1e3/(ms_per_sample * pulseHistories[trace]->samples());
-        if (nfreq != frequencies.size() || freq_step != last_freq_step) {
+        if (nfreq != frequencies.size() || !approx_equal(freq_step, last_freq_step, 1e-5)) {
             frequencies.resize(nfreq);
             for (int i=0; i<nfreq; i++)
                 frequencies[i] = i * freq_step;
@@ -259,8 +260,8 @@ void refreshPlots::refreshSpectrumPlots()
 
         double mVPerArb = 1.0;
         pulseRecord *pr = pulseHistories[trace]->newestRecord();
-        if (pr != NULL)
-            mVPerArb = 1000 * pr->voltsperarb;
+        if (pr != nullptr)
+            mVPerArb = 1000 * double(pr->voltsperarb);
 
         if (isPSD) {
             emit newDataToPlot(trace, frequencies, *psdData, 1.0, mVPerArb*mVPerArb);
@@ -560,7 +561,7 @@ void Histogram::clear()
 ///
 int Histogram::update(double value)
 {
-    int bin= 1 + (value-lower) * invBinWidth;
+    int bin= 1 + int((value-lower) * invBinWidth);
     if (bin <= 0)
         nUnder++;
     else if (bin >= nbins-1)

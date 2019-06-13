@@ -60,13 +60,13 @@ pulseRecord::pulseRecord(const QVector<double> &data_in) :
     presamples(0),
     wordsize(2),
     sampletime(0.),
-    voltsperarb(.0001),
+    voltsperarb(.0001f),
     nsamples(data_in.size()),
     time_nsec(0),
     serialnumber(0),
     dtime(1e9),
     data(data_in) {
-    ;
+
 }
 
 pulseRecord::pulseRecord() :
@@ -74,18 +74,18 @@ pulseRecord::pulseRecord() :
     presamples(0),
     wordsize(2),
     sampletime(0.),
-    voltsperarb(.0001),
+    voltsperarb(.0001f),
     nsamples(0),
     time_nsec(0),
     serialnumber(0),
     dtime(1e9),
     data() {
-    ;
+
 }
 
 
 
 pulseRecord::~pulseRecord() {
-    ;
+
 }
 

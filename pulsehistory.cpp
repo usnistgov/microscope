@@ -18,7 +18,7 @@ pulseHistory::pulseHistory(int capacity, FFTMaster *master) :
     doDFT(false),
     fftMaster(master)
 {
-    ;
+
 }
 
 
@@ -115,7 +115,7 @@ void pulseHistory::setDoDFT(bool dft) {
 ///
 pulseRecord *pulseHistory::newestRecord() const {
     if (records.isEmpty())
-        return NULL;
+        return nullptr;
     return records.back();
 }
 
@@ -126,7 +126,7 @@ pulseRecord *pulseHistory::newestRecord() const {
 ///
 QVector<double> *pulseHistory::newestPSD() const {
     if (spectra.isEmpty())
-        return NULL;
+        return nullptr;
     return spectra.back();
 }
 
@@ -170,7 +170,7 @@ pulseRecord *pulseHistory::meanRecord(int nAverage) {
 /// \return
 ///
 QVector<double> *pulseHistory::meanPSD(int nAverage) {
-    QVector<double> *last = spectra.newestPSD();
+    QVector<double> *last = newestPSD();
     if (last == nullptr) {
         return nullptr;
     }

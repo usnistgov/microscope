@@ -16,9 +16,9 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin, std::string t
     window(w),
     plotManager(w->refreshPlotsThread),
     zmqcontext(zin),
-    subscriber(NULL),
-    killsocket(NULL),
-    chansocket(NULL),
+    subscriber(nullptr),
+    killsocket(nullptr),
+    chansocket(nullptr),
     tcpdatasource(tcpsourcein),
     sampletime(1.0)
 {
@@ -56,16 +56,16 @@ dataSubscriber::~dataSubscriber() {
 
 
 void dataSubscriber::subscribeChannel(int channum) {
-    if (subscriber == 0)
+    if (subscriber == nullptr)
         return;
-    uint16_t filternumber = channum;
+    uint16_t filternumber = static_cast<uint16_t>(channum);
     const char *filter = reinterpret_cast<char *>(&filternumber);
     subscriber->setsockopt(ZMQ_SUBSCRIBE, filter, sizeof(filternumber));
 //    std::cout << "Subscribed chan " << channum << std::endl;
 }
 
 void dataSubscriber::unsubscribeChannel(int channum) {
-    if (subscriber == 0)
+    if (subscriber == nullptr)
         return;
     const char *filter = reinterpret_cast<char *>(&channum);
     subscriber->setsockopt(ZMQ_UNSUBSCRIBE, filter, sizeof(int));
@@ -92,9 +92,9 @@ void dataSubscriber::process() {
     try {
         subscriber->connect(tcpdatasource.c_str());
         std::cout << "done!" << std::endl;
-    } catch (zmq::error_t) {
+    } catch (zmq::error_t&) {
         delete subscriber;
-        subscriber = NULL;
+        subscriber = nullptr;
         std::cout << "failed!" << std::endl;
         emit failed();
         return;
@@ -104,9 +104,9 @@ void dataSubscriber::process() {
     try {
         killsocket->connect(KILLPORT);
         killsocket->setsockopt(ZMQ_SUBSCRIBE, "Quit", 4);
-    } catch (zmq::error_t) {
+    } catch (zmq::error_t&) {
         delete killsocket;
-        killsocket = NULL;
+        killsocket = nullptr;
         emit failed();
         return;
     }
@@ -115,9 +115,9 @@ void dataSubscriber::process() {
     try {
         chansocket->connect(CHANSUBPORT);
         chansocket->setsockopt(ZMQ_SUBSCRIBE, "", 0);
-    } catch (zmq::error_t) {
+    } catch (zmq::error_t&) {
         delete chansocket;
-        chansocket = NULL;
+        chansocket = nullptr;
         emit failed();
         return;
     }
@@ -166,8 +166,8 @@ void dataSubscriber::process() {
         //           << pr->data[pr->nsamples-1] <<"] dT="<< pr->sampletime << std::endl;
         int tracenum = window->streamnum2trace(pr->channum);
         if (tracenum >= 0) {
-            if (pr->sampletime != sampletime) {
-                sampletime = pr->sampletime;
+            if (!approx_equal(pr->sampletime, sampletime, 1e-5)) {
+                sampletime = double(pr->sampletime);
                 emit newSampleTime(sampletime);
             }
             emit newDataToPlot(tracenum, pr);

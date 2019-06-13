@@ -17,8 +17,8 @@ public:
     int channum;
     int presamples;
     int wordsize;
-    float sampletime;
-    float voltsperarb;
+    double sampletime;
+    double voltsperarb;
     int nsamples;
     uint64_t time_nsec;
     uint64_t serialnumber;

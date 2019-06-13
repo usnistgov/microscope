@@ -19,7 +19,7 @@
 /// \param msec  Period of refresh, in milliseconds.
 ///
 periodicUpdater::periodicUpdater(int msec) :
-    calls(0), myThread(NULL)
+    calls(0), myThread(nullptr)
 {
     timer = new QTimer;
     myThread = new QThread;
