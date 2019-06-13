@@ -278,8 +278,11 @@ void refreshPlots::refreshSpectrumPlots()
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-/// \brief Called by the run loop once to draw standard (non-spectrum) plots
+/// \brief Called by the run loop once to draw timeseries plots
 ///
+/// Depend on QCustomPlot's addDataToPlot feature. This means infinite points can be
+/// added to the plot, even if our stored memory in pulseHistory is only 20k deep. But
+/// if you switch which analyzed values to plot, only those in pulseHistory get plotted.
 void refreshPlots::refreshTimeseriesPlots()
 {
     for (int trace=0; trace<channels.size(); trace++) {
@@ -396,6 +399,7 @@ void refreshPlots::changedChannel(int traceNumber, int channelNumber)
     if (traceNumber >= channels.size())
         return;
     channels[traceNumber] = channelNumber;
+    lastSerial[traceNumber] = -1;
     pulseHistories[traceNumber]->clearAllData();
 
     //    scratch[traceNumber].clear();
@@ -470,7 +474,12 @@ void refreshPlots::setIsFFT(bool fft)
 ///
 void refreshPlots::setIsTimeseries(bool ts)
 {
+    if (isTimeseries == ts)
+        return;
     isTimeseries = ts;
+    for (int tracenum=0; tracenum < channels.size(); tracenum++) {
+        lastSerial[tracenum] = -1;
+    }
 }
 
 
@@ -486,7 +495,7 @@ void refreshPlots::setAnalysisType(enum analysisFields newType)
 
     analysisType = newType;
     for (int tracenum=0; tracenum < channels.size(); tracenum++) {
-        lastSerial[tracenum] = 0;
+        lastSerial[tracenum] = -1;
 
 //        scratch[tracenum].clear();
 //        histograms[tracenum]->clear();
