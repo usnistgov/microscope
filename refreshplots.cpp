@@ -226,7 +226,7 @@ void refreshPlots::refreshStandardPlots()
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-/// \brief Called by the run loop once to draw standard (non-spectrum) plots
+/// \brief Called by the run loop once to draw spectrum plots
 ///
 void refreshPlots::refreshSpectrumPlots()
 {
