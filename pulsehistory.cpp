@@ -23,6 +23,10 @@ pulseHistory::pulseHistory(int capacity, FFTMaster *master) :
 
 }
 
+pulseHistory::~pulseHistory() {
+    clearAllData();
+}
+
 
 ///
 /// \brief Clear the stored queues of records, power spectra, and analysis.

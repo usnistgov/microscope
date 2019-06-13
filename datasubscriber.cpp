@@ -17,8 +17,6 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin, std::string t
     plotManager(w->refreshPlotsThread),
     zmqcontext(zin),
     subscriber(nullptr),
-    killsocket(nullptr),
-    chansocket(nullptr),
     tcpdatasource(tcpsourcein),
     sampletime(1.0)
 {
@@ -48,9 +46,6 @@ dataSubscriber::dataSubscriber(plotWindow *w, zmq::context_t *zin, std::string t
 /// to the connections made in the constructor.
 ///
 dataSubscriber::~dataSubscriber() {
-    delete chansocket;
-    delete killsocket;
-    delete subscriber;
     emit finished();
 }
 
@@ -100,24 +95,27 @@ void dataSubscriber::process() {
         return;
     }
 
-    killsocket = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
+    zmq::socket_t *killsocket = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
     try {
         killsocket->connect(KILLPORT);
         killsocket->setsockopt(ZMQ_SUBSCRIBE, "Quit", 4);
     } catch (zmq::error_t&) {
+        delete subscriber;
+        subscriber = nullptr;
         delete killsocket;
-        killsocket = nullptr;
         emit failed();
         return;
     }
 
-    chansocket = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
+    zmq::socket_t *chansocket = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
     try {
         chansocket->connect(CHANSUBPORT);
         chansocket->setsockopt(ZMQ_SUBSCRIBE, "", 0);
     } catch (zmq::error_t&) {
+        delete subscriber;
+        subscriber = nullptr;
+        delete killsocket;
         delete chansocket;
-        chansocket = nullptr;
         emit failed();
         return;
     }
@@ -171,9 +169,15 @@ void dataSubscriber::process() {
                 emit newSampleTime(sampletime);
             }
             emit newDataToPlot(tracenum, pr);
+        } else {
+            delete pr;
+//            std::cout << "trace num" << tracenum << std::endl;
         }
     }
-
+    delete subscriber;
+    subscriber = nullptr;
+    delete killsocket;
+    delete chansocket;
     myThread->quit();
 }
 

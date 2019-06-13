@@ -93,8 +93,7 @@ refreshPlots::~refreshPlots()
 /// \param length
 ///
 void refreshPlots::receiveNewData(int tracenum, pulseRecord *pr) {
-    if (tracenum < 0 || tracenum >= pulseHistories.size())
-        return;
+    Q_ASSERT (tracenum >= 0 && tracenum < pulseHistories.size());
     struct timeval now;
     gettimeofday(&now, nullptr);
     pr->dtime = now.tv_sec-time_zero.tv_sec + now.tv_usec*1e-6;

@@ -19,6 +19,7 @@ class pulseHistory
 {
 public:
     pulseHistory(int capacity, FFTMaster *master);
+    ~pulseHistory();
 
     void insertRecord(pulseRecord *pr);
     void clearAllData();

@@ -47,8 +47,6 @@ private:
     refreshPlots *plotManager; ///< Where we send data for plotting
     zmq::context_t *zmqcontext;
     zmq::socket_t *subscriber;
-    zmq::socket_t *killsocket;
-    zmq::socket_t *chansocket;
     std::string tcpdatasource;
 
     void subscribeChannel(int channum);

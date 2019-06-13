@@ -14,8 +14,8 @@ CONFIG += qt thread
 
 LIBS += -lpthread -lfftw3 -lzmq # -lpthread -lX11 -lm -lXext -ldl -lfftw3 -lzmq
 QMAKE_CXXFLAGS += -std=c++0x
-QMAKE_CFLAGS_RELEASE += -O3
-QMAKE_CXXFLAGS_RELEASE += -O3
+QMAKE_CFLAGS_RELEASE += -O3 -g
+QMAKE_CXXFLAGS_RELEASE += -O3 -g
 QMAKE_CFLAGS_DEBUG += -O0
 QMAKE_CXXFLAGS_DEBUG += -O0
 
