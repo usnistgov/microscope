@@ -696,7 +696,7 @@
   </connection>
   <connection>
    <sender>actionSave_plot</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>plotWindow</receiver>
    <slot>savePlot()</slot>
    <hints>

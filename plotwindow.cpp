@@ -638,8 +638,9 @@ void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
 
     // Signal to dataSubscriber
     if (newStreamIndex >= 0) {
-        char text[50];
-        snprintf(text, 50, "add %d", newStreamIndex);
+        char text[10];
+        // terminate message with space b/c of ZMQ message trickery
+        snprintf(text, 10, "add %d ", newStreamIndex);
         zmq::message_t msg(text, strlen(text));
         chansocket->send(msg);
     }
@@ -652,8 +653,8 @@ void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
         }
     }
     if (oldStreamIndex >= 0) {
-        char text[50];
-        snprintf(text, 50, "rem %d", oldStreamIndex);
+        char text[10];
+        snprintf(text, 10, "rem %d ", oldStreamIndex);
         zmq::message_t msg(text, strlen(text));
         chansocket->send(msg);
     }

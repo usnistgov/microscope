@@ -13,12 +13,18 @@
 ///
 pulseHistory::pulseHistory(int capacity, FFTMaster *master) :
     queueCapacity(capacity),
+    analysisHardCap(20000),
+    analysisSoftCap(16000),
     nsamples(0),
     nstored(0),
     doDFT(false),
     fftMaster(master)
 {
 
+}
+
+pulseHistory::~pulseHistory() {
+    clearAllData();
 }
 
 
@@ -31,20 +37,21 @@ void pulseHistory::clearAllData() {
     pulse_rms.clear();
     pulse_time.clear();
 
-    const int RESERVE=32; // reserve space for this many values (can max averages be larger than this?)
+    const int RESERVE=analysisHardCap; // reserve space for this many values--a memory optimization tactic
+    // Note that the QVector::reserve statements do NOT set a hard limit on the QVector size, but only a
+    // hint to the QVector memory manager.
     pulse_average.reserve(RESERVE);
     pulse_peak.reserve(RESERVE);
     pulse_rms.reserve(RESERVE);
     pulse_time.reserve(RESERVE);
 
     clearQueue();
-    clearSpectra();
 }
 
 
 
 ///
-/// \brief Clear the stored queues of records and power spectra\.
+/// \brief Clear the stored queues of records and power spectra.
 ///
 void pulseHistory::clearQueue(int keep) {
     if (keep < 0)
@@ -70,8 +77,8 @@ void pulseHistory::clearSpectra(int keep) {
         keep = 0;
     lock.lock();
     while (spectra.size() > keep) {
-        QVector<double> *r = spectra.dequeue();
-        delete r;
+        QVector<double> *sp = spectra.dequeue();
+        delete sp;
     }
     lock.unlock();
     Q_ASSERT(spectra.size() <= keep);
@@ -141,14 +148,14 @@ pulseRecord *pulseHistory::meanRecord(int nAverage) {
         return nullptr;
     }
 
-    QVector<double> *mean = new QVector<double>(nsamples, 0.0);
+    pulseRecord *result = new pulseRecord(*last);
 
     int nused = 0;
     lock.lock();
     for (int i=0; (i<records.size() && i<nAverage); i++) {
         if (records[i]->nsamples <= nsamples) {
             for (int j=0; j<nsamples; j++)
-                (*mean)[j] += records[i]->data[j];
+                (result->data)[j] += records[i]->data[j];
             nused++;
         }
     }
@@ -156,11 +163,8 @@ pulseRecord *pulseHistory::meanRecord(int nAverage) {
 
     if (nused > 1) {
          for (int j=0; j<nsamples; j++)
-            (*mean)[j] /= nused;
+            (result->data)[j] /= nused;
     }
-    pulseRecord *result = new pulseRecord(*last);
-    result->data = *mean;
-    delete mean;
     return result;
 }
 
@@ -255,6 +259,14 @@ void pulseHistory::insertRecord(pulseRecord *pr) {
     double prms = sqrt(sumsq/(len-pr->presamples-1));
     lock.unlock();
 
+    if (pulse_average.size() >= analysisHardCap) {
+        const int nval_to_remove = analysisHardCap - analysisSoftCap;
+        pulse_average.remove(0, nval_to_remove);
+        pulse_peak.remove(0, nval_to_remove);
+        pulse_rms.remove(0, nval_to_remove);
+        pulse_time.remove(0, nval_to_remove);
+        pulse_baseline.remove(0, nval_to_remove);
+    }
     pulse_average.append(pavg);
     pulse_peak.append(peak);
     pulse_rms.append(prms);
