@@ -778,6 +778,24 @@ void plotWindow::yAxisLog(bool checked)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+/// \brief A slot to force the x-axis to span only positive numbers,
+/// used to ensure switching to FFT spectrum plots works from cases with negative
+/// x-axis values. After that, auto-range should work to reach sensible values.
+///
+void plotWindow::forcePositiveXAxisRange()
+{
+    double a = ui->xminBox->value();
+    double b = ui->xmaxBox->value();
+    if (a <= 0) {
+        a = 0;
+    };
+    if (b <= 0) {
+        b = 1000;
+    };
+    QCPRange newrange = QCPRange(a,b);
+    ui->plot->xAxis->setRange(newrange);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief A slot to fix the upper x axis range (ms) when the lower (sample #)
@@ -995,6 +1013,7 @@ void plotWindow::plotTypeChanged(QAction *action)
         }
         pl->xAxis->setLabel("Frequency (Hz)");
         pl->xAxis2->setVisible(false);
+        forcePositiveXAxisRange();
         line = true;
         break;
 
@@ -1006,6 +1025,7 @@ void plotWindow::plotTypeChanged(QAction *action)
         }
         pl->xAxis->setLabel("Frequency (Hz)");
         pl->xAxis2->setVisible(false);
+        forcePositiveXAxisRange();
         line = true;
         break;
 
