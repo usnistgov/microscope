@@ -124,6 +124,11 @@ int main(int argc, char *argv[])
 
     const char quit[] = "Quit";
     killsocket->send(quit, strlen(quit));
+    // The following will eliminate a certain deprecation message in zmqpp >= version 4.3.1.
+    // But it won't compile at (for example) version 4.1.1.
+    // Someday, we'll have to figure this out.  -Joe Fowler. March 7, 2020.
+    //    zmq::const_buffer Qmsg = zmq::const_buffer(quit, strlen(quit));
+    //    killsocket->send(Qmsg);
 
     sub->wait(1000);
     delete sub;
