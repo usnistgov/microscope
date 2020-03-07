@@ -162,6 +162,7 @@ private slots:
     void pausePressed(bool);
     void yAxisLog(bool);
     void xAxisLog(bool);
+    void forcePositiveXAxisRange();
     void updateXAxisRange(QCPRange);
     void updateYAxisRange(QCPRange);
     void typedXAxisMin(double a);

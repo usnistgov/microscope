@@ -638,9 +638,9 @@ void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
 
     // Signal to dataSubscriber
     if (newStreamIndex >= 0) {
-        char text[10];
+        char text[20];
         // terminate message with space b/c of ZMQ message trickery
-        snprintf(text, 10, "add %d ", newStreamIndex);
+        snprintf(text, 20, "add %d ", newStreamIndex);
         zmq::message_t msg(text, strlen(text));
         chansocket->send(msg);
     }
@@ -653,8 +653,8 @@ void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
         }
     }
     if (oldStreamIndex >= 0) {
-        char text[10];
-        snprintf(text, 10, "rem %d ", oldStreamIndex);
+        char text[20];
+        snprintf(text, 20, "rem %d ", oldStreamIndex);
         zmq::message_t msg(text, strlen(text));
         chansocket->send(msg);
     }
@@ -778,6 +778,24 @@ void plotWindow::yAxisLog(bool checked)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+/// \brief A slot to force the x-axis to span only positive numbers,
+/// used to ensure switching to FFT spectrum plots works from cases with negative
+/// x-axis values. After that, auto-range should work to reach sensible values.
+///
+void plotWindow::forcePositiveXAxisRange()
+{
+    double a = ui->xminBox->value();
+    double b = ui->xmaxBox->value();
+    if (a <= 1e-9) {
+        a = 1e-9;
+    };
+    if (b <= a) {
+        b = a*1000;
+    };
+    QCPRange newrange = QCPRange(a,b);
+    ui->plot->xAxis->setRange(newrange);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief A slot to fix the upper x axis range (ms) when the lower (sample #)
@@ -995,6 +1013,7 @@ void plotWindow::plotTypeChanged(QAction *action)
         }
         pl->xAxis->setLabel("Frequency (Hz)");
         pl->xAxis2->setVisible(false);
+        forcePositiveXAxisRange();
         line = true;
         break;
 
@@ -1006,6 +1025,7 @@ void plotWindow::plotTypeChanged(QAction *action)
         }
         pl->xAxis->setLabel("Frequency (Hz)");
         pl->xAxis2->setVisible(false);
+        forcePositiveXAxisRange();
         line = true;
         break;
 
