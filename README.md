@@ -16,14 +16,24 @@ To proceed, you will need to have installed:
 * git
 * gcc and make (possibly other development tools I'm forgetting?)
 * zmq including zmq.hpp (the C++ binding)
-* Qt4 development libraries (Qt5 might work, but I doubt it)
+* Qt5 (or Qt4) development libraries (we encourage Qt5)
 
 On an Ubuntu 16.04 system, this can be accomplished by a command along these lines:
 
 ```
-sudo apt-get install gcc make git qt4-default qt4-qmake libczmq-dev libzmqpp-dev libfftw3-dev
+sudo apt-get install gcc make git qt5-default qt5-qmake libczmq-dev libzmqpp-dev libfftw3-dev
+# If you really need qt4 for other reasons, then replace the above with:
+# sudo apt-get install gcc make git qt4-default qt4-qmake libczmq-dev libzmqpp-dev libfftw3-dev
 # And if you want to work on the program, you probably also want:
 sudo apt-get install qtcreator qtchooser
+```
+
+On MacPorts, you need something like (probably not all 4 of the following ZMQ ports are
+required, but this is what I have installed at the moment; you can experiment with a
+shorter list):
+```
+sudo port install qt5 qt5-base gcc9 gmake git cppzmq czmq zmq zmqpp fftw-3
+sudo port install qt5-qtcreator
 ```
 
 #### Download and build
@@ -31,10 +41,16 @@ sudo apt-get install qtcreator qtchooser
 ```text
 git clone https://github.com/usnistgov/microscope
 cd microscope
-qmake-qt4
+qmake # (for the system default/preferred Qt version)
+# If you need a specific Qt version, use one of:
+# qmake-qt4
+# qmake-qt5
 make
 ./microscope
 ```
+
+If you used to use Qt4 and want to switch to Qt5, you first should `make clean` then remove the `Makefile`
+generated in the past by the Qt4 version of `qmake` step before running the Qt5 version of `qmake`.
 
 #### Installation
 
@@ -44,7 +60,7 @@ can start it automatically. We have not yet created a `make install` target, bec
 `qmake` is super-confusing, so you have two slightly less convenient choices.
 
 First, check your path with `echo $PATH`.
-In this document, we'll assume that you found `/usr/local/bin` to be on your path.
+In what follows, we'll assume that you found `/usr/local/bin` to be on your path.
 
 **Method A** If you don't expect to update microscope often, then you might as well copy
 the exectuable into your path each time you re-build it, e.g.
