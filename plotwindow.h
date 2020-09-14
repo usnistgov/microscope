@@ -25,14 +25,14 @@
 class options {
 public:
     QString appname;
-    QString rname;
-    QString cname;
     int rows;
     int cols;
     bool tdm;
+    bool indexing;
     bool failed;
 
     options();
+    bool readChanGroups();
 };
 
 

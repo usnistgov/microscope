@@ -13,14 +13,16 @@
 
 options::options() :
     appname("Microscope"),
-    rname("rows"),
-    cname("cols"),
     rows(0),
     cols(0),
     tdm(true),
+    indexing(false),
     failed(false)
 {
+}
 
+bool options::readChanGroups() {
+    return false;
 }
 
 options *processOptions(int argc, char *argv[])
@@ -29,8 +31,9 @@ options *processOptions(int argc, char *argv[])
 
     static struct option longopts[] = {
         { "appname", required_argument, nullptr, 'a'},
-        { "rows", required_argument, nullptr, 'r'},
-        { "columns", required_argument, nullptr, 'c'},
+        { "rows", optional_argument, nullptr, 'r'},
+        { "columns", optional_argument, nullptr, 'c'},
+        { "indexing", no_argument, nullptr, 'i'},
         { "no-error-channel", no_argument, nullptr, 'n'},
         { "help", no_argument, nullptr, 'h'},
         { nullptr, 0, nullptr, 0 }
@@ -49,6 +52,9 @@ options *processOptions(int argc, char *argv[])
         case 'a':
             Opt->appname = QString(optarg);
             break;
+        case 'i':
+            Opt->indexing = true;
+            break;
         case 'r':
             Opt->rows = atoi(optarg);
             break;
@@ -59,9 +65,16 @@ options *processOptions(int argc, char *argv[])
             Opt->failed = true;
         }
     }
+
+    // We can using indexing, read the config file to learn the channel groups, or set rows+cols.
+    if (Opt->indexing) {
+        return Opt;
+    }
     if (Opt->rows==0 || Opt->cols==0) {
+        // if (!Opt->readChanGroups()) {
         std::cerr << "Must set both row and column counts to 1 or more with -rNR -cNC." << std::endl;
         Opt->failed = true;
+        // }
     }
 
     return Opt;
