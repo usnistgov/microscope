@@ -14,6 +14,8 @@ public:
     QString appname;
     int rows;
     int cols;
+    int nchan;
+    int nsensors;
     bool tdm;
     bool indexing;
     bool failed;

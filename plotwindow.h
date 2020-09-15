@@ -15,6 +15,7 @@
 #include <QActionGroup>
 #include <QCheckBox>
 #include <QColor>
+#include <QList>
 #include <QSettings>
 #include <QString>
 #include <QVector>
@@ -88,7 +89,7 @@ public:
     refreshPlots *refreshPlotsThread;    ///< Thread to periodically update traces.
 
 public slots:
-    void updateQuickSelect(int nrows, int ncols);
+    void updateQuickSelect(QList<channelGroup> &groups);
     void newPlotTrace(int tracenum, const QVector<double> &ydata, int pre, double mVPerArb);
     void newPlotTrace(int tracenum, const QVector<double> &xdata,
                       const QVector<double> &ydata, double xmVPerArb, double ymVPerArb);
@@ -122,8 +123,6 @@ private:
     QActionGroup yaxisUnitsActionGroup;   ///< Object that keeps y-axis units choices exclusive.
     QSettings *mscopeSettings;            ///< Store program settings.
 
-    int nrows;                            ///< Number of rows in the current microcal array.
-    int ncols;                            ///< Number of columns in the current microcal array.
     QVector<double>  sampleIndex;         ///< Object to hold [-nPre,1-nPre,...N-2-nPre]
     enum plotTypeComboItems plotType;     ///< Current plot style
     enum analysisFields analysisType;     ///< Current type of analysis to plot (histo/timeseries)
@@ -131,6 +130,7 @@ private:
     bool preferVisibleMinMaxRange;        ///< Whether user wants min/max/range boxes visible
     bool preferYaxisRawUnits;             ///< Whether user wants raw units on y axis
     bool hasErr;                          ///< Whether this source has error/FB channels
+    int nsensors;                         ///< How many sensors
     zmq::context_t *zmqcontext;
     zmq::socket_t *chansocket;
 

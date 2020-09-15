@@ -60,12 +60,14 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
     ms_per_sample(1),
     zmqcontext(context_in)
 {
-    // How many rows and columns are in the actual data:
-    // set via a command-line argument.
-    nrows = opt->rows;
-    ncols = opt->cols;
-    int nsensors = nrows * ncols;
     hasErr = opt->tdm;
+    int highestChan = 0;
+    if (opt->chanGroups.size() > 0) {
+        channelGroup cg = opt->chanGroups.last();
+        highestChan = cg.nchan + cg.firstchan - 1;
+    } else {
+        highestChan = opt->nsensors;
+    }
 
     chansocket = new zmq::socket_t(*zmqcontext, ZMQ_PUB);
     try {
@@ -101,7 +103,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
         label->setPalette(palette);
 
         QSpinBox *box = new QSpinBox(this);
-        box->setRange(0, nsensors);
+        box->setRange(0, highestChan);
         box->setSpecialValueText("--");
         box->setValue(0);
         box->setPrefix("Ch ");
@@ -238,7 +240,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
 
     // Start the refresh loop
     startRefresh();
-    updateQuickSelect(nrows, ncols);
+    updateQuickSelect(opt->chanGroups);
     plotTypeChanged(ui->actionRaw_pulse_records);
     if (preferYaxisRawUnits)
         ui->actionY_axis_raw_units->trigger();
@@ -503,7 +505,7 @@ void plotWindow::updateSpinners(void)
 /// \param nrows_in The number of rows now
 /// \param ncols_in The number of columns now
 ///
-void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
+void plotWindow::updateQuickSelect(QList<channelGroup> &groups)
 {
     quickSelectChanMin.clear();
     quickSelectChanMax.clear();
@@ -515,23 +517,22 @@ void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
     ui->quickErrComboBox->clear();
     ui->quickFBComboBox->addItem("");
     ui->quickErrComboBox->addItem("");
-    nrows = nrows_in;
-    ncols = ncols_in;
 
-    if (nrows <= 0 || ncols <= 0)
+    const int ngroups = groups.size();
+    if (ngroups <= 0)
         return;
 
-    const int entries_per_column = (nrows-1+NUM_TRACES)/NUM_TRACES;
-    const int entries_per_label = (nrows-1+entries_per_column)/entries_per_column;
-
-    for (int c=0; c<ncols; c++)
-        for (int e=0; e<entries_per_column; e++) {
-            QString text("%1 %2-%3 (col %4)");
-            int c2 = c*nrows+e*entries_per_label + 1;
-            int c3 = c2+entries_per_label - 1;
-            // Don't let the last channel in the list be selected from column c+1!
-            if (c3 > (c+1)*nrows)
-                c3 = (c+1)*nrows;
+    for (int c=0; c<ngroups; c++) {
+        channelGroup cg = groups[c];
+        const int labels_per_group = (cg.nchan-1+NUM_TRACES)/NUM_TRACES;
+        const int entries_per_label = (cg.nchan-1+labels_per_group)/labels_per_group;
+        for (int e=0; e<labels_per_group; e++) {
+            QString text("%1 %2-%3 (group %4)");
+            int c2 = cg.firstchan + e*entries_per_label;
+            int c3 = c2 + entries_per_label - 1;
+            // Don't let the last channel in the list be beyond this group!
+            if (c3 >= cg.firstchan+cg.nchan)
+                c3 = cg.firstchan+cg.nchan-1;
             quickSelectChanMin.append(c2);
             quickSelectChanMax.append(c3);
             QString fb, err;
@@ -542,7 +543,7 @@ void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
             fb.chop(1);  // remove trailing comma
             err.chop(1);
             // Pad to length 8
-            for (int i=0; i<NUM_TRACES-(c3-c2+1); i++) {
+            for (int i=c3-c2+1; i<NUM_TRACES; i++) {
                 fb.append(",-");
                 err.append(",-");
             }
@@ -551,6 +552,7 @@ void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
             ui->quickFBComboBox->addItem(text.arg("Ch").arg(c2).arg(c3).arg(c));
             ui->quickErrComboBox->addItem(text.arg("Err").arg(c2).arg(c3).arg(c));
         }
+    }
 }
 
 
@@ -563,6 +565,7 @@ void plotWindow::updateQuickTypeFromErr(int index)
 {
     if (index <= 0)
         return;
+    std::cout <<" Setting error channels " << quickSelectErrTexts[index].toStdString() << std::endl;
     ui->quickChanEdit->setPlainText(quickSelectErrTexts[index]);
 }
 
@@ -576,6 +579,7 @@ void plotWindow::updateQuickTypeFromFB(int index)
 {
     if (index <= 0)
         return;
+    std::cout <<" Setting FB channels " << quickSelectFBTexts[index].toStdString() << std::endl;
     ui->quickChanEdit->setPlainText(quickSelectFBTexts[index]);
 }
 

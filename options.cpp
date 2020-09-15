@@ -25,6 +25,7 @@ options::options() :
     appname("Microscope"),
     rows(0),
     cols(0),
+    nchan(0),
     tdm(true),
     indexing(false),
     failed(false)
@@ -45,12 +46,17 @@ bool options::readChanGroups() {
         return false;
 
     std::cout << "Found " << ngroups << " channel groups in " << filename.str() << std::endl;
+    nsensors = 0;
     for (int i=0; i<ngroups; i++) {
         channelGroup cg;
         cg.nchan = groups[i]["Nchan"].int_value();
         cg.firstchan = groups[i]["Firstchan"].int_value();
         chanGroups.append(cg);
+        nsensors += cg.nchan;
     }
+    nchan = nsensors;
+    if (tdm)
+        nchan *= 2;
     return chanGroups.size() > 0;
 }
 
@@ -62,6 +68,7 @@ options *processOptions(int argc, char *argv[])
         { "appname", required_argument, nullptr, 'a'},
         { "rows", optional_argument, nullptr, 'r'},
         { "columns", optional_argument, nullptr, 'c'},
+        { "nsensors", optional_argument, nullptr, 'N'},
         { "indexing", no_argument, nullptr, 'i'},
         { "no-error-channel", no_argument, nullptr, 'n'},
         { "help", no_argument, nullptr, 'h'},
@@ -70,7 +77,7 @@ options *processOptions(int argc, char *argv[])
 
     int ch;
     QString name;
-    while ((ch = getopt_long(argc, argv, "hna:ir:c:", longopts, nullptr)) != -1) {
+    while ((ch = getopt_long(argc, argv, "hna:ir:c:N:", longopts, nullptr)) != -1) {
         switch (ch) {
         case 'h':
             Opt->failed = true;
@@ -90,6 +97,9 @@ options *processOptions(int argc, char *argv[])
         case 'c':
             Opt->cols = atoi(optarg);
             break;
+        case 'N':
+            Opt->nsensors = atoi(optarg);
+            break;
         default:
             Opt->failed = true;
         }
@@ -97,6 +107,20 @@ options *processOptions(int argc, char *argv[])
 
     // 3 ways to number channels: we can using indexing, set rows+cols, or read the config file to learn the channel groups.
     if (Opt->indexing) {
+        // Need some default values
+        if (Opt->nsensors <= 0) {
+            const int MAXTES = 256;
+            Opt->nsensors = MAXTES;
+            Opt->nchan = MAXTES;
+            if (Opt->tdm)
+                Opt->nchan *= 2;
+            channelGroup cg;
+            cg.nchan = MAXTES;
+            cg.firstchan = 1;
+            Opt->chanGroups.append(cg);
+            std::cerr << "Warning: indexing assumes up to "<< MAXTES <<
+                         " channels exist. Use -N option to raise this value." << std::endl;
+        }
         return Opt;
     }
 
@@ -107,6 +131,8 @@ options *processOptions(int argc, char *argv[])
         int chanpercol = Opt->rows;
         if (Opt->tdm)
             chanpercol *= 2;
+        Opt->nchan = Opt->cols * Opt->rows;
+        Opt->nsensors = Opt->nchan * chanpercol;
 
         int fc = 0;
         for (int i=0; i<Opt->cols; i++) {
