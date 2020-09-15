@@ -19,22 +19,9 @@
 #include <QString>
 #include <QVector>
 #include <QWidget>
+#include "options.h"
 #include "qcustomplot.h"
 #include  <zmq.hpp>
-
-class options {
-public:
-    QString appname;
-    int rows;
-    int cols;
-    bool tdm;
-    bool indexing;
-    bool failed;
-
-    options();
-    bool readChanGroups();
-};
-
 
 namespace Ui {
 class plotWindow;

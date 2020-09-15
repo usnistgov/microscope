@@ -1,7 +1,3 @@
-#include "plotwindow.h"
-#include "datasubscriber.h"
-#include "microscope.h"
-
 #include <QApplication>
 #include <QMetaType>
 #include <QObject>
@@ -9,87 +5,11 @@
 #include <vector>
 #include <iostream>
 #include <unistd.h> // for usleep
-#include <getopt.h>
 
-options::options() :
-    appname("Microscope"),
-    rows(0),
-    cols(0),
-    tdm(true),
-    indexing(false),
-    failed(false)
-{
-}
-
-bool options::readChanGroups() {
-    return false;
-}
-
-options *processOptions(int argc, char *argv[])
-{
-    options *Opt = new(options);
-
-    static struct option longopts[] = {
-        { "appname", required_argument, nullptr, 'a'},
-        { "rows", optional_argument, nullptr, 'r'},
-        { "columns", optional_argument, nullptr, 'c'},
-        { "indexing", no_argument, nullptr, 'i'},
-        { "no-error-channel", no_argument, nullptr, 'n'},
-        { "help", no_argument, nullptr, 'h'},
-        { nullptr, 0, nullptr, 0 }
-    };
-
-    int ch;
-    QString name;
-    while ((ch = getopt_long(argc, argv, "hna:r:c:", longopts, nullptr)) != -1) {
-        switch (ch) {
-        case 'h':
-            Opt->failed = true;
-            return Opt;
-        case 'n':
-            Opt->tdm = false;
-            break;
-        case 'a':
-            Opt->appname = QString(optarg);
-            break;
-        case 'i':
-            Opt->indexing = true;
-            break;
-        case 'r':
-            Opt->rows = atoi(optarg);
-            break;
-        case 'c':
-            Opt->cols = atoi(optarg);
-            break;
-        default:
-            Opt->failed = true;
-        }
-    }
-
-    // We can using indexing, read the config file to learn the channel groups, or set rows+cols.
-    if (Opt->indexing) {
-        return Opt;
-    }
-    if (Opt->rows==0 || Opt->cols==0) {
-        // if (!Opt->readChanGroups()) {
-        std::cerr << "Must set both row and column counts to 1 or more with -rNR -cNC." << std::endl;
-        Opt->failed = true;
-        // }
-    }
-
-    return Opt;
-}
-
-
-void usage() {
-    std::cerr << "Usage: microscope [options] -c8 -r28 tcp://localhost:5502\n"
-              << "Options include:\n"
-              << "     -h, --help              Print this help message\n"
-              << "     -n, --no-error-channel  This is a non-TDM system and has no error channels\n"
-              << "     -a, --appname AppName   Change the app name on the window title bar\n" << std::endl;
-}
-
-
+#include "plotwindow.h"
+#include "datasubscriber.h"
+#include "microscope.h"
+#include "options.h"
 
 
 int main(int argc, char *argv[])
@@ -136,14 +56,14 @@ int main(int argc, char *argv[])
     int app_return_val = a.exec();
 
     const char quit[] = "Quit";
-    // The following will eliminate a certain deprecation message in zmqpp >= version 4.3.1.
-    // But it won't compile at (for example) version 4.1.1, hence the #if/#else/#endif.
-#ifdef ZMQ_CPP11
+    // The following will eliminate a certain deprecation message in zmqpp >= version 4.3.1 yet
+    // still compile before 4.3.1.
+    #ifdef ZMQ_CPP11
     zmq::const_buffer Qmsg = zmq::const_buffer(quit, strlen(quit));
     killsocket->send(Qmsg);
-#else
+    #else
     killsocket->send(quit, strlen(quit));
-#endif
+    #endif
 
     sub->wait(1000);
     delete sub;
