@@ -1,7 +1,13 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include <QList>
 #include <QString>
+
+struct channelGroup {
+    int firstchan;
+    int nchan;
+};
 
 class options {
 public:
@@ -11,6 +17,7 @@ public:
     bool tdm;
     bool indexing;
     bool failed;
+    QList<channelGroup> chanGroups;
 
     options();
     bool readChanGroups();

@@ -1,6 +1,25 @@
-#include "options.h"
-#include <iostream>
 #include <getopt.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+
+// Find home directory name
+// From https://stackoverflow.com/questions/2910377/get-home-directory-in-linux
+std::string home() {
+    const char *homedir;
+    if ((homedir = getenv("HOME")) == NULL) {
+        homedir = getpwuid(getuid())->pw_dir;
+    }
+    return std::string(homedir);
+}
+
+#include "options.h"
+#include "json11/json11.hpp"
 
 options::options() :
     appname("Microscope"),
@@ -12,8 +31,27 @@ options::options() :
 {
 }
 
+
 bool options::readChanGroups() {
-    return false;
+    std::stringstream filename;
+    filename << home() << "/.dastard/channels.json";
+    std::ifstream t(filename.str());
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    std::string err;
+    const auto groups = json11::Json::parse(buffer.str(), err);
+    int ngroups = groups.array_items().size();
+    if (ngroups == 0)
+        return false;
+
+    std::cout << "Found " << ngroups << " channel groups in " << filename.str() << std::endl;
+    for (int i=0; i<ngroups; i++) {
+        channelGroup cg;
+        cg.nchan = groups[i]["Nchan"].int_value();
+        cg.firstchan = groups[i]["Firstchan"].int_value();
+        chanGroups.append(cg);
+    }
+    return chanGroups.size() > 0;
 }
 
 options *processOptions(int argc, char *argv[])
