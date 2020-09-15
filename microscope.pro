@@ -41,6 +41,7 @@ macx {
 
 
 SOURCES += main.cpp\
+    json11/json11.cpp \
     options.cpp \
     periodicupdater.cpp \
     plotwindow.cpp \
@@ -52,6 +53,7 @@ SOURCES += main.cpp\
     pulserecord.cpp
 
 HEADERS  += plotwindow.h \
+    json11/json11.hpp \
     options.h \
     periodicupdater.h \
     qcustomplot.h \
