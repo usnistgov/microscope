@@ -95,18 +95,41 @@ options *processOptions(int argc, char *argv[])
         }
     }
 
-    // We can using indexing, read the config file to learn the channel groups, or set rows+cols.
+    // 3 ways to number channels: we can using indexing, set rows+cols, or read the config file to learn the channel groups.
     if (Opt->indexing) {
         return Opt;
     }
-    if (Opt->rows==0 || Opt->cols==0) {
-         if (!Opt->readChanGroups()) {
-             std::cerr << "Could not read the channel file $HOME/.dastard/channels.json\n";
-             std::cerr << "Therefore, you must set row+column counts with -rNR -cNC, or use indexing with -i." << std::endl;
-             Opt->failed = true;
-         }
+
+    if (Opt->rows > 0 && Opt->cols > 0) {
+        // If -r and -c arguments are nonzero, treat each column as a channel group with nrows channels,
+        // or double this if it's a TDM system.
+        // These arguments override reading the $HOME/.dastard/channels.json file.
+        int chanpercol = Opt->rows;
+        if (Opt->tdm)
+            chanpercol *= 2;
+
+        int fc = 0;
+        for (int i=0; i<Opt->cols; i++) {
+            channelGroup cg;
+            cg.nchan = chanpercol;
+            cg.firstchan = fc;
+            Opt->chanGroups.append(cg);
+            fc += chanpercol;
+        }
+        return Opt;
     }
 
+    if (Opt->rows > 0 || Opt->cols > 0) {
+        std::cerr << "Command-line arguments rows=" << Opt->rows << " and cols=" << Opt->cols << " are ignored.  " <<
+                     "Must set BOTH nonzero." << std::endl;
+    }
+
+    // Not indexing, not given rows+columns, so read the channel group config file.
+    if (!Opt->readChanGroups()) {
+        std::cerr << "Could not read the channel file $HOME/.dastard/channels.json\n";
+        std::cerr << "Therefore, you must set row+column counts with -rNR -cNC, or use indexing with -i." << std::endl;
+        Opt->failed = true;
+    }
     return Opt;
 }
 
