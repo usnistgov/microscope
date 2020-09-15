@@ -133,12 +133,20 @@ void dataSubscriber::process() {
 
         if (pollitems[0].revents & ZMQ_POLLIN) {
             // killsocket received a message. Any message there means DIE.
+            #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 3, 1)
+            killsocket->recv(update);
+            #else
             killsocket->recv(&update);
+            #endif
             break;
         }
         if (pollitems[1].revents & ZMQ_POLLIN) {
             // chansocket received a message.
+            #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 3, 1)
+            chansocket->recv(update);
+            #else
             chansocket->recv(&update);
+            #endif
             parseChannelMessage(update);
             continue;
         }
@@ -148,12 +156,20 @@ void dataSubscriber::process() {
         }
 
         // Receive a 2-part message
+        #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 3, 1)
+        subscriber->recv(header);
+        #else
         subscriber->recv(&header);
+        #endif
         if (!header.more()) {
             std::cerr << "Received an unexpected 1-part message" << std::endl;
             continue;
         }
+        #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 3, 1)
+        subscriber->recv(pulsedata);
+        #else
         subscriber->recv(&pulsedata);
+        #endif
 
         pulseRecord *pr = new pulseRecord(header, pulsedata);
         // std::cout << "Received message of size " << header.size() << "+" << pulsedata.size();
@@ -184,5 +200,3 @@ void dataSubscriber::process() {
 void dataSubscriber::wait(unsigned long time) {
     myThread->wait(time);
 }
-
-
