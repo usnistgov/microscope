@@ -641,8 +641,13 @@ void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
         char text[20];
         // terminate message with space b/c of ZMQ message trickery
         snprintf(text, 20, "add %d ", newStreamIndex);
-        zmq::message_t msg(text, strlen(text));
-        chansocket->send(msg);
+        #ifdef ZMQ_CPP11
+            zmq::const_buffer Qmsg = zmq::const_buffer(text, strlen(text));
+            chansocket->send(Qmsg);
+        #else
+            zmq::message_t msg(text, strlen(text));
+            chansocket->send(msg);
+        #endif
     }
 
     // Now unsubscribe the previous channel, first checking that it's not
@@ -655,8 +660,13 @@ void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
     if (oldStreamIndex >= 0) {
         char text[20];
         snprintf(text, 20, "rem %d ", oldStreamIndex);
-        zmq::message_t msg(text, strlen(text));
-        chansocket->send(msg);
+        #ifdef ZMQ_CPP11
+            zmq::const_buffer Qmsg = zmq::const_buffer(text, strlen(text));
+            chansocket->send(Qmsg);
+        #else
+            zmq::message_t msg(text, strlen(text));
+            chansocket->send(msg);
+        #endif
     }
 }
 
