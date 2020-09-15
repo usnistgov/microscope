@@ -133,7 +133,7 @@ void dataSubscriber::process() {
 
         if (pollitems[0].revents & ZMQ_POLLIN) {
             // killsocket received a message. Any message there means DIE.
-            #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 3, 1)
+            #ifdef ZMQ_CPP11
             killsocket->recv(update);
             #else
             killsocket->recv(&update);
@@ -142,7 +142,7 @@ void dataSubscriber::process() {
         }
         if (pollitems[1].revents & ZMQ_POLLIN) {
             // chansocket received a message.
-            #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 3, 1)
+            #ifdef ZMQ_CPP11
             chansocket->recv(update);
             #else
             chansocket->recv(&update);
@@ -156,7 +156,7 @@ void dataSubscriber::process() {
         }
 
         // Receive a 2-part message
-        #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 3, 1)
+        #ifdef ZMQ_CPP11
         subscriber->recv(header);
         #else
         subscriber->recv(&header);
@@ -165,7 +165,7 @@ void dataSubscriber::process() {
             std::cerr << "Received an unexpected 1-part message" << std::endl;
             continue;
         }
-        #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 3, 1)
+        #ifdef ZMQ_CPP11
         subscriber->recv(pulsedata);
         #else
         subscriber->recv(&pulsedata);
