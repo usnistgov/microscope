@@ -15,7 +15,6 @@
 #include <QActionGroup>
 #include <QCheckBox>
 #include <QColor>
-#include <QList>
 #include <QSettings>
 #include <QString>
 #include <QVector>
@@ -89,7 +88,7 @@ public:
     refreshPlots *refreshPlotsThread;    ///< Thread to periodically update traces.
 
 public slots:
-    void updateQuickSelect(QList<channelGroup> &groups);
+    void updateQuickSelect(QVector<channelGroup> &groups);
     void newPlotTrace(int tracenum, const QVector<double> &ydata, int pre, double mVPerArb);
     void newPlotTrace(int tracenum, const QVector<double> &xdata,
                       const QVector<double> &ydata, double xmVPerArb, double ymVPerArb);

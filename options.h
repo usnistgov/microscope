@@ -1,8 +1,8 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#include <QList>
 #include <QString>
+#include <QVector>
 
 struct channelGroup {
     int firstchan;
@@ -19,7 +19,7 @@ public:
     bool tdm;
     bool indexing;
     bool failed;
-    QList<channelGroup> chanGroups;
+    QVector<channelGroup> chanGroups;
 
     options();
     bool readChanGroups();

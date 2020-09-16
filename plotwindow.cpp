@@ -505,7 +505,7 @@ void plotWindow::updateSpinners(void)
 /// \param nrows_in The number of rows now
 /// \param ncols_in The number of columns now
 ///
-void plotWindow::updateQuickSelect(QList<channelGroup> &groups)
+void plotWindow::updateQuickSelect(QVector<channelGroup> &groups)
 {
     quickSelectChanMin.clear();
     quickSelectChanMax.clear();

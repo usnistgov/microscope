@@ -46,6 +46,7 @@ bool options::readChanGroups() {
         return false;
 
     std::cout << "Found " << ngroups << " channel groups in " << filename.str() << std::endl;
+    chanGroups.reserve(ngroups);
     nsensors = 0;
     for (int i=0; i<ngroups; i++) {
         channelGroup cg;
@@ -171,5 +172,3 @@ void usage() {
               << "     -n, --no-error-channel  This is a non-TDM system and has no error channels\n"
               << "     -a, --appname AppName   Change the app name on the window title bar\n" << std::endl;
 }
-
-
