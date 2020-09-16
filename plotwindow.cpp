@@ -108,6 +108,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
         box->setValue(0);
         box->setPrefix("Ch ");
         box->setAlignment(Qt::AlignRight);
+        box->setMinimumWidth(75);
         spinners.append(box);
         streamIndex.append(-1);
         connect(box, SIGNAL(valueChanged(int)), this, SLOT(channelChanged(int)));
@@ -115,7 +116,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
         chanSpinnersLayout->addWidget(label, i, 0);
         chanSpinnersLayout->addWidget(box, i, 1);
 
-        if (opt->tdm) {
+        if (hasErr) {
             QCheckBox *check = new QCheckBox(this);
             QString tt = QString("Curve %1 use error signal").arg(char('A'+i));
             check->setToolTip(tt);
