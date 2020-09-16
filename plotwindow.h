@@ -15,6 +15,7 @@
 #include <QActionGroup>
 #include <QCheckBox>
 #include <QColor>
+#include <QMap>
 #include <QSettings>
 #include <QString>
 #include <QVector>
@@ -133,6 +134,10 @@ private:
     zmq::context_t *zmqcontext;
     zmq::socket_t *chansocket;
 
+    QVector<QString> channelNames;        ///< The channel names in this source, in order
+    QMap<QString, int> channelName2Index; ///< Map from channel number to channel index
+
+    void buildNameIndexTables(const options *opt);
     void startRefresh();
     void rescalePlots(QCPGraph *);
     void closeEvent(QCloseEvent *);

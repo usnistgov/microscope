@@ -76,6 +76,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
         delete chansocket;
         chansocket = nullptr;
     }
+    buildNameIndexTables(opt);
 
     setWindowFlags(Qt::Window);
     setAttribute(Qt::WA_DeleteOnClose); // important!
@@ -247,6 +248,35 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
         ui->actionY_axis_raw_units->trigger();
     else
         ui->actionY_axis_phys_units->trigger();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// \brief Fill in     QVector<int> channelNumbers and QMap<int, int> channelNum2Index
+///
+/// These map channel index to number and number to index, respectively.
+///
+void plotWindow::buildNameIndexTables(const options *opt) {
+    int index=0;
+    foreach(channelGroup cg, opt->chanGroups) {
+        for (int cnum=cg.firstchan; cnum<cg.firstchan+cg.nchan; cnum++) {
+            QString name = QString("Ch %1").arg(cnum);
+            channelNames.append(name);
+            channelName2Index[name] = index;
+            index++;
+            if (hasErr) {
+                QString name = QString("Err %1").arg(cnum);
+                channelNames.append(name);
+                channelName2Index[name] = index;
+                index++;
+            }
+        }
+    }
+    std::cout << "Debug:\n";
+    for (int idx=0; idx<channelNames.size(); idx++) {
+        std::cout << "Channel Index " << idx << "-> " << channelNames[idx].toStdString() <<
+            "-> Index " << channelName2Index[channelNames[idx]] << std::endl;
+    }
 }
 
 
