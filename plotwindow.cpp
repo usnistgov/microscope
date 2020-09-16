@@ -112,7 +112,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
         box->setMinimumWidth(75);
         spinners.append(box);
         streamIndex.append(-1);
-        connect(box, SIGNAL(valueChanged(int)), this, SLOT(channelChanged(int)));
+        connect(box, SIGNAL(valueChanged(int)), this, SLOT(channelChanged()));
 
         chanSpinnersLayout->addWidget(label, i, 0);
         chanSpinnersLayout->addWidget(box, i, 1);
@@ -272,11 +272,11 @@ void plotWindow::buildNameIndexTables(const options *opt) {
             }
         }
     }
-    std::cout << "Debug:\n";
-    for (int idx=0; idx<channelNames.size(); idx++) {
-        std::cout << "Channel Index " << idx << "-> " << channelNames[idx].toStdString() <<
-            "-> Index " << channelName2Index[channelNames[idx]] << std::endl;
-    }
+    // std::cout << "Debug:\n";
+    // for (int idx=0; idx<channelNames.size(); idx++) {
+    //     std::cout << "Channel Index " << idx << "-> " << channelNames[idx].toStdString() <<
+    //         "-> Index " << channelName2Index[channelNames[idx]] << std::endl;
+    // }
 }
 
 
@@ -523,7 +523,8 @@ void plotWindow::updateSpinners(void)
         int i = pstr->toInt(&ok, 10);
         if (!ok)
             i = 0;
-        if (hasErr)
+        // Careful: don't change error check box if chan name is "--"
+        if (ok && hasErr)
             checkers[spin_id]->setChecked(isErr);
         spinners[spin_id++]->setValue(i);
     }
@@ -596,7 +597,7 @@ void plotWindow::updateQuickTypeFromErr(int index)
 {
     if (index <= 0)
         return;
-    std::cout <<" Setting error channels " << quickSelectErrTexts[index].toStdString() << std::endl;
+    // std::cout <<" Setting error channels " << quickSelectErrTexts[index].toStdString() << std::endl;
     ui->quickChanEdit->setPlainText(quickSelectErrTexts[index]);
 }
 
@@ -610,7 +611,7 @@ void plotWindow::updateQuickTypeFromFB(int index)
 {
     if (index <= 0)
         return;
-    std::cout <<" Setting FB channels " << quickSelectFBTexts[index].toStdString() << std::endl;
+    // std::cout <<" Setting FB channels " << quickSelectFBTexts[index].toStdString() << std::endl;
     ui->quickChanEdit->setPlainText(quickSelectFBTexts[index]);
 }
 
@@ -668,8 +669,8 @@ void plotWindow::updateQuickTypeText(void)
 void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
     int oldStreamIndex = streamIndex[tracenum];
     streamIndex[tracenum] = newStreamIndex;
-//    std::cout << "Trace " << tracenum << " index: " << oldStreamIndex << "->" <<
-//                 newStreamIndex << std::endl;
+    // std::cout << "Trace " << tracenum << " index: " << oldStreamIndex << "->" <<
+    //              newStreamIndex << std::endl;
 
     // Signal to dataSubscriber
     if (newStreamIndex >= 0) {
@@ -711,21 +712,16 @@ void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
 ///
 /// This method must identify which spin box it was, using Qt sender().
 ///
-/// \param newChan  The new channel
-///
-void plotWindow::channelChanged(int newChan)
+void plotWindow::channelChanged()
 {
     QSpinBox *box = static_cast<QSpinBox *>(sender());
     for (int i=0; i<spinners.size(); i++) {
         if (spinners[i] == box) {
-            bool isErr = false;
-            int newStreamIndex = newChan - 1;
-            if (hasErr) {
-                newStreamIndex *= 2;
-                isErr = checkers[i]->isChecked();
-                if (!isErr)
-                    newStreamIndex++;
-            }
+            int newStreamIndex = -1;
+            QString name = box->text();
+            if (channelNames.contains(name))
+                newStreamIndex = channelName2Index[name];
+            // std::cout << "channelChanged to " << name.toStdString() << " = index " << newStreamIndex << std::endl;
             subscribeStream(i, newStreamIndex);
             updateQuickTypeText();
             refreshPlotsThread->changedChannel(i, newStreamIndex);
@@ -753,13 +749,6 @@ void plotWindow::errStateChanged(bool checked)
     QCheckBox *box = static_cast<QCheckBox *>(sender());
     for (int i=0; i<checkers.size(); i++) {
         if (checkers[i] == box) {
-            int oldStreamIndex = streamIndex[i];
-            int newStreamIndex = oldStreamIndex - oldStreamIndex % 2;
-            if (!checked)
-                newStreamIndex++;
-            if (newStreamIndex == oldStreamIndex)
-                return;
-
             QSpinBox *sb = spinners[i];
             if (checked) {
                 sb->setPrefix("Err ");
@@ -767,12 +756,12 @@ void plotWindow::errStateChanged(bool checked)
                 sb->setPrefix("Ch ");
             }
 
-            subscribeStream(i, newStreamIndex);
+            // Change the spin box's value to -1 and back. This guarantees a valueChanged signal.
+            int value = sb->value();
+            sb->setValue(-1);
+            sb->setValue(value);
+
             updateQuickTypeText();
-            refreshPlotsThread->changedChannel(i, newStreamIndex);
-            QCPGraph *graph = ui->plot->graph(i);
-            QVector<double> empty;
-            graph->setData(empty, empty);
             return;
         }
     }

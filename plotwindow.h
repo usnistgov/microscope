@@ -148,7 +148,7 @@ private slots:
     void updateQuickTypeFromErr(int);
     void updateQuickTypeFromFB(int);
     void updateQuickTypeText();
-    void channelChanged(int);
+    void channelChanged();
     void errStateChanged(bool);
     void pausePressed(bool);
     void yAxisLog(bool);
