@@ -132,8 +132,8 @@ options *processOptions(int argc, char *argv[])
         int chanpercol = Opt->rows;
         if (Opt->tdm)
             chanpercol *= 2;
-        Opt->nchan = Opt->cols * Opt->rows;
-        Opt->nsensors = Opt->nchan * chanpercol;
+        Opt->nsensors = Opt->cols * Opt->rows;
+        Opt->nchan = Opt->cols * chanpercol;
 
         int fc = 0;
         for (int i=0; i<Opt->cols; i++) {
