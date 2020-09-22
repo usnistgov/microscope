@@ -15,26 +15,14 @@
 #include <QActionGroup>
 #include <QCheckBox>
 #include <QColor>
+#include <QMap>
 #include <QSettings>
 #include <QString>
 #include <QVector>
 #include <QWidget>
+#include "options.h"
 #include "qcustomplot.h"
 #include  <zmq.hpp>
-
-class options {
-public:
-    QString appname;
-    QString rname;
-    QString cname;
-    int rows;
-    int cols;
-    bool tdm;
-    bool failed;
-
-    options();
-};
-
 
 namespace Ui {
 class plotWindow;
@@ -101,7 +89,7 @@ public:
     refreshPlots *refreshPlotsThread;    ///< Thread to periodically update traces.
 
 public slots:
-    void updateQuickSelect(int nrows, int ncols);
+    void updateQuickSelect(QVector<channelGroup> &groups);
     void newPlotTrace(int tracenum, const QVector<double> &ydata, int pre, double mVPerArb);
     void newPlotTrace(int tracenum, const QVector<double> &xdata,
                       const QVector<double> &ydata, double xmVPerArb, double ymVPerArb);
@@ -135,8 +123,6 @@ private:
     QActionGroup yaxisUnitsActionGroup;   ///< Object that keeps y-axis units choices exclusive.
     QSettings *mscopeSettings;            ///< Store program settings.
 
-    int nrows;                            ///< Number of rows in the current microcal array.
-    int ncols;                            ///< Number of columns in the current microcal array.
     QVector<double>  sampleIndex;         ///< Object to hold [-nPre,1-nPre,...N-2-nPre]
     enum plotTypeComboItems plotType;     ///< Current plot style
     enum analysisFields analysisType;     ///< Current type of analysis to plot (histo/timeseries)
@@ -144,9 +130,14 @@ private:
     bool preferVisibleMinMaxRange;        ///< Whether user wants min/max/range boxes visible
     bool preferYaxisRawUnits;             ///< Whether user wants raw units on y axis
     bool hasErr;                          ///< Whether this source has error/FB channels
+    int nsensors;                         ///< How many sensors
     zmq::context_t *zmqcontext;
     zmq::socket_t *chansocket;
 
+    QVector<QString> channelNames;        ///< The channel names in this source, in order
+    QMap<QString, int> channelName2Index; ///< Map from channel number to channel index
+
+    void buildNameIndexTables(const options *opt);
     void startRefresh();
     void rescalePlots(QCPGraph *);
     void closeEvent(QCloseEvent *);
@@ -157,7 +148,7 @@ private slots:
     void updateQuickTypeFromErr(int);
     void updateQuickTypeFromFB(int);
     void updateQuickTypeText();
-    void channelChanged(int);
+    void channelChanged();
     void errStateChanged(bool);
     void pausePressed(bool);
     void yAxisLog(bool);

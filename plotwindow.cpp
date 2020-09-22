@@ -60,12 +60,14 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
     ms_per_sample(1),
     zmqcontext(context_in)
 {
-    // How many rows and columns are in the actual data:
-    // set via a command-line argument.
-    nrows = opt->rows;
-    ncols = opt->cols;
-    int nsensors = nrows * ncols;
     hasErr = opt->tdm;
+    int highestChan = 0;
+    if (opt->chanGroups.size() > 0) {
+        channelGroup cg = opt->chanGroups.last();
+        highestChan = cg.nchan + cg.firstchan - 1;
+    } else {
+        highestChan = opt->nsensors;
+    }
 
     chansocket = new zmq::socket_t(*zmqcontext, ZMQ_PUB);
     try {
@@ -74,6 +76,7 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
         delete chansocket;
         chansocket = nullptr;
     }
+    buildNameIndexTables(opt);
 
     setWindowFlags(Qt::Window);
     setAttribute(Qt::WA_DeleteOnClose); // important!
@@ -101,19 +104,20 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
         label->setPalette(palette);
 
         QSpinBox *box = new QSpinBox(this);
-        box->setRange(0, nsensors);
+        box->setRange(0, highestChan);
         box->setSpecialValueText("--");
         box->setValue(0);
         box->setPrefix("Ch ");
         box->setAlignment(Qt::AlignRight);
+        box->setMinimumWidth(75);
         spinners.append(box);
         streamIndex.append(-1);
-        connect(box, SIGNAL(valueChanged(int)), this, SLOT(channelChanged(int)));
+        connect(box, SIGNAL(valueChanged(int)), this, SLOT(channelChanged()));
 
         chanSpinnersLayout->addWidget(label, i, 0);
         chanSpinnersLayout->addWidget(box, i, 1);
 
-        if (opt->tdm) {
+        if (hasErr) {
             QCheckBox *check = new QCheckBox(this);
             QString tt = QString("Curve %1 use error signal").arg(char('A'+i));
             check->setToolTip(tt);
@@ -238,12 +242,41 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
 
     // Start the refresh loop
     startRefresh();
-    updateQuickSelect(nrows, ncols);
+    updateQuickSelect(opt->chanGroups);
     plotTypeChanged(ui->actionRaw_pulse_records);
     if (preferYaxisRawUnits)
         ui->actionY_axis_raw_units->trigger();
     else
         ui->actionY_axis_phys_units->trigger();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// \brief Fill in     QVector<int> channelNumbers and QMap<int, int> channelNum2Index
+///
+/// These map channel index to number and number to index, respectively.
+///
+void plotWindow::buildNameIndexTables(const options *opt) {
+    int index=0;
+    foreach(channelGroup cg, opt->chanGroups) {
+        for (int cnum=cg.firstchan; cnum<cg.firstchan+cg.nchan; cnum++) {
+            QString name = QString("Ch %1").arg(cnum);
+            channelNames.append(name);
+            channelName2Index[name] = index;
+            index++;
+            if (hasErr) {
+                QString name = QString("Err %1").arg(cnum);
+                channelNames.append(name);
+                channelName2Index[name] = index;
+                index++;
+            }
+        }
+    }
+    // std::cout << "Debug:\n";
+    // for (int idx=0; idx<channelNames.size(); idx++) {
+    //     std::cout << "Channel Index " << idx << "-> " << channelNames[idx].toStdString() <<
+    //         "-> Index " << channelName2Index[channelNames[idx]] << std::endl;
+    // }
 }
 
 
@@ -490,7 +523,8 @@ void plotWindow::updateSpinners(void)
         int i = pstr->toInt(&ok, 10);
         if (!ok)
             i = 0;
-        if (hasErr)
+        // Careful: don't change error check box if chan name is "--"
+        if (ok && hasErr)
             checkers[spin_id]->setChecked(isErr);
         spinners[spin_id++]->setValue(i);
     }
@@ -503,7 +537,7 @@ void plotWindow::updateSpinners(void)
 /// \param nrows_in The number of rows now
 /// \param ncols_in The number of columns now
 ///
-void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
+void plotWindow::updateQuickSelect(QVector<channelGroup> &groups)
 {
     quickSelectChanMin.clear();
     quickSelectChanMax.clear();
@@ -515,23 +549,22 @@ void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
     ui->quickErrComboBox->clear();
     ui->quickFBComboBox->addItem("");
     ui->quickErrComboBox->addItem("");
-    nrows = nrows_in;
-    ncols = ncols_in;
 
-    if (nrows <= 0 || ncols <= 0)
+    const int ngroups = groups.size();
+    if (ngroups <= 0)
         return;
 
-    const int entries_per_column = (nrows-1+NUM_TRACES)/NUM_TRACES;
-    const int entries_per_label = (nrows-1+entries_per_column)/entries_per_column;
-
-    for (int c=0; c<ncols; c++)
-        for (int e=0; e<entries_per_column; e++) {
-            QString text("%1 %2-%3 (col %4)");
-            int c2 = c*nrows+e*entries_per_label + 1;
-            int c3 = c2+entries_per_label - 1;
-            // Don't let the last channel in the list be selected from column c+1!
-            if (c3 > (c+1)*nrows)
-                c3 = (c+1)*nrows;
+    for (int c=0; c<ngroups; c++) {
+        channelGroup cg = groups[c];
+        const int labels_per_group = (cg.nchan-1+NUM_TRACES)/NUM_TRACES;
+        const int entries_per_label = (cg.nchan-1+labels_per_group)/labels_per_group;
+        for (int e=0; e<labels_per_group; e++) {
+            QString text("%1 %2-%3 (group %4)");
+            int c2 = cg.firstchan + e*entries_per_label;
+            int c3 = c2 + entries_per_label - 1;
+            // Don't let the last channel in the list be beyond this group!
+            if (c3 >= cg.firstchan+cg.nchan)
+                c3 = cg.firstchan+cg.nchan-1;
             quickSelectChanMin.append(c2);
             quickSelectChanMax.append(c3);
             QString fb, err;
@@ -542,7 +575,7 @@ void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
             fb.chop(1);  // remove trailing comma
             err.chop(1);
             // Pad to length 8
-            for (int i=0; i<NUM_TRACES-(c3-c2+1); i++) {
+            for (int i=c3-c2+1; i<NUM_TRACES; i++) {
                 fb.append(",-");
                 err.append(",-");
             }
@@ -551,6 +584,7 @@ void plotWindow::updateQuickSelect(int nrows_in, int ncols_in)
             ui->quickFBComboBox->addItem(text.arg("Ch").arg(c2).arg(c3).arg(c));
             ui->quickErrComboBox->addItem(text.arg("Err").arg(c2).arg(c3).arg(c));
         }
+    }
 }
 
 
@@ -563,6 +597,7 @@ void plotWindow::updateQuickTypeFromErr(int index)
 {
     if (index <= 0)
         return;
+    // std::cout <<" Setting error channels " << quickSelectErrTexts[index].toStdString() << std::endl;
     ui->quickChanEdit->setPlainText(quickSelectErrTexts[index]);
 }
 
@@ -576,6 +611,7 @@ void plotWindow::updateQuickTypeFromFB(int index)
 {
     if (index <= 0)
         return;
+    // std::cout <<" Setting FB channels " << quickSelectFBTexts[index].toStdString() << std::endl;
     ui->quickChanEdit->setPlainText(quickSelectFBTexts[index]);
 }
 
@@ -633,8 +669,8 @@ void plotWindow::updateQuickTypeText(void)
 void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
     int oldStreamIndex = streamIndex[tracenum];
     streamIndex[tracenum] = newStreamIndex;
-//    std::cout << "Trace " << tracenum << " index: " << oldStreamIndex << "->" <<
-//                 newStreamIndex << std::endl;
+    // std::cout << "Trace " << tracenum << " index: " << oldStreamIndex << "->" <<
+    //              newStreamIndex << std::endl;
 
     // Signal to dataSubscriber
     if (newStreamIndex >= 0) {
@@ -676,21 +712,16 @@ void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
 ///
 /// This method must identify which spin box it was, using Qt sender().
 ///
-/// \param newChan  The new channel
-///
-void plotWindow::channelChanged(int newChan)
+void plotWindow::channelChanged()
 {
     QSpinBox *box = static_cast<QSpinBox *>(sender());
     for (int i=0; i<spinners.size(); i++) {
         if (spinners[i] == box) {
-            bool isErr = false;
-            int newStreamIndex = newChan - 1;
-            if (hasErr) {
-                newStreamIndex *= 2;
-                isErr = checkers[i]->isChecked();
-                if (!isErr)
-                    newStreamIndex++;
-            }
+            int newStreamIndex = -1;
+            QString name = box->text();
+            if (channelNames.contains(name))
+                newStreamIndex = channelName2Index[name];
+            // std::cout << "channelChanged to " << name.toStdString() << " = index " << newStreamIndex << std::endl;
             subscribeStream(i, newStreamIndex);
             updateQuickTypeText();
             refreshPlotsThread->changedChannel(i, newStreamIndex);
@@ -718,13 +749,6 @@ void plotWindow::errStateChanged(bool checked)
     QCheckBox *box = static_cast<QCheckBox *>(sender());
     for (int i=0; i<checkers.size(); i++) {
         if (checkers[i] == box) {
-            int oldStreamIndex = streamIndex[i];
-            int newStreamIndex = oldStreamIndex - oldStreamIndex % 2;
-            if (!checked)
-                newStreamIndex++;
-            if (newStreamIndex == oldStreamIndex)
-                return;
-
             QSpinBox *sb = spinners[i];
             if (checked) {
                 sb->setPrefix("Err ");
@@ -732,12 +756,12 @@ void plotWindow::errStateChanged(bool checked)
                 sb->setPrefix("Ch ");
             }
 
-            subscribeStream(i, newStreamIndex);
+            // Change the spin box's value to -1 and back. This guarantees a valueChanged signal.
+            int value = sb->value();
+            sb->setValue(-1);
+            sb->setValue(value);
+
             updateQuickTypeText();
-            refreshPlotsThread->changedChannel(i, newStreamIndex);
-            QCPGraph *graph = ui->plot->graph(i);
-            QVector<double> empty;
-            graph->setData(empty, empty);
             return;
         }
     }

@@ -12,7 +12,7 @@ TEMPLATE = app
 CONFIG -= app_bundle
 CONFIG += qt thread
 
-LIBS += -lpthread -lfftw3 -lzmq # -lpthread -lX11 -lm -lXext -ldl -lfftw3 -lzmq
+LIBS += -lpthread -lfftw3 -lzmq
 QMAKE_CXXFLAGS += -std=c++0x
 QMAKE_CFLAGS_RELEASE += -O3 -g
 QMAKE_CXXFLAGS_RELEASE += -O3 -g
@@ -41,6 +41,8 @@ macx {
 
 
 SOURCES += main.cpp\
+    json11/json11.cpp \
+    options.cpp \
     periodicupdater.cpp \
     plotwindow.cpp \
     qcustomplot.cpp \
@@ -51,6 +53,8 @@ SOURCES += main.cpp\
     pulserecord.cpp
 
 HEADERS  += plotwindow.h \
+    json11/json11.hpp \
+    options.h \
     periodicupdater.h \
     qcustomplot.h \
     refreshplots.h \
