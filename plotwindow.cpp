@@ -677,7 +677,7 @@ void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
         char text[20];
         // terminate message with space b/c of ZMQ message trickery
         snprintf(text, 20, "add %d ", newStreamIndex);
-        #ifdef ZMQ_CPP11
+        #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 3, 1)
             zmq::const_buffer Qmsg = zmq::const_buffer(text, strlen(text));
             chansocket->send(Qmsg);
         #else
@@ -696,7 +696,7 @@ void plotWindow::subscribeStream(int tracenum, int newStreamIndex) {
     if (oldStreamIndex >= 0) {
         char text[20];
         snprintf(text, 20, "rem %d ", oldStreamIndex);
-        #ifdef ZMQ_CPP11
+        #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 3, 1)
             zmq::const_buffer Qmsg = zmq::const_buffer(text, strlen(text));
             chansocket->send(Qmsg);
         #else

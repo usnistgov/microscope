@@ -56,9 +56,9 @@ int main(int argc, char *argv[])
     int app_return_val = a.exec();
 
     const char quit[] = "Quit";
-    // The following will eliminate a certain deprecation message in zmqpp >= version 4.3.1 yet
-    // still compile before 4.3.1.
-    #ifdef ZMQ_CPP11
+    // The following will eliminate a certain deprecation message in zmqpp >= version 4.3.1.
+    // But it won't compile at (for example) version 4.1.1, hence the #if/#else/#endif.
+    #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 3, 1)
     zmq::const_buffer Qmsg = zmq::const_buffer(quit, strlen(quit));
     killsocket->send(Qmsg);
     #else
