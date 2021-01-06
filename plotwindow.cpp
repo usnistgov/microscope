@@ -260,16 +260,16 @@ void plotWindow::buildNameIndexTables(const options *opt) {
     int index=0;
     foreach(channelGroup cg, opt->chanGroups) {
         for (int cnum=cg.firstchan; cnum<cg.firstchan+cg.nchan; cnum++) {
-            QString name = QString("Ch %1").arg(cnum);
-            channelNames.append(name);
-            channelName2Index[name] = index;
-            index++;
             if (hasErr) {
                 QString name = QString("Err %1").arg(cnum);
                 channelNames.append(name);
                 channelName2Index[name] = index;
                 index++;
             }
+            QString name = QString("Ch %1").arg(cnum);
+            channelNames.append(name);
+            channelName2Index[name] = index;
+            index++;
         }
     }
     // std::cout << "Debug:\n";
