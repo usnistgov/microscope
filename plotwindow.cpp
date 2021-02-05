@@ -21,6 +21,10 @@
 
 Q_DECLARE_METATYPE(QCPRange)
 
+/// Let "channel -1" be the minimum allowed number, which in Qt can have a
+/// special label and meaning. Here, the meaning is "invalid; don't plot".
+const int SPECIAL_INVALID_CHAN = -1;
+
 ///////////////////////////////////////////////////////////////////////////////
 /// The standard color palette for plotting. Maybe someday this won't be const?
 /// I'm using mostly unnamed colors so that I can make them a little darker
@@ -104,9 +108,9 @@ plotWindow::plotWindow(zmq::context_t *context_in, options *opt, QWidget *parent
         label->setPalette(palette);
 
         QSpinBox *box = new QSpinBox(this);
-        box->setRange(0, highestChan);
+        box->setRange(SPECIAL_INVALID_CHAN, highestChan);
         box->setSpecialValueText("--");
-        box->setValue(0);
+        box->setValue(SPECIAL_INVALID_CHAN);
         box->setPrefix("Ch ");
         box->setAlignment(Qt::AlignRight);
         box->setMinimumWidth(75);
@@ -522,7 +526,7 @@ void plotWindow::updateSpinners(void)
         }
         int i = pstr->toInt(&ok, 10);
         if (!ok)
-            i = 0;
+            i = SPECIAL_INVALID_CHAN;
         // Careful: don't change error check box if chan name is "--"
         if (ok && hasErr)
             checkers[spin_id]->setChecked(isErr);
@@ -627,7 +631,7 @@ void plotWindow::updateQuickTypeText(void)
     for (QVector<QSpinBox *>::iterator box=spinners.begin();
          box != spinners.end(); box++) {
         int c = (*box)->value();
-        if (c>0) {
+        if (c > SPECIAL_INVALID_CHAN) {
             if ((*box)->text().startsWith("Err"))
                 text += QString("e%1,").arg(c);
             else
