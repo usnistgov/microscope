@@ -55,7 +55,11 @@ void dataSubscriber::subscribeChannel(int channum) {
         return;
     uint16_t filternumber = static_cast<uint16_t>(channum);
     const char *filter = reinterpret_cast<char *>(&filternumber);
+    #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 7, 0)
+    subscriber->set(zmq::sockopt::subscribe, filter);
+    #else
     subscriber->setsockopt(ZMQ_SUBSCRIBE, filter, sizeof(filternumber));
+    #endif
 //    std::cout << "Subscribed chan " << channum << std::endl;
 }
 
@@ -63,7 +67,11 @@ void dataSubscriber::unsubscribeChannel(int channum) {
     if (subscriber == nullptr)
         return;
     const char *filter = reinterpret_cast<char *>(&channum);
-    subscriber->setsockopt(ZMQ_UNSUBSCRIBE, filter, sizeof(int));
+    #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 7, 0)
+    subscriber->set(zmq::sockopt::unsubscribe, filter);
+    #else
+    subscriber->setsockopt(ZMQ_UNSUBSCRIBE, filter, sizeof(filternumber));
+    #endif
 //    std::cout << "Unsubscribed chan " << channum << std::endl;
 }
 
@@ -98,7 +106,12 @@ void dataSubscriber::process() {
     zmq::socket_t *killsocket = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
     try {
         killsocket->connect(KILLPORT);
+        #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 7, 0)
+        subscriber->set(zmq::sockopt::subscribe, "Quit");
+        #else
         killsocket->setsockopt(ZMQ_SUBSCRIBE, "Quit", 4);
+        #endif
+
     } catch (zmq::error_t&) {
         delete subscriber;
         subscriber = nullptr;
@@ -110,7 +123,11 @@ void dataSubscriber::process() {
     zmq::socket_t *chansocket = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
     try {
         chansocket->connect(CHANSUBPORT);
-        chansocket->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+        #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 7, 0)
+        subscriber->set(zmq::sockopt::subscribe, "");
+        #else
+        killsocket->setsockopt(ZMQ_SUBSCRIBE, "", 4);
+        #endif
     } catch (zmq::error_t&) {
         delete subscriber;
         subscriber = nullptr;
@@ -129,7 +146,7 @@ void dataSubscriber::process() {
 
     zmq::message_t update, header, pulsedata;
     while (true) {
-        zmq::poll(&pollitems[0], NPOLLITEMS, -1);
+        zmq::poll(&pollitems[0], NPOLLITEMS);
 
         if (pollitems[0].revents & ZMQ_POLLIN) {
             // killsocket received a message. Any message there means DIE.
