@@ -4,10 +4,11 @@
 #ifndef VERSION_MAJOR
 #define VERSION_MAJOR 0       ///< Major version #
 #define VERSION_MINOR 1       ///< Minor version #
-#define VERSION_REALLYMINOR 3 ///< Version release #
+#define VERSION_REALLYMINOR 4 ///< Version release #
 #endif
 /*
 
+  0.1.4 2022-03 Joe Fowler. Update to QCustomPlot 2.1.0. Remove deprecated API of cppzmq 4.7.0+.
   0.1.3 2021-02 Joe Fowler. Fix an err/FB ordering problem. Allow chan 0 to be valid.
   0.1.2 2020-09 Joe Fowler. Use channel groups, instead of rows/columns.
   0.1.1 2019-06 Joe Fowler. Finite amount of analysis stored; memory leaks attacked.
