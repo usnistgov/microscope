@@ -18,20 +18,22 @@ To proceed, you will need to have installed:
 * zmq including zmq.hpp (the C++ binding)
 * Qt5 (or Qt4) development libraries (we encourage Qt5)
 
-On an Ubuntu 18.04 system, this can be accomplished by a command along these lines:
+On an Ubuntu 18.04 or 20.04 system, this can be accomplished by a command along these lines:
 
 ```
 sudo apt-get install gcc make git qt5-default qt5-qmake libzmq3-dev libfftw3-dev
+#
 # If you really need qt4 for other reasons, then replace the above with:
 # sudo apt-get install gcc make git qt4-default qt4-qmake libzmq3-dev libfftw3-dev
 
-# If you want to work on the program, you probably also want:
+# If you want to work on (edit) the program, you probably also want:
 sudo apt-get install qtcreator qtchooser
 ```
+The C++ all-header implementation of ZMQ ("CPPZMQ" or simply the file `zmq.hpp`) is included in the package `libzmq3-dev`. We mention this in case you're wondering why the Mac Port `cppzmq` is required for Macs, but nothing analogous is required with Ubuntu.
 
 On MacPorts, you need something like the following:
 ```
-sudo port install qt5 qt5-base gcc9 gmake git cppzmq zmq fftw-3
+sudo port install qt5 qt5-base gcc10 gmake git zmq cppzmq fftw-3
 # If you want to work on the program, you probably also want:
 sudo port install qt5-qtcreator
 ```

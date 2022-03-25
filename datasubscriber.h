@@ -56,5 +56,9 @@ private:
     double sampletime;
 };
 
+// The API for zmq::socket_t changes in version 4.7.0+ but only if you're using C++11 or later.
+#if (defined(ZMQ_CPP11) && (CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 7, 0)))
+#define USE_NEW_SOCKET_SET_API
+#endif
 
 #endif // DATASUBSCRIBER_H
