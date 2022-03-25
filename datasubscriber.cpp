@@ -55,7 +55,7 @@ void dataSubscriber::subscribeChannel(int channum) {
         return;
     uint16_t filternumber = static_cast<uint16_t>(channum);
     const char *filter = reinterpret_cast<char *>(&filternumber);
-    #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 7, 0)
+    #if defined(USE_NEW_SOCKET_SET_API)
     subscriber->set(zmq::sockopt::subscribe, filter);
     #else
     subscriber->setsockopt(ZMQ_SUBSCRIBE, filter, sizeof(filternumber));
@@ -66,8 +66,9 @@ void dataSubscriber::subscribeChannel(int channum) {
 void dataSubscriber::unsubscribeChannel(int channum) {
     if (subscriber == nullptr)
         return;
-    const char *filter = reinterpret_cast<char *>(&channum);
-    #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 7, 0)
+    uint16_t filternumber = static_cast<uint16_t>(channum);
+    const char *filter = reinterpret_cast<char *>(&filternumber);
+    #if defined(USE_NEW_SOCKET_SET_API)
     subscriber->set(zmq::sockopt::unsubscribe, filter);
     #else
     subscriber->setsockopt(ZMQ_UNSUBSCRIBE, filter, sizeof(filternumber));
@@ -106,8 +107,8 @@ void dataSubscriber::process() {
     zmq::socket_t *killsocket = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
     try {
         killsocket->connect(KILLPORT);
-        #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 7, 0)
-        subscriber->set(zmq::sockopt::subscribe, "Quit");
+        #if defined(USE_NEW_SOCKET_SET_API)
+        killsocket->set(zmq::sockopt::subscribe, "Quit");
         #else
         killsocket->setsockopt(ZMQ_SUBSCRIBE, "Quit", 4);
         #endif
@@ -123,10 +124,10 @@ void dataSubscriber::process() {
     zmq::socket_t *chansocket = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
     try {
         chansocket->connect(CHANSUBPORT);
-        #if CPPZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 7, 0)
-        subscriber->set(zmq::sockopt::subscribe, "");
+        #if defined(USE_NEW_SOCKET_SET_API)
+        chansocket->set(zmq::sockopt::subscribe, "");
         #else
-        killsocket->setsockopt(ZMQ_SUBSCRIBE, "", 4);
+        chansocket->setsockopt(ZMQ_SUBSCRIBE, "", 4);
         #endif
     } catch (zmq::error_t&) {
         delete subscriber;
