@@ -1,8 +1,8 @@
 #ifndef PULSERECORD_H
 #define PULSERECORD_H
 
-#include <zmq.hpp>
 #include <QVector>
+#include "zmq.hpp"
 
 class pulseRecord {
 

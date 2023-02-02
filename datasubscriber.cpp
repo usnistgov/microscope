@@ -5,7 +5,6 @@
 #include <QThread>
 #include <QTimer>
 #include <string.h>
-#include <zmq.hpp>
 
 #include "datasubscriber.h"
 #include "microscope.h"

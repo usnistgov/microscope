@@ -1,9 +1,9 @@
 #ifndef DATASUBSCRIBER_H
 #define DATASUBSCRIBER_H
 
-#include <zmq.hpp>
 #include <QObject>
 #include <QVector>
+#include "zmq.hpp"
 
 class QThread;
 class plotWindow;

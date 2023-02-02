@@ -54,6 +54,7 @@ SOURCES += main.cpp\
 
 HEADERS  += plotwindow.h \
     json11/json11.hpp \
+    zmq.hpp \
     options.h \
     periodicupdater.h \
     qcustomplot.h \

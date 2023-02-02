@@ -22,7 +22,7 @@
 #include <QWidget>
 #include "options.h"
 #include "qcustomplot.h"
-#include  <zmq.hpp>
+#include  "zmq.hpp"
 
 namespace Ui {
 class plotWindow;
