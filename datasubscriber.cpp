@@ -5,7 +5,6 @@
 #include <QThread>
 #include <QTimer>
 #include <string.h>
-#include <zmq.hpp>
 
 #include "datasubscriber.h"
 #include "microscope.h"
@@ -55,11 +54,7 @@ void dataSubscriber::subscribeChannel(int channum) {
         return;
     uint16_t filternumber = static_cast<uint16_t>(channum);
     const char *filter = reinterpret_cast<char *>(&filternumber);
-    #if defined(USE_NEW_SOCKET_SET_API)
     subscriber->set(zmq::sockopt::subscribe, filter);
-    #else
-    subscriber->setsockopt(ZMQ_SUBSCRIBE, filter, sizeof(filternumber));
-    #endif
 //    std::cout << "Subscribed chan " << channum << std::endl;
 }
 
@@ -68,11 +63,7 @@ void dataSubscriber::unsubscribeChannel(int channum) {
         return;
     uint16_t filternumber = static_cast<uint16_t>(channum);
     const char *filter = reinterpret_cast<char *>(&filternumber);
-    #if defined(USE_NEW_SOCKET_SET_API)
     subscriber->set(zmq::sockopt::unsubscribe, filter);
-    #else
-    subscriber->setsockopt(ZMQ_UNSUBSCRIBE, filter, sizeof(filternumber));
-    #endif
 //    std::cout << "Unsubscribed chan " << channum << std::endl;
 }
 
@@ -107,11 +98,7 @@ void dataSubscriber::process() {
     zmq::socket_t *killsocket = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
     try {
         killsocket->connect(KILLPORT);
-        #if defined(USE_NEW_SOCKET_SET_API)
         killsocket->set(zmq::sockopt::subscribe, "Quit");
-        #else
-        killsocket->setsockopt(ZMQ_SUBSCRIBE, "Quit", 4);
-        #endif
 
     } catch (zmq::error_t&) {
         delete subscriber;
@@ -124,11 +111,7 @@ void dataSubscriber::process() {
     zmq::socket_t *chansocket = new zmq::socket_t(*zmqcontext, ZMQ_SUB);
     try {
         chansocket->connect(CHANSUBPORT);
-        #if defined(USE_NEW_SOCKET_SET_API)
         chansocket->set(zmq::sockopt::subscribe, "");
-        #else
-        chansocket->setsockopt(ZMQ_SUBSCRIBE, "", 4);
-        #endif
     } catch (zmq::error_t&) {
         delete subscriber;
         subscriber = nullptr;
