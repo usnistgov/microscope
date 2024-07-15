@@ -28,7 +28,8 @@ options::options() :
     nchan(0),
     tdm(true),
     indexing(false),
-    failed(false)
+    failed(false),
+    help(false)
 {
 }
 
@@ -81,7 +82,7 @@ options *processOptions(int argc, char *argv[])
     while ((ch = getopt_long(argc, argv, "hna:ir:c:N:", longopts, nullptr)) != -1) {
         switch (ch) {
         case 'h':
-            Opt->failed = true;
+            Opt->help = true;
             return Opt;
         case 'n':
             Opt->tdm = false;

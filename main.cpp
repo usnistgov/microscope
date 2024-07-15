@@ -23,6 +23,9 @@ int main(int argc, char *argv[])
     if (Opt->failed) {
         usage();
         return 1;
+    } else if (Opt->help) {
+        usage();
+        return 0;
     }
     argc -= optind;
     argv += optind;

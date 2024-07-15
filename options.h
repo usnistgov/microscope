@@ -19,6 +19,7 @@ public:
     bool tdm;
     bool indexing;
     bool failed;
+    bool help;
     QVector<channelGroup> chanGroups;
 
     options();

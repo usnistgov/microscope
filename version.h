@@ -4,10 +4,11 @@
 #ifndef VERSION_MAJOR
 #define VERSION_MAJOR 0       ///< Major version #
 #define VERSION_MINOR 1       ///< Minor version #
-#define VERSION_REALLYMINOR 6 ///< Version release #
+#define VERSION_REALLYMINOR 7 ///< Version release #
 #endif
 /*
 
+  0.1.7 2024-07 Joe Fowler. Make microscope -h return 0, not error.
   0.1.6 2023-01 Joe Fowler. Include zmq.hpp directly to ensure latest cppzmq.
   0.1.5 2022-03 Joe Fowler. Fix error in use of new API in cppzmq 4.7.0+.
   0.1.4 2022-03 Joe Fowler. Update to QCustomPlot 2.1.0. Remove deprecated API of cppzmq 4.7.0+.
