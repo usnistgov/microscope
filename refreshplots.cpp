@@ -35,7 +35,7 @@ refreshPlots::refreshPlots(int msec_period) :
     isFFT(false),
 //    isHistogram(false),
     averaging(false),
-    nAverage(16), // matches the initial value of spinBox_nAverage in QtDesigner
+    nAverage(1), // matches the initial value of spinBox_nAverage in QtDesigner
     analysisType(ANALYSIS_PULSE_RMS)
 {
     // Fill the list of channels to be plotted with the no-plot indicator.
