@@ -139,21 +139,24 @@ QVector<double> *pulseHistory::newestPSD() const {
 
 
 ///
-/// \brief Compute and return the mean of all stored records.
+/// \brief Compute and return the mean of the last 'nAverage' stored records.
 /// \return
 ///
 pulseRecord *pulseHistory::meanRecord(int nAverage) {
+    lock.lock(); // lock before accessing records
+
     pulseRecord *last = newestRecord();
     if (last == nullptr) {
+        lock.unlock();
         return nullptr;
     }
-
     pulseRecord *result = new pulseRecord(*last);
 
-    int nused = 0;
-    lock.lock();
-    for (int i=0; (i<records.size() && i<nAverage); i++) {
-        if (records[i]->nsamples <= nsamples) {
+    int nused = 1; //The last record is included for free above
+
+    int start = std::max(records.size() - nAverage, 0);
+    for (int i=start; i<records.size() - 1; i++) {
+        if (records[i]->nsamples == nsamples) {
             for (int j=0; j<nsamples; j++)
                 (result->data)[j] += records[i]->data[j];
             nused++;
@@ -170,12 +173,14 @@ pulseRecord *pulseHistory::meanRecord(int nAverage) {
 
 
 ///
-/// \brief pulseHistory::meanPSD
+/// \brief Compute and return the mean of the last 'nAverage' stored PSDs
 /// \return
 ///
 QVector<double> *pulseHistory::meanPSD(int nAverage) {
+    lock.lock();
     QVector<double> *last = newestPSD();
     if (last == nullptr) {
+        lock.unlock();
         return nullptr;
     }
 
@@ -184,9 +189,10 @@ QVector<double> *pulseHistory::meanPSD(int nAverage) {
     for (int i=0; i<nfreq; i++)
         mean_psd[i] = 0;
 
-    int nused = 0;
-    lock.lock();
-    for (int i=0; (i<spectra.size() && i<nAverage); i++) {
+    int nused = 0; // the base record was zeroed out above, different from pulseHistory::meanRecord
+
+    int start = std::max(records.size() - nAverage, 0);
+    for (int i=start; i<spectra.size(); i++) {
         if (spectra[i]->size() == nfreq) {
             for (int j=0; j<nfreq; j++)
                 mean_psd[j] += (*spectra[i])[j];

@@ -5,7 +5,6 @@ demo_pulses.py
 Generate pulse-like data to appear as ZMQ packets, in order to develop microscope.
 """
 
-import pylab as plt
 import numpy as np
 import zmq
 
@@ -36,7 +35,7 @@ while True:
     channel = random.randrange(chanmin, chanmax+1)
     thisdata = np.asarray(messagedata[channel] + np.random.random_integers(-500, 500, size=samples), dtype=np.uint16)
     header = pulseRecord[channel].packheader(thisdata)
-    print "chan %d message length %d" % (channel, len(thisdata))
+    print("chan %d message length %d" % (channel, len(thisdata)))
     socket.send(header, zmq.SNDMORE)
     socket.send(thisdata.data[:])
     time.sleep(0.1)
