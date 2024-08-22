@@ -139,7 +139,7 @@ QVector<double> *pulseHistory::newestPSD() const {
 
 
 ///
-/// \brief Compute and return the mean of all stored records.
+/// \brief Compute and return the mean of the last 'nAverage' stored records.
 /// \return
 ///
 pulseRecord *pulseHistory::meanRecord(int nAverage) {
@@ -152,10 +152,11 @@ pulseRecord *pulseHistory::meanRecord(int nAverage) {
 
     int nused = 0;
     lock.lock();
-    for (int i=0; (i<records.size() && i<nAverage); i++) {
+    int offset = records.size() - nAverage;
+    for (int i=0; ((i+offset)<records.size() && i<nAverage); i++) {
         if (records[i]->nsamples <= nsamples) {
             for (int j=0; j<nsamples; j++)
-                (result->data)[j] += records[i]->data[j];
+                (result->data)[j] += records[i+offset]->data[j];
             nused++;
         }
     }
@@ -170,7 +171,7 @@ pulseRecord *pulseHistory::meanRecord(int nAverage) {
 
 
 ///
-/// \brief pulseHistory::meanPSD
+/// \brief Compute and return the mean of the last 'nAverage' stored PSDs
 /// \return
 ///
 QVector<double> *pulseHistory::meanPSD(int nAverage) {
@@ -186,10 +187,11 @@ QVector<double> *pulseHistory::meanPSD(int nAverage) {
 
     int nused = 0;
     lock.lock();
-    for (int i=0; (i<spectra.size() && i<nAverage); i++) {
+    int offset = records.size() - nAverage;
+    for (int i=0; ((i+offset)<spectra.size() && i<nAverage); i++) {
         if (spectra[i]->size() == nfreq) {
             for (int j=0; j<nfreq; j++)
-                mean_psd[j] += (*spectra[i])[j];
+                mean_psd[j] += (*spectra[i+offset])[j];
             nused++;
         }
     }
