@@ -152,11 +152,11 @@ pulseRecord *pulseHistory::meanRecord(int nAverage) {
 
     int nused = 0;
     lock.lock();
-    int offset = records.size() - nAverage;
-    for (int i=0; ((i+offset)<records.size() && i<nAverage); i++) {
+    int start = std::max(records.size() - nAverage, 0);
+    for (int i=start; i<records.size(); i++) {
         if (records[i]->nsamples <= nsamples) {
             for (int j=0; j<nsamples; j++)
-                (result->data)[j] += records[i+offset]->data[j];
+                (result->data)[j] += records[i]->data[j];
             nused++;
         }
     }
@@ -187,11 +187,11 @@ QVector<double> *pulseHistory::meanPSD(int nAverage) {
 
     int nused = 0;
     lock.lock();
-    int offset = records.size() - nAverage;
-    for (int i=0; ((i+offset)<spectra.size() && i<nAverage); i++) {
+    int start = std::max(records.size() - nAverage,0);
+    for (int i=start; i<spectra.size(); i++) {
         if (spectra[i]->size() == nfreq) {
             for (int j=0; j<nfreq; j++)
-                mean_psd[j] += (*spectra[i+offset])[j];
+                mean_psd[j] += (*spectra[i])[j];
             nused++;
         }
     }
