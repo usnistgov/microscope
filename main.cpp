@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
     argv += optind;
     QApplication a(argc, argv);
     qRegisterMetaType<QVector<double> >("QVector<double>");
+    a.setWindowIcon(QIcon(":/icon/microscope.png"));
 
     std::string tcpdataport = "tcp://localhost:5502";
     QStringList args = a.arguments();

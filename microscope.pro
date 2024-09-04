@@ -18,7 +18,7 @@ QMAKE_CFLAGS_RELEASE += -O3 -g
 QMAKE_CXXFLAGS_RELEASE += -O3 -g
 QMAKE_CFLAGS_DEBUG += -O0
 QMAKE_CXXFLAGS_DEBUG += -O0
-
+RESOURCES += resources.qrc
 
 
 ##################################################
