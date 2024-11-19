@@ -95,9 +95,9 @@ void FFTComputer::prepare(int length_in) {
 
     // When using a window function, the amount of power in the signal is reduced.
     // To compensate for this, the average(window[i]^2) should be scaled to 1.
-    const double meansq = sumsq / length;
+    const double rtmeansq = sqrt(sumsq / length);
     for (int i=0; i<length; i++) {
-        window[i] /= meansq;
+        window[i] /= rtmeansq;
     }
 }
 

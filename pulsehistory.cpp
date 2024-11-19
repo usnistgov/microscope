@@ -105,8 +105,8 @@ void pulseHistory::setDoDFT(bool dft) {
         lock.lock();
         for (int i=0; i<n; i++) {
             QVector<double> *psd = new QVector<double>;
-            const double sampleRate = 1.0;
-            fftMaster->computePSD(records[i]->data, *psd, sampleRate, WINDOW, previous_mean);
+            // const double sampleRate = 1.0;
+            fftMaster->computePSD(records[i]->data, *psd, 1/records[i]->sampletime, WINDOW, previous_mean);
             spectra.append(psd);
         }
         lock.unlock();
@@ -233,7 +233,7 @@ void pulseHistory::insertRecord(pulseRecord *pr) {
         clearSpectra(queueCapacity-1);
         const bool WINDOW=true; // always use Hann windowing
         QVector<double> *psd = new QVector<double>();
-        fftMaster->computePSD(pr->data, *psd, 1.0, WINDOW, previous_mean);
+        fftMaster->computePSD(pr->data, *psd, 1/pr->sampletime, WINDOW, previous_mean);
         lock.lock();
         spectra.enqueue(psd);
         lock.unlock();
