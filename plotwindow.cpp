@@ -791,14 +791,10 @@ void plotWindow::pausePressed(bool pause_state)
 ///
 void plotWindow::xAxisLog(bool checked)
 {
-
-    //std::cout << "number format was: " << ui->plot->xAxis->numberFormat().toStdString() << "precision was" << ui->plot->xAxis->numberPrecision() << std::endl;
     QCPAxis::ScaleType st;
-    // QSharedPointer<QCPAxisTicker> ticker;
     if (checked) 
     {
         st = QCPAxis::stLogarithmic;
-        // ticker = QSharedPointer<QCPAxisTicker>(new QCPAxisTickerLog);
         ui->plot->xAxis->setTicker(QSharedPointer<QCPAxisTickerLog>(new QCPAxisTickerLog));
         ui->plot->xAxis->setNumberPrecision(0);
         ui->plot->xAxis->setNumberFormat("eb");
@@ -806,14 +802,12 @@ void plotWindow::xAxisLog(bool checked)
     else 
     {
         st= QCPAxis::stLinear;
-        // ticker = QSharedPointer<QCPAxisTicker>(new QCPAxisTickerFixed);
         ui->plot->xAxis->setTicker(QSharedPointer<QCPAxisTicker>(new QCPAxisTicker));
         ui->plot->xAxis->setNumberFormat("gb");
         ui->plot->xAxis->setNumberPrecision(6);
  
     }
     ui->plot->xAxis->setScaleType(st);
-    // ui->plot->xAxis->setTicker(ticker);
     
 }
 
