@@ -792,11 +792,23 @@ void plotWindow::pausePressed(bool pause_state)
 void plotWindow::xAxisLog(bool checked)
 {
     QCPAxis::ScaleType st;
-    if (checked)
+    if (checked) 
+    {
         st = QCPAxis::stLogarithmic;
-    else
+        ui->plot->xAxis->setTicker(QSharedPointer<QCPAxisTickerLog>(new QCPAxisTickerLog));
+        ui->plot->xAxis->setNumberPrecision(0);
+        ui->plot->xAxis->setNumberFormat("eb");
+    }
+    else 
+    {
         st= QCPAxis::stLinear;
+        ui->plot->xAxis->setTicker(QSharedPointer<QCPAxisTicker>(new QCPAxisTicker));
+        ui->plot->xAxis->setNumberFormat("gb");
+        ui->plot->xAxis->setNumberPrecision(6);
+ 
+    }
     ui->plot->xAxis->setScaleType(st);
+    
 }
 
 
@@ -809,9 +821,29 @@ void plotWindow::yAxisLog(bool checked)
 {
     QCPAxis::ScaleType st;
     if (checked)
+    {
+        QCPRange range = ui->plot->yAxis->range();
+        if(range.lower <= 0)
+        {
+            range.lower=0.1;
+        }
+        if(range.upper <= 0.1)
+        {
+            range.upper = 0.2;
+        }
+        ui->plot->yAxis->setRange(range);
         st = QCPAxis::stLogarithmic;
+        ui->plot->yAxis->setTicker(QSharedPointer<QCPAxisTickerLog>(new QCPAxisTickerLog));
+        ui->plot->yAxis->setNumberPrecision(0);
+        ui->plot->yAxis->setNumberFormat("eb");
+    }
     else
+    {
         st= QCPAxis::stLinear;
+        ui->plot->yAxis->setTicker(QSharedPointer<QCPAxisTicker>(new QCPAxisTicker));
+        ui->plot->yAxis->setNumberFormat("gb");
+        ui->plot->yAxis->setNumberPrecision(6);
+    }
     ui->plot->yAxis->setScaleType(st);
 }
 
