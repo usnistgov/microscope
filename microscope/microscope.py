@@ -13,6 +13,12 @@ May 2025 -
 Original C++ version May 2018-May 2025
 """
 
+# Qt5 imports
+import PyQt5.uic
+from PyQt5 import QtGui, QtWidgets
+from PyQt5.QtCore import QSettings, pyqtSlot, QCoreApplication
+# from PyQt5.QtWidgets import QFileDialog
+
 # Non-Qt imports
 import argparse
 import json
@@ -25,12 +31,6 @@ import os
 
 # from collections import defaultdict
 # import numpy as np
-
-# Qt5 imports
-import PyQt5.uic
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QSettings, pyqtSlot, QCoreApplication
-# from PyQt5.QtWidgets import QFileDialog
 
 # # User code imports
 import plotwindow
@@ -97,7 +97,7 @@ def version_message():
 def read_channels_json_file(args):
     try:
         HOME = pathlib.Path.home()
-        with open(f"{HOME}/.dastard/channels.json", "r") as fp:
+        with open(f"{HOME}/.dastard/channels.json", "r", encoding="ascii") as fp:
             info = json.load(fp)
         args.nsensors = 0
         args.channel_groups = []
@@ -118,7 +118,7 @@ def read_channels_json_file(args):
 def parsed_arguments():
     parser = argparse.ArgumentParser(
         prog='Microscope',
-        description='A GUI for plotting pulses'
+        description='A GUI for plotting microcalorimeter pulses live'
     )
     parser.add_argument("-a", "--appname", default="Microscope: microcalorimeter plots")
     parser.add_argument("-r", "--rows", type=int, default=0)
@@ -147,7 +147,7 @@ def parsed_arguments():
         if args.tdm:
             args.nchan *= 2
         cg = ChannelGroup(1, args.nsensors)
-        args.channel_groups.append(gc)
+        args.channel_groups.append(cg)
         return args
 
     if args.rows > 0 and args.columns > 0:
@@ -177,10 +177,10 @@ def parsed_arguments():
 def main():
     args = parsed_arguments()
 
-    settings = QSettings("NIST Quantum Sensors", "microscope")
+    settings = QSettings("NIST Quantum Sensors", "Microscope")
 
     app = QtWidgets.QApplication(sys.argv)
-    app.setWindowIcon(QtGui.QIcon("./ui/microscope.png"))
+    app.setWindowIcon(QtGui.QIcon("../ui/microscope.png"))
     app.setApplicationName(args.appname)
     app.setApplicationDisplayName(args.appname)
 

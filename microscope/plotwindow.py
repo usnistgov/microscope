@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5 import QtWidgets
 
 # other non-user imports
-import numpy as np
+# import numpy as np
 import os
 
 
