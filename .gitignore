@@ -6,7 +6,6 @@ ui_*.h
 microscope
 microscope.pro.user
 microscope.pro.user.-1 
-Makefile
 .DS_Store
 .qmake.stash
 *.autosave
