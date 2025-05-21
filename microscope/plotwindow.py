@@ -63,6 +63,7 @@ class PlotWindow(QtWidgets.QWidget):
             s.setPrefix("Ch ")
             s.setAlignment(Qt.AlignRight)
             s.setMinimumWidth(75)
+            s.valueChanged.connect(self.channelChanged)
             self.channelSpinners.append(s)
             layout.addWidget(s, i, 1)
 
@@ -70,13 +71,23 @@ class PlotWindow(QtWidgets.QWidget):
                 box = QtWidgets.QCheckBox(self)
                 tool = f"Trace {c} use error signal"
                 box.setToolTip(tool)
-                # connect(box, ...)
+                box.toggled.connect(self.errStateChanged)
                 self.checkers.append(box)
                 layout.addWidget(box, i, 2)
 
-    @pyqtSlot()
+    @pyqtSlot(bool)
     def pausePressed(self, bool): pass
     @pyqtSlot()
     def clearGraphs(self): pass
     @pyqtSlot()
     def savePlot(self): pass
+
+    @pyqtSlot(int)
+    def channelChanged(self, value):
+        sender = self.channelSpinners.index(self.sender())
+        print(f"Next chan: {value} sent by spinner #{sender}")
+
+    @pyqtSlot(bool)
+    def errStateChanged(self, value):
+        sender = self.checkers.index(self.sender())
+        print(f"Err state: {value} sent by checkbox #{sender}")
