@@ -3,10 +3,11 @@
 moc_*.cpp
 ui_*.h
 *~
-microscope
 microscope.pro.user
 microscope.pro.user.-1 
 .DS_Store
 .qmake.stash
 *.autosave
 moc_predefs.h
+_version.py
+
