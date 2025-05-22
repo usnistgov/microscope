@@ -69,9 +69,12 @@ class PlotWindow(QtWidgets.QWidget):
         self.lastRecord = [None for i in range(self.NUM_TRACES)]
         self.idx2trace = {}
         self.setupChannels(channel_groups)
+        self.setupQuickSelect(channel_groups)
         self.setupPlot()
         self.xPhysicalCheck.stateChanged.connect(self.xPhysicalChanged)
         self.subtractBaselineCheck.stateChanged.connect(self.redrawAll)
+        self.quickFBComboBox.currentIndexChanged.connect(self.quickChannel)
+        self.quickErrComboBox.currentIndexChanged.connect(self.quickChannel)
 
     def setupChannels(self, channel_groups):
         self.channel_groups = channel_groups
@@ -115,6 +118,27 @@ class PlotWindow(QtWidgets.QWidget):
                 self.checkers.append(box)
                 layout.addWidget(box, i, 2)
 
+    def setupQuickSelect(self, channel_groups):
+        self.quickSelectIndex = [None]
+        for box in (self.quickFBComboBox, self.quickErrComboBox):
+            box.clear()
+            box.addItem("")
+        for i, cg in enumerate(channel_groups):
+            n = cg.nChan
+            nentries = (n-1+self.NUM_TRACES) // self.NUM_TRACES
+            for j in range(nentries):
+                cstart = cg.firstChan + j*self.NUM_TRACES
+                cend = cstart + self.NUM_TRACES - 1
+                if cend > cg.lastChan:
+                    cstart -= (cend - cg.lastChan)
+                    cend = cg.lastChan
+                label = f"Ch {cstart}-{cend} (group {i})"
+                self.quickFBComboBox.addItem(label)
+                self.quickSelectIndex.append((cstart, cend))
+                if self.isTDM:
+                    elabel = f"Err {cstart}-{cend} (group {i})"
+                    self.quickErrComboBox.addItem(elabel)
+
     def setupPlot(self):
         p1 = pg.PlotWidget()
         p1.setWindowTitle("LJH pulse record")
@@ -130,6 +154,19 @@ class PlotWindow(QtWidgets.QWidget):
     def savePlot(self): pass
 
     @pyqtSlot(int)
+    def quickChannel(self, index):
+        iserror = self.isTDM and self.sender() == self.quickErrComboBox
+        prefix = "Err " if iserror else "Ch "
+        if index < 1:
+            return
+        cstart, cend = self.quickSelectIndex[index]
+        for c in range(cstart, cend+1):
+            i = c - cstart
+            self.channelSpinners[i].setValue(c)
+            self.channelSpinners[i].setPrefix(prefix)
+            self.checkers[i].setChecked(iserror)
+
+    @pyqtSlot(int)
     def channelChanged(self, value):
         sender = self.channelSpinners.index(self.sender())
         print(f"Next chan: {value} sent by spinner #{sender}")
@@ -141,15 +178,22 @@ class PlotWindow(QtWidgets.QWidget):
         sender = self.checkers.index(self.sender())
         print(f"Err state: {value} sent by checkbox #{sender}")
         self.clearTrace(sender)
+        prefix = "Err " if self.checkers[sender].isChecked() else "Ch "
+        self.channelSpinners[sender].setPrefix(prefix)
         self.channelListChanged()
 
     def channelListChanged(self):
         self.idx2trace = {}
         for traceIdx, spinner in enumerate(self.channelSpinners):
             channum = spinner.value()
-            if channum not in self.channel_index:
-                continue
-            chanidx = self.channel_index[channum]
+            if self.isTDM:
+                chanidx = 2*channum + 1
+                if self.checkers[traceIdx].isChecked():
+                    chanidx -= 1
+            else:
+                if channum not in self.channel_index:
+                    continue
+                chanidx = self.channel_index[channum]
             if chanidx in self.idx2trace:
                 self.idx2trace[chanidx].add(traceIdx)
             else:
