@@ -67,10 +67,11 @@ class PlotWindow(QtWidgets.QWidget):
         self.highestChan = 39
         self.timeAxes = [None for i in range(self.NUM_TRACES)]
         self.curves = [None for i in range(self.NUM_TRACES)]
-        self.ydata = [None for i in range(self.NUM_TRACES)]
+        self.lastRecord = [None for i in range(self.NUM_TRACES)]
         self.setupChannels()
         self.setupPlot()
         self.xPhysicalCheck.stateChanged.connect(self.xPhysicalChanged)
+        self.subtractBaselineCheck.stateChanged.connect(self.redrawAll)
 
     def setupChannels(self):
         self.pens = [pg.mkPen(c, width=1) for c in self.standardColors]
@@ -154,7 +155,7 @@ class PlotWindow(QtWidgets.QWidget):
                     xaxis.timebase != record.timebase):
                 xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
                 self.timeAxes[traceIdx] = xaxis
-        self.ydata[traceIdx] = record.record
+        self.lastRecord[traceIdx] = record
         self.draw(traceIdx)
 
     @pyqtSlot()
@@ -187,7 +188,7 @@ class PlotWindow(QtWidgets.QWidget):
                 continue
             self.plotWidget.removeItem(curve)
             self.curves[traceIdx] = None
-            self.ydata[traceIdx] = None
+            self.lastRecord[traceIdx] = None
 
     @pyqtSlot()
     def redrawAll(self):
@@ -201,4 +202,7 @@ class PlotWindow(QtWidgets.QWidget):
 
         xaxis = self.timeAxes[traceIdx]
         x = xaxis.x(self.xPhysicalCheck.isChecked())
-        self.curves[traceIdx].setData(x, self.ydata[traceIdx])
+        ydata = self.lastRecord[traceIdx].record
+        if self.subtractBaselineCheck.isChecked():
+            ydata = self.lastRecord[traceIdx].record_baseline_subtracted
+        self.curves[traceIdx].setData(x, ydata)

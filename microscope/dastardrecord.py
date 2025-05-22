@@ -19,6 +19,10 @@ class DastardRecord:
     data_fmt = ("b", "B", "<h", "<H", "<i", "<I", "<q", "<Q")
     data_type = (np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, np.int64, np.uint64)
 
+    @property
+    def record_baseline_subtracted(self):
+        return self.record - self.record[:self.nPresamples-1].mean()
+
     @classmethod
     def fromBinary(cls, header, contents):
         values = struct.unpack(cls.header_fmt, header)
