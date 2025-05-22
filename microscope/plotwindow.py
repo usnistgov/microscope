@@ -60,20 +60,30 @@ class PlotWindow(QtWidgets.QWidget):
         "gray"
     )
 
-    def __init__(self, parent, isTDM=False):
+    def __init__(self, parent, channel_groups, isTDM=False):
         QtWidgets.QWidget.__init__(self, parent)
         PyQt5.uic.loadUi(os.path.join(os.path.dirname(__file__), "ui/plotwindow.ui"), self)
         self.isTDM = isTDM
-        self.highestChan = 39
         self.timeAxes = [None for i in range(self.NUM_TRACES)]
         self.curves = [None for i in range(self.NUM_TRACES)]
         self.lastRecord = [None for i in range(self.NUM_TRACES)]
-        self.setupChannels()
+        self.setupChannels(channel_groups)
         self.setupPlot()
         self.xPhysicalCheck.stateChanged.connect(self.xPhysicalChanged)
         self.subtractBaselineCheck.stateChanged.connect(self.redrawAll)
 
-    def setupChannels(self):
+    def setupChannels(self, channel_groups):
+        self.channel_groups = channel_groups
+        self.channel_index = {}
+        self.channel_number = {}
+        i = 0
+        for cg in channel_groups:
+            for j in range(cg.nChan):
+                self.channel_index[j+cg.firstChan] = i
+                self.channel_number[i] = j+cg.firstChan
+                i += 1
+        self.highestChan = np.max([cg.lastChan for cg in channel_groups])
+
         self.pens = [pg.mkPen(c, width=1) for c in self.standardColors]
         layout = self.channelNameLayout
         clear_grid_layout(layout)
@@ -110,9 +120,7 @@ class PlotWindow(QtWidgets.QWidget):
         self.plotFrame.layout().addWidget(p1)
         p1.setLabel("left", "TES current")
         p1.setLabel("bottom", "Samples after trigger")
-        # self.curve = p1.plot([1, 2, 3, 4, 5], [1, 4, 9, 16, 4], pen=self.pens[2], name="Pulse 0")
-        # p1.getViewBox().setLimits(xMin=samplevalues[0], xMax=samplevalues[-1])
-        p1.addLegend()
+        # p1.addLegend()
         self.plotWidget = p1
 
     @pyqtSlot(bool)

@@ -5,3 +5,7 @@ from dataclasses import dataclass
 class ChannelGroup:
     firstChan: int
     nChan: int
+
+    @property
+    def lastChan(self):
+        return self.firstChan + self.nChan - 1

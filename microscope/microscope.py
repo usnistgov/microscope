@@ -57,10 +57,12 @@ QCoreApplication.setApplicationName("Microscope")
 
 
 class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
-    def __init__(self, settings, title, isTDM, parent=None):
+    def __init__(self, settings, title, isTDM, channel_groups):
         self.settings = settings
         self.isTDM = isTDM
+        self.set_channel_groups(channel_groups)
 
+        parent = None
         QtWidgets.QMainWindow.__init__(self, parent)
         my_dir = os.path.dirname(__file__)
         self.setWindowIcon(QtGui.QIcon(os.path.join(my_dir, "ui/dc.png")))
@@ -68,9 +70,7 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         self.setWindowTitle(title)
 
         self.plotWindows = []
-        pw1 = plotwindow.PlotWindow(None, isTDM=isTDM)
-        self.plotWindows.append(pw1)
-        self.frame.layout().addWidget(pw1, 0, 0)
+        self.addPlotWindow()
 
         host = "localhost"
         port = 5502
@@ -78,9 +78,28 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         self.zmqsubscriber = subscriber.ZMQSubscriber(host, port)
         self.zmqsubscriber.moveToThread(self.zmqthread)
         self.zmqsubscriber.pulserecord.connect(self.updateReceived)
-        self.zmqsubscriber.pulserecord.connect(pw1.updateReceived)
+        pw = self.plotWindows[0]
+        self.zmqsubscriber.pulserecord.connect(pw.updateReceived)
         self.zmqthread.started.connect(self.zmqsubscriber.data_monitor_loop)
         QtCore.QTimer.singleShot(0, self.zmqthread.start)
+
+    def addPlotWindow(self):
+        pw = plotwindow.PlotWindow(None, self.channel_groups, isTDM=self.isTDM)
+        self.plotWindows.append(pw)
+        r = len(self.plotWindows) % 2
+        c = len(self.plotWindows) // 2
+        self.frame.layout().addWidget(pw, r, c)
+
+    def set_channel_groups(self, cgs):
+        self.channel_groups = cgs
+        self.channel_index = {}
+        self.channel_number = {}
+        i = 0
+        for cg in cgs:
+            for j in range(cg.nChan):
+                self.channel_index[j+cg.firstChan] = i
+                self.channel_number[i] = j+cg.firstChan
+                i += 1
 
     @pyqtSlot()
     def savePlot(self): pass
@@ -203,7 +222,7 @@ def main():
 
     short_ver = __version__.split("+")[0]
     title = f"{args.appname} (version {short_ver})"
-    window = MainWindow(settings, title, args.tdm)
+    window = MainWindow(settings, title, args.tdm, args.channel_groups)
 
     window.show()
     retval = app.exec_()
