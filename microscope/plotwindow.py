@@ -132,11 +132,25 @@ class PlotWindow(QtWidgets.QWidget):
     def channelChanged(self, value):
         sender = self.channelSpinners.index(self.sender())
         print(f"Next chan: {value} sent by spinner #{sender}")
+        self.channelListChanged()
 
     @pyqtSlot(bool)
     def errStateChanged(self, value):
         sender = self.checkers.index(self.sender())
         print(f"Err state: {value} sent by checkbox #{sender}")
+        self.channelListChanged()
+
+    def channelListChanged(self):
+        self.idx2trace = {}
+        for traceIdx, spinner in enumerate(self.channelSpinners):
+            channum = spinner.value()
+            if channum not in self.channel_index:
+                continue
+            chanidx = self.channel_index[channum]
+            if chanidx in self.idx2trace:
+                self.idx2trace[chanidx].add(traceIdx)
+            else:
+                self.idx2trace[chanidx] = {traceIdx}
 
     @pyqtSlot(DastardRecord)
     def updateReceived(self, record):
@@ -146,13 +160,8 @@ class PlotWindow(QtWidgets.QWidget):
         """
         if self.pauseButton.isChecked():
             return
-
-        for traceIdx, spinner in enumerate(self.channelSpinners):
-            channum = spinner.value()
-            if channum not in self.channel_index:
-                continue
-            chanidx = self.channel_index[channum]
-            if chanidx == record.channelIndex:
+        if record.channelIndex in self.idx2trace:
+            for traceIdx in self.idx2trace[record.channelIndex]:
                 self.plotrecord(traceIdx, record)
 
     def plotrecord(self, traceIdx, record):
