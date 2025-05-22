@@ -146,10 +146,16 @@ class PlotWindow(QtWidgets.QWidget):
         """
         if self.pauseButton.isChecked():
             return
-        traceIdx = record.channelIndex
-        if traceIdx >= 8:
-            return
 
+        for traceIdx, spinner in enumerate(self.channelSpinners):
+            channum = spinner.value()
+            if channum not in self.channel_index:
+                continue
+            chanidx = self.channel_index[channum]
+            if chanidx == record.channelIndex:
+                self.plotrecord(traceIdx, record)
+
+    def plotrecord(self, traceIdx, record):
         curve = self.curves[traceIdx]
         if curve is None:
             xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
