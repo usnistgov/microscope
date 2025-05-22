@@ -27,7 +27,7 @@
     <number>6</number>
    </property>
    <item>
-    <layout class="QVBoxLayout" name="chanSelectLayout" stretch="0,0,0,0,0,0">
+    <layout class="QVBoxLayout" name="chanSelectLayout" stretch="0,0,0,0,0,0,0,0">
      <property name="spacing">
       <number>6</number>
      </property>
@@ -154,6 +154,20 @@
       </widget>
      </item>
      <item>
+      <widget class="QCheckBox" name="subtractBaselineCheck">
+       <property name="text">
+        <string>Subtract baseline</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="xPhysicalCheck">
+       <property name="text">
+        <string>X axis physical</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="verticalSpacer">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
@@ -174,18 +188,20 @@
       <number>2</number>
      </property>
      <item>
-      <widget class="QFrame" name="plot">
+      <widget class="QFrame" name="plotFrame">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QWidget" name="minMaxRangeWidget" native="true">
-       <layout class="QGridLayout" name="plotRangeTexts"/>
+       <property name="frameShape">
+        <enum>QFrame::Box</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Sunken</enum>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout"/>
       </widget>
      </item>
      <item>
@@ -436,8 +452,8 @@
    <slot>close()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>633</x>
-     <y>397</y>
+     <x>632</x>
+     <y>424</y>
     </hint>
     <hint type="destinationlabel">
      <x>550</x>
@@ -468,8 +484,8 @@
    <slot>clearGraphs()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>427</x>
-     <y>388</y>
+     <x>492</x>
+     <y>424</y>
     </hint>
     <hint type="destinationlabel">
      <x>373</x>

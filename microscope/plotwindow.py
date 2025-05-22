@@ -2,10 +2,14 @@
 import PyQt5.uic
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5 import QtWidgets
+import pyqtgraph as pg
 
 # other non-user imports
-# import numpy as np
+import numpy as np
 import os
+from dataclasses import dataclass
+
+from dastardrecord import DastardRecord
 
 
 def clear_grid_layout(grid_layout):
@@ -19,6 +23,24 @@ def clear_grid_layout(grid_layout):
             grid_layout.removeItem(item)
 
 
+@dataclass(frozen=True)
+class timeAxis:
+    nPresamples: int
+    nSamples: int
+    timebase: float
+    xsamples: np.ndarray
+    xms: np.ndarray
+
+    def x(self, isphysical):
+        return self.xms if isphysical else self.xsamples
+
+    @staticmethod
+    def create(nPresamples, nSamples, timebase):
+        xsamples = np.arange(nSamples) - nPresamples
+        xms = xsamples * timebase * 1000
+        return timeAxis(nPresamples, nSamples, timebase, xsamples, xms)
+
+
 class PlotWindow(QtWidgets.QWidget):
     """Provide the UI inside each Plot Window."""
 
@@ -29,7 +51,7 @@ class PlotWindow(QtWidgets.QWidget):
         # For most, use QColor to replace standard named colors with slightly darker versions
         "black",
         "#b400e6",  # Purple
-        "#00b4ff",  # Blue
+        "#0000b4",  # Blue
         "#00bebe",  # Cyan
         "darkgreen",
         "#cdcd00",  # Gold
@@ -43,9 +65,15 @@ class PlotWindow(QtWidgets.QWidget):
         PyQt5.uic.loadUi(os.path.join(os.path.dirname(__file__), "ui/plotwindow.ui"), self)
         self.isTDM = isTDM
         self.highestChan = 39
+        self.timeAxes = [None for i in range(self.NUM_TRACES)]
+        self.curves = [None for i in range(self.NUM_TRACES)]
+        self.ydata = [None for i in range(self.NUM_TRACES)]
         self.setupChannels()
+        self.setupPlot()
+        self.xPhysicalCheck.stateChanged.connect(self.xPhysicalChanged)
 
     def setupChannels(self):
+        self.pens = [pg.mkPen(c, width=1) for c in self.standardColors]
         layout = self.channelNameLayout
         clear_grid_layout(layout)
         self.channelSpinners = []
@@ -75,10 +103,19 @@ class PlotWindow(QtWidgets.QWidget):
                 self.checkers.append(box)
                 layout.addWidget(box, i, 2)
 
+    def setupPlot(self):
+        p1 = pg.PlotWidget()
+        p1.setWindowTitle("LJH pulse record")
+        self.plotFrame.layout().addWidget(p1)
+        p1.setLabel("left", "TES current")
+        p1.setLabel("bottom", "Samples after trigger")
+        # self.curve = p1.plot([1, 2, 3, 4, 5], [1, 4, 9, 16, 4], pen=self.pens[2], name="Pulse 0")
+        # p1.getViewBox().setLimits(xMin=samplevalues[0], xMax=samplevalues[-1])
+        p1.addLegend()
+        self.plotWidget = p1
+
     @pyqtSlot(bool)
     def pausePressed(self, bool): pass
-    @pyqtSlot()
-    def clearGraphs(self): pass
     @pyqtSlot()
     def savePlot(self): pass
 
@@ -91,3 +128,77 @@ class PlotWindow(QtWidgets.QWidget):
     def errStateChanged(self, value):
         sender = self.checkers.index(self.sender())
         print(f"Err state: {value} sent by checkbox #{sender}")
+
+    @pyqtSlot(DastardRecord)
+    def updateReceived(self, record):
+        """
+        Slot to handle one data record for one channel.
+        It ingests the data and feeds it to the BaselineFinder object for the channel.
+        """
+        if self.pauseButton.isChecked():
+            return
+        traceIdx = record.channelIndex
+        if traceIdx >= 8:
+            return
+
+        curve = self.curves[traceIdx]
+        if curve is None:
+            xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
+            self.timeAxes[traceIdx] = xaxis
+            x = xaxis.x(self.xPhysicalCheck.isChecked())
+            curve = self.plotWidget.plot(x, record.record, pen=self.pens[traceIdx])
+            self.curves[traceIdx] = curve
+        else:
+            xaxis = self.timeAxes[traceIdx]
+            if (xaxis.nPresamples != record.nPresamples or xaxis.nSamples != record.nSamples or
+                    xaxis.timebase != record.timebase):
+                xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
+                self.timeAxes[traceIdx] = xaxis
+        self.ydata[traceIdx] = record.record
+        self.draw(traceIdx)
+
+    @pyqtSlot()
+    def xPhysicalChanged(self):
+        # Do something to choose x-axis ranges: current value AND max range
+        physical = self.xPhysicalCheck.isChecked()
+        pw = self.plotWidget
+        x_range, _ = pw.viewRange()
+        timebase = np.mean([ax.timebase for ax in self.timeAxes if ax is not None])
+        if physical:
+            x_range[0] *= timebase*1000
+            x_range[1] *= timebase*1000
+            pw.setLabel("bottom", "Time after trigger", units="ms")
+        else:
+            x_range[0] /= timebase*1000
+            x_range[1] /= timebase*1000
+            pw.setLabel("bottom", "Samples after trigger", units="")
+        xmin = np.min([ax.x(physical)[0] for ax in self.timeAxes if ax is not None])
+        xmax = np.max([ax.x(physical)[-1] for ax in self.timeAxes if ax is not None])
+        vb = pw.getViewBox()
+        vb.setLimits(xMin=xmin, xMax=xmax)
+        vb.setXRange(x_range[0], x_range[1])
+        self.redrawAll()
+
+    @pyqtSlot()
+    def clearGraphs(self):
+        for traceIdx in range(self.NUM_TRACES):
+            curve = self.curves[traceIdx]
+            if curve is None:
+                continue
+            self.plotWidget.removeItem(curve)
+            self.curves[traceIdx] = None
+            self.ydata[traceIdx] = None
+
+    @pyqtSlot()
+    def redrawAll(self):
+        for (traceIdx, curve) in enumerate(self.curves):
+            self.draw(traceIdx)
+
+    def draw(self, traceIdx):
+        curve = self.curves[traceIdx]
+        if curve is None:
+            return
+
+        xaxis = self.timeAxes[traceIdx]
+        x = xaxis.x(self.xPhysicalCheck.isChecked())
+        self.curves[traceIdx].setData(x, self.ydata[traceIdx])

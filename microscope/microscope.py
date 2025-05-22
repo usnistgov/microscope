@@ -15,26 +15,23 @@ Original C++ version May 2018-May 2025
 
 # Qt5 imports
 import PyQt5.uic
-from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QSettings, pyqtSlot, QCoreApplication
 # from PyQt5.QtWidgets import QFileDialog
+import pyqtgraph as pg
 
 # Non-Qt imports
 import argparse
 import json
 import pathlib
-# import subprocess
 import sys
 import os
-# import yaml
-# import zmq
-
-# from collections import defaultdict
-# import numpy as np
 
 # # User code imports
 import plotwindow
+import subscriber
 from channel_group import ChannelGroup
+from dastardrecord import DastardRecord
 # from . import disable_hyperactive
 # from . import rpc_client
 # from . import status_monitor
@@ -75,19 +72,37 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         self.plotWindows.append(pw1)
         self.frame.layout().addWidget(pw1, 0, 0)
 
+        host = "localhost"
+        port = 5502
+        self.zmqthread = QtCore.QThread()
+        self.zmqsubscriber = subscriber.ZMQSubscriber(host, port)
+        self.zmqsubscriber.moveToThread(self.zmqthread)
+        self.zmqsubscriber.pulserecord.connect(self.updateReceived)
+        self.zmqsubscriber.pulserecord.connect(pw1.updateReceived)
+        self.zmqthread.started.connect(self.zmqsubscriber.data_monitor_loop)
+        QtCore.QTimer.singleShot(0, self.zmqthread.start)
+
     @pyqtSlot()
     def savePlot(self): pass
 
-    # @pyqtSlot()
-    # def close(self):
-    #     """Cleanly close the zmqlistener and block certain signals in the
-    #     trigger config widget."""
-    #     # self.triggerTab._closing()
-    #     # self.zmqlistener.running = False
-    #     # self.zmqthread.quit()
-    #     # self.zmqthread.wait()
-    #     # self.observeWindow.hide()  # prevents close hanging due to still visible observeWindow
-    #     self.c
+    @pyqtSlot(DastardRecord)
+    def updateReceived(self, record):
+        """
+        Slot to handle one data record for one channel.
+
+        It ingests the data and feeds it to the BaselineFinder object for the channel.
+        """
+        print(f"Received chan {record.channelIndex:3d} with data len={len(record.record)} and nPre={record.nPresamples}")
+
+    @pyqtSlot()
+    def closeEvent(self, event):
+        """Cleanly close the zmqlistener and block certain signals in the
+        trigger config widget."""
+        # self.triggerTab._closing()
+        self.zmqsubscriber.running = False
+        self.zmqthread.quit()
+        self.zmqthread.wait()
+        event.accept()
 
 
 def version_message():
@@ -123,7 +138,7 @@ def parsed_arguments():
     parser.add_argument("-a", "--appname", default="Microscope: microcalorimeter plots")
     parser.add_argument("-r", "--rows", type=int, default=0)
     parser.add_argument("-c", "--columns", type=int, default=0)
-    parser.add_argument("-N", "--nsensors", default=0)
+    parser.add_argument("-N", "--nsensors", type=int, default=0)
     parser.add_argument("-i", "--indexing", action="store_true")
     parser.add_argument("-n", "--no-error-channel", action="store_true")
     parser.add_argument("-v", "--version", action="store_true")
@@ -133,12 +148,11 @@ def parsed_arguments():
     if args.version:
         sys.exit(0)
 
-    args.channel_groups = []
-
-    # There are 3 ways to number channels. We can:
+    # There are 3 ways to number channels. Try these in order from top to lower precedence. We can:
     # 1. use indexing,
     # 2. set rows+cols, or
-    # 3. read the config file $HOME/.dastard/channels.json to learn the channel groups.
+    # 3. read the config file $HOME/.dastard/channels.json to learn the channel groups
+    args.channel_groups = []
     if args.indexing:
         if args.nsensors <= 0:
             DEFAULT_NSENSORS = 256
@@ -176,8 +190,11 @@ def parsed_arguments():
 
 def main():
     args = parsed_arguments()
-
     settings = QSettings("NIST Quantum Sensors", "Microscope")
+
+    pg.setConfigOption('background', 'w')
+    pg.setConfigOption('foreground', 'k')
+    pg.setConfigOptions(antialias=True)
 
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon("../ui/microscope.png"))
