@@ -67,6 +67,7 @@ class PlotWindow(QtWidgets.QWidget):
         self.timeAxes = [None for i in range(self.NUM_TRACES)]
         self.curves = [None for i in range(self.NUM_TRACES)]
         self.lastRecord = [None for i in range(self.NUM_TRACES)]
+        self.idx2trace = {}
         self.setupChannels(channel_groups)
         self.setupPlot()
         self.xPhysicalCheck.stateChanged.connect(self.xPhysicalChanged)
@@ -132,12 +133,14 @@ class PlotWindow(QtWidgets.QWidget):
     def channelChanged(self, value):
         sender = self.channelSpinners.index(self.sender())
         print(f"Next chan: {value} sent by spinner #{sender}")
+        self.clearTrace(sender)
         self.channelListChanged()
 
     @pyqtSlot(bool)
     def errStateChanged(self, value):
         sender = self.checkers.index(self.sender())
         print(f"Err state: {value} sent by checkbox #{sender}")
+        self.clearTrace(sender)
         self.channelListChanged()
 
     def channelListChanged(self):
@@ -206,12 +209,15 @@ class PlotWindow(QtWidgets.QWidget):
     @pyqtSlot()
     def clearGraphs(self):
         for traceIdx in range(self.NUM_TRACES):
-            curve = self.curves[traceIdx]
-            if curve is None:
-                continue
-            self.plotWidget.removeItem(curve)
-            self.curves[traceIdx] = None
-            self.lastRecord[traceIdx] = None
+            self.clearTrace(traceIdx)
+
+    def clearTrace(self, traceIdx):
+        curve = self.curves[traceIdx]
+        if curve is None:
+            return
+        self.plotWidget.removeItem(curve)
+        self.curves[traceIdx] = None
+        self.lastRecord[traceIdx] = None
 
     @pyqtSlot()
     def redrawAll(self):
