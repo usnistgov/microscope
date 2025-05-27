@@ -50,6 +50,9 @@ class DastardRecordsBuffer:
             self.buffer = self.buffer[nextra:]
         self.buffer.append(x)
 
+    def clear(self):
+        self.buffer = []
+
     def resize(self, s):
         self.capacity = s
         if len(self.buffer) > self.capacity:

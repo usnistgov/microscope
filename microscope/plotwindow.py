@@ -228,8 +228,6 @@ class PlotWindow(QtWidgets.QWidget):
     def pausePressed(self, paused): pass
     @pyqtSlot()
     def savePlot(self): pass
-    @pyqtSlot()
-    def startStopAveraging(self): pass
 
     @pyqtSlot(int)
     def quickChannel(self, index):
@@ -331,12 +329,14 @@ class PlotWindow(QtWidgets.QWidget):
             self.clearTrace(traceIdx)
 
     def clearTrace(self, traceIdx):
-        curve = self.traces[traceIdx].curve
+        trace = self.traces[traceIdx]
+        curve = trace.curve
         if curve is None:
             return
         self.plotWidget.removeItem(curve)
-        self.traces[traceIdx].curve = None
-        self.traces[traceIdx].lastRecord = None
+        trace.curve = None
+        trace.lastRecord = None
+        trace.previousRecords.clear()
 
     @pyqtSlot()
     def redrawAll(self):
