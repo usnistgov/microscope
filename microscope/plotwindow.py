@@ -1,6 +1,6 @@
 # Qt5 imports
 import PyQt5.uic
-from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtCore import Qt, pyqtSlot, QObject
 from PyQt5 import QtWidgets
 import pyqtgraph as pg
 
@@ -8,9 +8,8 @@ import pyqtgraph as pg
 import numpy as np
 import os
 from dataclasses import dataclass
-from typing import Optional
 
-from dastardrecord import DastardRecord
+from dastardrecord import DastardRecord, DastardRecordsBuffer
 
 
 def clear_grid_layout(grid_layout):
@@ -42,16 +41,55 @@ class timeAxis:
         return timeAxis(nPresamples, nSamples, timebase, xsamples, xms)
 
 
-@dataclass(frozen=False)
-class PlotTrace:
-    color: str
-    curve: Optional[pg.PlotCurveItem] = None
-    timeAx: Optional[timeAxis] = None
-    lastRecord: Optional[DastardRecord] = None
-    # nPresamples: int
-    # nSamples: int
-    # timebase: float
-    # rawdata: np.ndarray
+class PlotTrace(QObject):
+    def __init__(self, idx, color, previousBufferLength):
+        self.traceIdx = idx
+        self.color = color
+        self.pen = pg.mkPen(color, width=1)
+        self.curve = None
+        self.timeAx = None
+        self.lastRecord = None
+        self.previousRecords = DastardRecordsBuffer(previousBufferLength)
+
+    @pyqtSlot(int)
+    def changeBufferLength(self, cap):
+        self.previousRecords.resize(cap)
+
+    def plotrecord(self, record, plotWidget, xPhysical, sbtext, waterfallSpacing, average):
+        if self.curve is None:
+            xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
+            self.timeAx = xaxis
+            x = xaxis.x(xPhysical)
+            self.curve = plotWidget.plot(x, record.record, pen=self.pen)
+        else:
+            xaxis = self.timeAx
+            if (xaxis.nPresamples != record.nPresamples or xaxis.nSamples != record.nSamples or
+                    xaxis.timebase != record.timebase):
+                xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
+                self.timeAx = xaxis
+        self.lastRecord = record
+        self.previousRecords.push(record)
+        self.drawStoredRecord(xPhysical, sbtext, waterfallSpacing, average)
+
+    def drawStoredRecord(self, xPhysical, sbtext, waterfallSpacing, average):
+        if self.curve is None:
+            return
+
+        xaxis = self.timeAx
+        x = xaxis.x(xPhysical)
+        record = self.lastRecord
+        if average:
+            record = self.previousRecords.mean()
+        if "Raw" in sbtext:
+            ydata = record.record
+
+        elif "Subtract" in sbtext:
+            ydata = record.record_baseline_subtracted
+
+        elif "Waterfall" in sbtext:
+            ydata = record.record_baseline_subtracted + self.traceIdx * waterfallSpacing
+
+        self.curve.setData(x, ydata)
 
 
 class PlotWindow(QtWidgets.QWidget):
@@ -86,7 +124,8 @@ class PlotWindow(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         PyQt5.uic.loadUi(os.path.join(os.path.dirname(__file__), "ui/plotwindow.ui"), self)
         self.isTDM = isTDM
-        self.traces = [PlotTrace(i, self.color(i)) for i in range(self.NUM_TRACES)]
+        previousBufferLength = self.spinBox_nAverage.value()
+        self.traces = [PlotTrace(i, self.color(i), previousBufferLength) for i in range(self.NUM_TRACES)]
         self.idx2trace = {}
         self.setupChannels(channel_groups)
         self.setupQuickSelect(channel_groups)
@@ -96,7 +135,14 @@ class PlotWindow(QtWidgets.QWidget):
         self.quickFBComboBox.currentIndexChanged.connect(self.quickChannel)
         self.quickErrComboBox.currentIndexChanged.connect(self.quickChannel)
         self.waterfallDeltaSpin.valueChanged.connect(self.redrawAll)
-        self.averageTraces.clicked.connect(self.startStopAveraging)
+        self.averageTraces.toggled.connect(self.spinBox_nAverage.setEnabled)
+        self.averageTraces.toggled.connect(self.redrawAll)
+        self.spinBox_nAverage.valueChanged.connect(self.changeAverage)
+
+    @pyqtSlot(int)
+    def changeAverage(self, n):
+        for trace in self.traces:
+            trace.changeBufferLength(n)
 
     def setupChannels(self, channel_groups):
         self.channel_groups = channel_groups
@@ -110,7 +156,6 @@ class PlotWindow(QtWidgets.QWidget):
                 i += 1
         self.highestChan = np.max([cg.lastChan for cg in channel_groups])
 
-        self.pens = [pg.mkPen(self.color(i), width=1) for i in range(self.NUM_TRACES)]
         layout = self.channelNameLayout
         clear_grid_layout(layout)
         self.channelSpinners = []
@@ -180,7 +225,7 @@ class PlotWindow(QtWidgets.QWidget):
         p1.setLimits(yMin=self.YMIN, yMax=self.YMAX)
 
     @pyqtSlot(bool)
-    def pausePressed(self, bool): pass
+    def pausePressed(self, paused): pass
     @pyqtSlot()
     def savePlot(self): pass
     @pyqtSlot()
@@ -240,30 +285,18 @@ class PlotWindow(QtWidgets.QWidget):
         """
         if self.pauseButton.isChecked():
             return
+        sbtext = self.subtractBaselineMenu.currentText()
+        waterfallSpacing = self.waterfallDeltaSpin.value()
+        average = self.averageTraces.isChecked()
+
         if record.channelIndex in self.idx2trace:
             for traceIdx in self.idx2trace[record.channelIndex]:
-                self.plotrecord(traceIdx, record)
+                trace = self.traces[traceIdx]
+                trace.plotrecord(record, self.plotWidget, self.xPhysical, sbtext, waterfallSpacing, average)
 
     @property
     def xPhysical(self):
         return "ms" in self.xPhysicalMenu.currentText()
-
-    def plotrecord(self, traceIdx, record):
-        curve = self.traces[traceIdx].curve
-        if curve is None:
-            xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
-            self.traces[traceIdx].timeAx = xaxis
-            x = xaxis.x(self.xPhysical)
-            curve = self.plotWidget.plot(x, record.record, pen=self.pens[traceIdx])
-            self.traces[traceIdx].curve = curve
-        else:
-            xaxis = self.traces[traceIdx].timeAx
-            if (xaxis.nPresamples != record.nPresamples or xaxis.nSamples != record.nSamples or
-                    xaxis.timebase != record.timebase):
-                xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
-                self.traces[traceIdx].timeAx = xaxis
-        self.traces[traceIdx].lastRecord = record
-        self.draw(traceIdx)
 
     @pyqtSlot()
     def xPhysicalChanged(self):
@@ -307,28 +340,10 @@ class PlotWindow(QtWidgets.QWidget):
 
     @pyqtSlot()
     def redrawAll(self):
-        for traceIdx in range(len(self.traces)):
-            self.draw(traceIdx)
-
-    def draw(self, traceIdx):
-        curve = self.traces[traceIdx].curve
-        if curve is None:
-            return
-
-        xaxis = self.traces[traceIdx].timeAx
-        x = xaxis.x(self.xPhysical)
         sbtext = self.subtractBaselineMenu.currentText()
-        if "Raw" in sbtext:
-            ydata = self.traces[traceIdx].lastRecord.record
-
-        elif "Subtract" in sbtext:
-            ydata = self.traces[traceIdx].lastRecord.record_baseline_subtracted
-
-        if "Waterfall" in sbtext:
-            spacing = self.waterfallDeltaSpin.value()
-            ydata = self.traces[traceIdx].lastRecord.record_baseline_subtracted + traceIdx * spacing
-            self.waterfallDeltaSpin.setEnabled(True)
-        else:
-            self.waterfallDeltaSpin.setEnabled(False)
-
-        self.traces[traceIdx].curve.setData(x, ydata)
+        iswaterfall = "Waterfall" in sbtext
+        self.waterfallDeltaSpin.setEnabled(iswaterfall)
+        spacing = self.waterfallDeltaSpin.value()
+        average = self.averageTraces.isChecked()
+        for trace in self.traces:
+            trace.drawStoredRecord(self.xPhysical, sbtext, spacing, average)

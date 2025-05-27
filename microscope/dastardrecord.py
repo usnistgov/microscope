@@ -1,6 +1,6 @@
 import numpy as np
 import struct
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 @dataclass(frozen=True)
@@ -34,3 +34,38 @@ class DastardRecord:
 
         return DastardRecord(chanidx, datatype, nPresamples, nSamples, timebase, voltsPerArb,
                              triggerTime, frameIndex, data)
+
+
+class DastardRecordsBuffer:
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.buffer = []
+
+    def __len__(self):
+        return len(self.buffer)
+
+    def push(self, x):
+        if len(self.buffer) >= self.capacity:
+            nextra = len(self.buffer) - self.capacity + 1
+            self.buffer = self.buffer[nextra:]
+        self.buffer.append(x)
+
+    def resize(self, s):
+        self.capacity = s
+        if len(self.buffer) > self.capacity:
+            nextra = len(self.buffer) - self.capacity
+            self.buffer = self.buffer[nextra:]
+
+    def mean(self):
+        n = len(self.buffer)
+        if n <= 0:
+            return None
+
+        if n == 1:
+            return self.buffer[0]
+
+        r = replace(self.buffer[0])
+        raw = np.asarray(r.record, dtype=float)
+        for dr in self.buffer[1:]:
+            raw += dr.record
+        return replace(r, record=raw/n)
