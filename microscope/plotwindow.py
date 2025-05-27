@@ -114,15 +114,22 @@ class PlotWindow(QtWidgets.QWidget):
             self.channelSpinners.append(s)
             layout.addWidget(s, i, 1)
 
+            box = QtWidgets.QCheckBox(self)
+            tool = f"Trace {c} use error signal"
+            box.setToolTip(tool)
+            box.toggled.connect(self.errStateChanged)
+            self.checkers.append(box)
             if self.isTDM:
-                box = QtWidgets.QCheckBox(self)
-                tool = f"Trace {c} use error signal"
-                box.setToolTip(tool)
-                box.toggled.connect(self.errStateChanged)
-                self.checkers.append(box)
                 layout.addWidget(box, i, 2)
+            else:
+                box.setEnabled(False)
+                box.hide()
 
     def setupQuickSelect(self, channel_groups):
+        if not self.isTDM:
+            self.quickErrLabel.hide()
+            self.quickErrComboBox.hide()
+            self.quickFBLabel.setText("Quick select Chan #")
         self.quickSelectIndex = [None]
         for box in (self.quickFBComboBox, self.quickErrComboBox):
             box.clear()
