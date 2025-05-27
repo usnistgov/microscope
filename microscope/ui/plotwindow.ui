@@ -138,6 +138,9 @@
      </item>
      <item>
       <widget class="QCheckBox" name="averageTraces">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Average Traces</string>
        </property>
@@ -145,6 +148,9 @@
      </item>
      <item>
       <widget class="QSpinBox" name="spinBox_nAverage">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="minimum">
         <number>1</number>
        </property>
