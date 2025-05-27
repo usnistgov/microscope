@@ -1,6 +1,6 @@
 # Qt5 imports
 import PyQt5.uic
-from PyQt5.QtCore import Qt, pyqtSlot, QObject
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QObject
 from PyQt5 import QtWidgets
 import pyqtgraph as pg
 
@@ -253,14 +253,12 @@ class PlotWindow(QtWidgets.QWidget):
     @pyqtSlot(int)
     def channelChanged(self, value):
         sender = self.channelSpinners.index(self.sender())
-        print(f"Next chan: {value} sent by spinner #{sender}")
         self.clearTrace(sender)
         self.channelListChanged()
 
     @pyqtSlot(bool)
     def errStateChanged(self, value):
         sender = self.checkers.index(self.sender())
-        print(f"Err state: {value} sent by checkbox #{sender}")
         self.clearTrace(sender)
         prefix = "Err " if self.checkers[sender].isChecked() else "Ch "
         self.channelSpinners[sender].setPrefix(prefix)
@@ -355,3 +353,10 @@ class PlotWindow(QtWidgets.QWidget):
         average = self.averageTraces.isChecked()
         for trace in self.traces:
             trace.drawStoredRecord(self.xPhysical, sbtext, spacing, average)
+
+    closed = pyqtSignal()
+
+    @pyqtSlot()
+    def closeEvent(self, event):
+        self.closed.emit()
+        event.accept()

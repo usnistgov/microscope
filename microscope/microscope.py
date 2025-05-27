@@ -69,26 +69,42 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         PyQt5.uic.loadUi(os.path.join(my_dir, "ui/microscope.ui"), self)
         self.setWindowTitle(title)
 
-        self.plotWindows = []
-        self.addPlotWindow()
-
         host = "localhost"
         port = 5502
         self.zmqthread = QtCore.QThread()
         self.zmqsubscriber = subscriber.ZMQSubscriber(host, port)
         self.zmqsubscriber.moveToThread(self.zmqthread)
         # self.zmqsubscriber.pulserecord.connect(self.updateReceived)
-        pw = self.plotWindows[0]
-        self.zmqsubscriber.pulserecord.connect(pw.updateReceived)
         self.zmqthread.started.connect(self.zmqsubscriber.data_monitor_loop)
         QtCore.QTimer.singleShot(0, self.zmqthread.start)
 
+        self.plotWindows = {}
+        self.addPlotWindow()
+        self.addPlotsButton.clicked.connect(self.addPlotWindow)
+
+    @pyqtSlot()
     def addPlotWindow(self):
-        pw = plotwindow.PlotWindow(None, self.channel_groups, isTDM=self.isTDM)
-        self.plotWindows.append(pw)
-        r = len(self.plotWindows) % 2
-        c = len(self.plotWindows) // 2
-        self.frame.layout().addWidget(pw, r, c)
+        if len(self.plotWindows) >= 4:
+            return
+        pw = plotwindow.PlotWindow(self, self.channel_groups, isTDM=self.isTDM)
+        self.zmqsubscriber.pulserecord.connect(pw.updateReceived)
+        for location in ((0, 0), (0, 1), (1, 0), (1, 1)):
+            if location not in self.plotWindows:
+                self.plotWindows[location] = pw
+                r, c = location
+                self.frame.layout().addWidget(pw, r, c)
+                pw.closed.connect(self.removePlotWindow)
+                if len(self.plotWindows) >= 4:
+                    self.addPlotsButton.setDisabled(True)
+                return
+
+    @pyqtSlot()
+    def removePlotWindow(self):
+        sender = self.sender()
+        for location in ((0, 0), (0, 1), (1, 0), (1, 1)):
+            if self.plotWindows.get(location, None) == sender:
+                del self.plotWindows[location]
+                self.addPlotsButton.setEnabled(True)
 
     def set_channel_groups(self, cgs):
         self.channel_groups = cgs
