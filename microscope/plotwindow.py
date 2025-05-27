@@ -78,6 +78,7 @@ class PlotWindow(QtWidgets.QWidget):
         self.quickFBComboBox.currentIndexChanged.connect(self.quickChannel)
         self.quickErrComboBox.currentIndexChanged.connect(self.quickChannel)
         self.waterfallDeltaSpin.valueChanged.connect(self.redrawAll)
+        self.averageTraces.clicked.connect(self.startStopAveraging)
 
     def setupChannels(self, channel_groups):
         self.channel_groups = channel_groups
@@ -164,6 +165,8 @@ class PlotWindow(QtWidgets.QWidget):
     def pausePressed(self, bool): pass
     @pyqtSlot()
     def savePlot(self): pass
+    @pyqtSlot()
+    def startStopAveraging(self): pass
 
     @pyqtSlot(int)
     def quickChannel(self, index):
