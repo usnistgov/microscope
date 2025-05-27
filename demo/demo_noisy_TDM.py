@@ -13,7 +13,7 @@ import sys
 import time
 import message_definition
 
-chanmin, chanmax = 0, 11
+chanmin, chanmax = 1, 12
 samples, presamples = 1000, 200
 
 port = "5502"
@@ -37,7 +37,7 @@ for chnum in range(chanmin, chanmax + 1):
     errindex = 2 * (chnum - chanmin)
     fbindex = errindex + 1
     messagedata[fbindex] = np.asarray(pulse * (chnum + 20) * 1000 + 1000 * chnum, dtype=np.uint16)
-    messagedata[errindex] = np.asarray(derivative * (chnum + 20) * 1000 + 1000 * chnum, dtype=np.uint16)
+    messagedata[errindex] = np.asarray(derivative * (chnum + 20) * 1000 + 1000 * chnum, dtype=np.int16)
     pulseRecord[fbindex] = message_definition.DastardPulse(fbindex, presamples, 2.5e-6, 1. / 65535)
     pulseRecord[errindex] = message_definition.DastardPulse(errindex, presamples, 2.5e-6, 1. / 65535)
 
@@ -47,7 +47,7 @@ while True:
     fbindex = errindex + 1
 
     for chindex in (fbindex, errindex):
-        thisdata = np.asarray(messagedata[chindex] + rng.integers(-500, 500, size=samples), dtype=np.uint16)
+        thisdata = np.asarray(messagedata[chindex] + rng.integers(-500, 500, size=samples), dtype=messagedata[chindex].dtype)
         header = pulseRecord[chindex].packheader(thisdata)
         socket.send(header, zmq.SNDMORE)
         socket.send(thisdata.data[:])
