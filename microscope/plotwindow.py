@@ -46,6 +46,8 @@ class PlotWindow(QtWidgets.QWidget):
 
     NUM_TRACES = 8
     SPECIAL_INVALID = -1
+    YMIN = -35e3
+    YMAX = 66e4
 
     standardColors = (
         # For most, use QColor to replace standard named colors with slightly darker versions
@@ -147,6 +149,7 @@ class PlotWindow(QtWidgets.QWidget):
         p1.setLabel("bottom", "Samples after trigger")
         # p1.addLegend()
         self.plotWidget = p1
+        p1.setLimits(yMin=self.YMIN, yMax=self.YMAX)
 
     @pyqtSlot(bool)
     def pausePressed(self, bool): pass
@@ -234,7 +237,12 @@ class PlotWindow(QtWidgets.QWidget):
         physical = self.xPhysicalCheck.isChecked()
         pw = self.plotWidget
         x_range, _ = pw.viewRange()
-        timebase = np.mean([ax.timebase for ax in self.timeAxes if ax is not None])
+        plot_is_empty = self.timeAxes.count(None) == self.NUM_TRACES
+        if plot_is_empty:
+            timebase = 0.01
+        else:
+            timebase = np.mean([ax.timebase for ax in self.timeAxes if ax is not None])
+
         if physical:
             x_range[0] *= timebase*1000
             x_range[1] *= timebase*1000
@@ -243,11 +251,11 @@ class PlotWindow(QtWidgets.QWidget):
             x_range[0] /= timebase*1000
             x_range[1] /= timebase*1000
             pw.setLabel("bottom", "Samples after trigger", units="")
-        xmin = np.min([ax.x(physical)[0] for ax in self.timeAxes if ax is not None])
-        xmax = np.max([ax.x(physical)[-1] for ax in self.timeAxes if ax is not None])
-        vb = pw.getViewBox()
-        vb.setLimits(xMin=xmin, xMax=xmax)
-        vb.setXRange(x_range[0], x_range[1])
+        if not plot_is_empty:
+            xmin = np.min([ax.x(physical)[0] for ax in self.timeAxes if ax is not None])
+            xmax = np.max([ax.x(physical)[-1] for ax in self.timeAxes if ax is not None])
+            pw.setLimits(xMin=xmin, xMax=xmax, yMin=self.YMIN, yMax=self.YMAX)
+        pw.setXRange(x_range[0], x_range[1])
         self.redrawAll()
 
     @pyqtSlot()
