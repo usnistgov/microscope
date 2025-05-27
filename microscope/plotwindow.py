@@ -48,6 +48,7 @@ class PlotWindow(QtWidgets.QWidget):
     SPECIAL_INVALID = -1
     YMIN = -35e3
     YMAX = 66e4
+    WATERFALL_SPACING = 500
 
     standardColors = (
         # For most, use QColor to replace standard named colors with slightly darker versions
@@ -73,8 +74,8 @@ class PlotWindow(QtWidgets.QWidget):
         self.setupChannels(channel_groups)
         self.setupQuickSelect(channel_groups)
         self.setupPlot()
-        self.xPhysicalCheck.stateChanged.connect(self.xPhysicalChanged)
-        self.subtractBaselineCheck.stateChanged.connect(self.redrawAll)
+        self.xPhysicalMenu.currentIndexChanged.connect(self.xPhysicalChanged)
+        self.subtractBaselineMenu.currentIndexChanged.connect(self.redrawAll)
         self.quickFBComboBox.currentIndexChanged.connect(self.quickChannel)
         self.quickErrComboBox.currentIndexChanged.connect(self.quickChannel)
 
@@ -214,12 +215,16 @@ class PlotWindow(QtWidgets.QWidget):
             for traceIdx in self.idx2trace[record.channelIndex]:
                 self.plotrecord(traceIdx, record)
 
+    @property
+    def xPhysical(self):
+        return "ms" in self.xPhysicalMenu.currentText()
+
     def plotrecord(self, traceIdx, record):
         curve = self.curves[traceIdx]
         if curve is None:
             xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
             self.timeAxes[traceIdx] = xaxis
-            x = xaxis.x(self.xPhysicalCheck.isChecked())
+            x = xaxis.x(self.xPhysical)
             curve = self.plotWidget.plot(x, record.record, pen=self.pens[traceIdx])
             self.curves[traceIdx] = curve
         else:
@@ -234,7 +239,6 @@ class PlotWindow(QtWidgets.QWidget):
     @pyqtSlot()
     def xPhysicalChanged(self):
         # Do something to choose x-axis ranges: current value AND max range
-        physical = self.xPhysicalCheck.isChecked()
         pw = self.plotWidget
         x_range, _ = pw.viewRange()
         plot_is_empty = self.timeAxes.count(None) == self.NUM_TRACES
@@ -243,7 +247,7 @@ class PlotWindow(QtWidgets.QWidget):
         else:
             timebase = np.mean([ax.timebase for ax in self.timeAxes if ax is not None])
 
-        if physical:
+        if self.xPhysical:
             x_range[0] *= timebase*1000
             x_range[1] *= timebase*1000
             pw.setLabel("bottom", "Time after trigger", units="ms")
@@ -252,8 +256,8 @@ class PlotWindow(QtWidgets.QWidget):
             x_range[1] /= timebase*1000
             pw.setLabel("bottom", "Samples after trigger", units="")
         if not plot_is_empty:
-            xmin = np.min([ax.x(physical)[0] for ax in self.timeAxes if ax is not None])
-            xmax = np.max([ax.x(physical)[-1] for ax in self.timeAxes if ax is not None])
+            xmin = np.min([ax.x(self.xPhysical)[0] for ax in self.timeAxes if ax is not None])
+            xmax = np.max([ax.x(self.xPhysical)[-1] for ax in self.timeAxes if ax is not None])
             pw.setLimits(xMin=xmin, xMax=xmax, yMin=self.YMIN, yMax=self.YMAX)
         pw.setXRange(x_range[0], x_range[1])
         self.redrawAll()
@@ -282,8 +286,15 @@ class PlotWindow(QtWidgets.QWidget):
             return
 
         xaxis = self.timeAxes[traceIdx]
-        x = xaxis.x(self.xPhysicalCheck.isChecked())
-        ydata = self.lastRecord[traceIdx].record
-        if self.subtractBaselineCheck.isChecked():
+        x = xaxis.x(self.xPhysical)
+        sbtext = self.subtractBaselineMenu.currentText()
+        if "Raw" in sbtext:
+            ydata = self.lastRecord[traceIdx].record
+
+        elif "Subtract" in sbtext:
             ydata = self.lastRecord[traceIdx].record_baseline_subtracted
+
+        elif "Waterfall" in sbtext:
+            ydata = self.lastRecord[traceIdx].record_baseline_subtracted + traceIdx * self.WATERFALL_SPACING
+
         self.curves[traceIdx].setData(x, ydata)

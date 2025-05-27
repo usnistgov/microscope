@@ -27,7 +27,7 @@
     <number>6</number>
    </property>
    <item>
-    <layout class="QVBoxLayout" name="chanSelectLayout" stretch="0,0,0,0,0,0,0,0">
+    <layout class="QVBoxLayout" name="chanSelectLayout" stretch="0,0,0,0,0,0,0,0,0">
      <property name="spacing">
       <number>6</number>
      </property>
@@ -57,19 +57,6 @@
         </widget>
        </item>
       </layout>
-     </item>
-     <item>
-      <spacer name="verticalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
      </item>
      <item>
       <layout class="QVBoxLayout" name="quickChannelLayout" stretch="0,0,0,0,0,0">
@@ -137,6 +124,19 @@
       </layout>
      </item>
      <item>
+      <spacer name="verticalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
       <widget class="QCheckBox" name="averageTraces">
        <property name="enabled">
         <bool>false</bool>
@@ -160,17 +160,43 @@
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="subtractBaselineCheck">
+      <widget class="QLabel" name="pulseAxesLabel">
        <property name="text">
-        <string>Subtract baseline</string>
+        <string>Pulse axes:</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="xPhysicalCheck">
-       <property name="text">
-        <string>X axis physical</string>
-       </property>
+      <widget class="QComboBox" name="subtractBaselineMenu">
+       <item>
+        <property name="text">
+         <string>Y: Raw pulses</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Y: Subtract baseline</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Y: Waterfall (sub base)</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="xPhysicalMenu">
+       <item>
+        <property name="text">
+         <string>X: samples</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>X: ms</string>
+        </property>
+       </item>
       </widget>
      </item>
      <item>
