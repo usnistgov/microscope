@@ -26,7 +26,7 @@ socket = context.socket(zmq.PUB)
 socket.bind(f"tcp://*:{port}")
 
 rng = np.random.default_rng()
-pulseRecord = {ch: message_definition.DastardPulse(ch-chanmin, presamples, 2.5e-6, 1. / 65535) for ch in range(chanmin, chanmax)}
+pulseRecord = {ch: message_definition.DastardPulse(ch - chanmin, presamples, 2.5e-6, 1. / 65535) for ch in range(chanmin, chanmax)}
 
 while True:
     channel = random.randrange(1, 21)

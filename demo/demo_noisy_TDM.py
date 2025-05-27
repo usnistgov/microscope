@@ -13,7 +13,7 @@ import sys
 import time
 import message_definition
 
-chanmin, chanmax = 1, 10
+chanmin, chanmax = 0, 11
 samples, presamples = 1000, 200
 
 port = "5502"
@@ -34,7 +34,7 @@ derivative[0] = 0
 messagedata = {}
 pulseRecord = {}
 for chnum in range(chanmin, chanmax + 1):
-    errindex = 2*(chnum-chanmin)
+    errindex = 2 * (chnum - chanmin)
     fbindex = errindex + 1
     messagedata[fbindex] = np.asarray(pulse * (chnum + 20) * 1000 + 1000 * chnum, dtype=np.uint16)
     messagedata[errindex] = np.asarray(derivative * (chnum + 20) * 1000 + 1000 * chnum, dtype=np.uint16)
@@ -43,7 +43,7 @@ for chnum in range(chanmin, chanmax + 1):
 
 while True:
     chnum = random.randrange(chanmin, chanmax + 1)
-    errindex = 2*(chnum-chanmin)
+    errindex = 2 * (chnum - chanmin)
     fbindex = errindex + 1
 
     for chindex in (fbindex, errindex):

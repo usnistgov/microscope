@@ -201,9 +201,9 @@ class PlotWindow(QtWidgets.QWidget):
             box.addItem("")
         for i, cg in enumerate(channel_groups):
             n = cg.nChan
-            nentries = (n-1+self.NUM_TRACES) // self.NUM_TRACES
+            nentries = (n - 1 + self.NUM_TRACES) // self.NUM_TRACES
             for j in range(nentries):
-                cstart = cg.firstChan + j*self.NUM_TRACES
+                cstart = cg.firstChan + j * self.NUM_TRACES
                 cend = cstart + self.NUM_TRACES - 1
                 if cend > cg.lastChan:
                     cstart -= (cend - cg.lastChan)
@@ -232,8 +232,10 @@ class PlotWindow(QtWidgets.QWidget):
 
     @pyqtSlot(int)
     def quickChannel(self, index):
+        # Do not act if the empty menu item is chosen.
         if index < 1:
             return
+
         iserror = self.isTDM and self.sender() == self.quickErrComboBox
         if iserror:
             prefix = "Err "
@@ -242,7 +244,7 @@ class PlotWindow(QtWidgets.QWidget):
             prefix = "Ch "
             self.quickErrComboBox.setCurrentIndex(0)
         cstart, cend = self.quickSelectIndex[index]
-        for c in range(cstart, cend+1):
+        for c in range(cstart, cend + 1):
             i = c - cstart
             self.channelSpinners[i].setValue(c)
             self.channelSpinners[i].setPrefix(prefix)
@@ -269,7 +271,7 @@ class PlotWindow(QtWidgets.QWidget):
         for traceIdx, spinner in enumerate(self.channelSpinners):
             channum = spinner.value()
             if self.isTDM:
-                chanidx = 2*channum + 1
+                chanidx = 2 * channum + 1
                 if self.checkers[traceIdx].isChecked():
                     chanidx -= 1
             else:
@@ -315,12 +317,12 @@ class PlotWindow(QtWidgets.QWidget):
             timebase = np.mean([ax.timebase for ax in timeAxes if ax is not None])
 
         if self.xPhysical:
-            x_range[0] *= timebase*1000
-            x_range[1] *= timebase*1000
+            x_range[0] *= timebase * 1000
+            x_range[1] *= timebase * 1000
             pw.setLabel("bottom", "Time after trigger", units="ms")
         else:
-            x_range[0] /= timebase*1000
-            x_range[1] /= timebase*1000
+            x_range[0] /= timebase * 1000
+            x_range[1] /= timebase * 1000
             pw.setLabel("bottom", "Samples after trigger", units="")
         if not plot_is_empty:
             xmin = np.min([ax.x(self.xPhysical)[0] for ax in timeAxes if ax is not None])

@@ -21,7 +21,7 @@ class DastardRecord:
 
     @property
     def record_baseline_subtracted(self):
-        return self.record - self.record[:self.nPresamples-1].mean()
+        return self.record - self.record[:self.nPresamples - 1].mean()
 
     @classmethod
     def fromBinary(cls, header, contents):
@@ -71,4 +71,4 @@ class DastardRecordsBuffer:
         raw = np.asarray(r.record, dtype=float)
         for dr in self.buffer[1:]:
             raw += dr.record
-        return replace(r, record=raw/n)
+        return replace(r, record=raw / n)

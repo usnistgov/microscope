@@ -30,7 +30,7 @@ t = np.arange(1 - presamples, samples - presamples + 1, dtype=float)
 pulse = (np.exp(-t / 200.) - np.exp(-t / 40)) + 0
 pulse[t < 0] = 0
 messagedata = {ch: np.asarray(pulse * (ch + 20) * 1000 + 1000 * ch, dtype=np.uint16) for ch in range(chanmin, chanmax + 1)}
-pulseRecord = {ch: message_definition.DastardPulse(ch-chanmin, presamples, 2.5e-6, 1. / 65535) for ch in range(chanmin, chanmax + 1)}
+pulseRecord = {ch: message_definition.DastardPulse(ch - chanmin, presamples, 2.5e-6, 1. / 65535) for ch in range(chanmin, chanmax + 1)}
 
 while True:
     channel = random.randrange(chanmin, chanmax + 1)

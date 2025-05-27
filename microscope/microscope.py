@@ -77,7 +77,7 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         self.zmqthread = QtCore.QThread()
         self.zmqsubscriber = subscriber.ZMQSubscriber(host, port)
         self.zmqsubscriber.moveToThread(self.zmqthread)
-        self.zmqsubscriber.pulserecord.connect(self.updateReceived)
+        # self.zmqsubscriber.pulserecord.connect(self.updateReceived)
         pw = self.plotWindows[0]
         self.zmqsubscriber.pulserecord.connect(pw.updateReceived)
         self.zmqthread.started.connect(self.zmqsubscriber.data_monitor_loop)
@@ -97,21 +97,21 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         i = 0
         for cg in cgs:
             for j in range(cg.nChan):
-                self.channel_index[j+cg.firstChan] = i
-                self.channel_number[i] = j+cg.firstChan
+                self.channel_index[j + cg.firstChan] = i
+                self.channel_number[i] = j + cg.firstChan
                 i += 1
 
     @pyqtSlot()
     def savePlot(self): pass
 
-    @pyqtSlot(DastardRecord)
-    def updateReceived(self, record):
-        """
-        Slot to handle one data record for one channel.
+    # @pyqtSlot(DastardRecord)
+    # def updateReceived(self, record):
+    #     """
+    #     Slot to handle one data record for one channel.
 
-        It ingests the data and feeds it to the BaselineFinder object for the channel.
-        """
-        print(f"Received chan {record.channelIndex:3d} with data len={len(record.record)} and nPre={record.nPresamples}")
+    #     It ingests the data and feeds it to the BaselineFinder object for the channel.
+    #     """
+    #     print(f"Received chan {record.channelIndex:3d} with data len={len(record.record)} and nPre={record.nPresamples}")
 
     @pyqtSlot()
     def closeEvent(self, event):

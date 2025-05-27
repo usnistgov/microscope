@@ -2,8 +2,6 @@
 from PyQt5 import QtCore
 
 # Non-Qt imports
-import numpy as np
-import struct
 import zmq
 
 from dastardrecord import DastardRecord
