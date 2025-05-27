@@ -48,7 +48,6 @@ class PlotWindow(QtWidgets.QWidget):
     SPECIAL_INVALID = -1
     YMIN = -35e3
     YMAX = 66e4
-    WATERFALL_SPACING = 500
 
     standardColors = (
         # For most, use QColor to replace standard named colors with slightly darker versions
@@ -78,6 +77,7 @@ class PlotWindow(QtWidgets.QWidget):
         self.subtractBaselineMenu.currentIndexChanged.connect(self.redrawAll)
         self.quickFBComboBox.currentIndexChanged.connect(self.quickChannel)
         self.quickErrComboBox.currentIndexChanged.connect(self.quickChannel)
+        self.waterfallDeltaSpin.valueChanged.connect(self.redrawAll)
 
     def setupChannels(self, channel_groups):
         self.channel_groups = channel_groups
@@ -294,7 +294,11 @@ class PlotWindow(QtWidgets.QWidget):
         elif "Subtract" in sbtext:
             ydata = self.lastRecord[traceIdx].record_baseline_subtracted
 
-        elif "Waterfall" in sbtext:
-            ydata = self.lastRecord[traceIdx].record_baseline_subtracted + traceIdx * self.WATERFALL_SPACING
+        if "Waterfall" in sbtext:
+            spacing = self.waterfallDeltaSpin.value()
+            ydata = self.lastRecord[traceIdx].record_baseline_subtracted + traceIdx * spacing
+            self.waterfallDeltaSpin.setEnabled(True)
+        else:
+            self.waterfallDeltaSpin.setEnabled(False)
 
         self.curves[traceIdx].setData(x, ydata)
