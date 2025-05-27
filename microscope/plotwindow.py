@@ -8,6 +8,7 @@ import pyqtgraph as pg
 import numpy as np
 import os
 from dataclasses import dataclass
+from typing import Optional
 
 from dastardrecord import DastardRecord
 
@@ -41,6 +42,18 @@ class timeAxis:
         return timeAxis(nPresamples, nSamples, timebase, xsamples, xms)
 
 
+@dataclass(frozen=False)
+class PlotTrace:
+    color: str
+    curve: Optional[pg.PlotCurveItem] = None
+    timeAx: Optional[timeAxis] = None
+    lastRecord: Optional[DastardRecord] = None
+    # nPresamples: int
+    # nSamples: int
+    # timebase: float
+    # rawdata: np.ndarray
+
+
 class PlotWindow(QtWidgets.QWidget):
     """Provide the UI inside each Plot Window."""
 
@@ -66,9 +79,7 @@ class PlotWindow(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         PyQt5.uic.loadUi(os.path.join(os.path.dirname(__file__), "ui/plotwindow.ui"), self)
         self.isTDM = isTDM
-        self.timeAxes = [None for i in range(self.NUM_TRACES)]
-        self.curves = [None for i in range(self.NUM_TRACES)]
-        self.lastRecord = [None for i in range(self.NUM_TRACES)]
+        self.traces = [PlotTrace(self.standardColors[i]) for i in range(self.NUM_TRACES)]
         self.idx2trace = {}
         self.setupChannels(channel_groups)
         self.setupQuickSelect(channel_groups)
@@ -231,20 +242,20 @@ class PlotWindow(QtWidgets.QWidget):
         return "ms" in self.xPhysicalMenu.currentText()
 
     def plotrecord(self, traceIdx, record):
-        curve = self.curves[traceIdx]
+        curve = self.traces[traceIdx].curve
         if curve is None:
             xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
-            self.timeAxes[traceIdx] = xaxis
+            self.traces[traceIdx].timeAx = xaxis
             x = xaxis.x(self.xPhysical)
             curve = self.plotWidget.plot(x, record.record, pen=self.pens[traceIdx])
-            self.curves[traceIdx] = curve
+            self.traces[traceIdx].curve = curve
         else:
-            xaxis = self.timeAxes[traceIdx]
+            xaxis = self.traces[traceIdx].timeAx
             if (xaxis.nPresamples != record.nPresamples or xaxis.nSamples != record.nSamples or
                     xaxis.timebase != record.timebase):
                 xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
-                self.timeAxes[traceIdx] = xaxis
-        self.lastRecord[traceIdx] = record
+                self.traces[traceIdx].timeAx = xaxis
+        self.traces[traceIdx].lastRecord = record
         self.draw(traceIdx)
 
     @pyqtSlot()
@@ -252,11 +263,12 @@ class PlotWindow(QtWidgets.QWidget):
         # Do something to choose x-axis ranges: current value AND max range
         pw = self.plotWidget
         x_range, _ = pw.viewRange()
-        plot_is_empty = self.timeAxes.count(None) == self.NUM_TRACES
+        timeAxes = [t.timeAx for t in self.traces]
+        plot_is_empty = timeAxes.count(None) == self.NUM_TRACES
         if plot_is_empty:
             timebase = 0.01
         else:
-            timebase = np.mean([ax.timebase for ax in self.timeAxes if ax is not None])
+            timebase = np.mean([ax.timebase for ax in timeAxes if ax is not None])
 
         if self.xPhysical:
             x_range[0] *= timebase*1000
@@ -267,8 +279,8 @@ class PlotWindow(QtWidgets.QWidget):
             x_range[1] /= timebase*1000
             pw.setLabel("bottom", "Samples after trigger", units="")
         if not plot_is_empty:
-            xmin = np.min([ax.x(self.xPhysical)[0] for ax in self.timeAxes if ax is not None])
-            xmax = np.max([ax.x(self.xPhysical)[-1] for ax in self.timeAxes if ax is not None])
+            xmin = np.min([ax.x(self.xPhysical)[0] for ax in timeAxes if ax is not None])
+            xmax = np.max([ax.x(self.xPhysical)[-1] for ax in timeAxes if ax is not None])
             pw.setLimits(xMin=xmin, xMax=xmax, yMin=self.YMIN, yMax=self.YMAX)
         pw.setXRange(x_range[0], x_range[1])
         self.redrawAll()
@@ -279,37 +291,37 @@ class PlotWindow(QtWidgets.QWidget):
             self.clearTrace(traceIdx)
 
     def clearTrace(self, traceIdx):
-        curve = self.curves[traceIdx]
+        curve = self.traces[traceIdx].curve
         if curve is None:
             return
         self.plotWidget.removeItem(curve)
-        self.curves[traceIdx] = None
-        self.lastRecord[traceIdx] = None
+        self.traces[traceIdx].curve = None
+        self.traces[traceIdx].lastRecord = None
 
     @pyqtSlot()
     def redrawAll(self):
-        for (traceIdx, curve) in enumerate(self.curves):
+        for traceIdx in range(len(self.traces)):
             self.draw(traceIdx)
 
     def draw(self, traceIdx):
-        curve = self.curves[traceIdx]
+        curve = self.traces[traceIdx].curve
         if curve is None:
             return
 
-        xaxis = self.timeAxes[traceIdx]
+        xaxis = self.traces[traceIdx].timeAx
         x = xaxis.x(self.xPhysical)
         sbtext = self.subtractBaselineMenu.currentText()
         if "Raw" in sbtext:
-            ydata = self.lastRecord[traceIdx].record
+            ydata = self.traces[traceIdx].lastRecord.record
 
         elif "Subtract" in sbtext:
-            ydata = self.lastRecord[traceIdx].record_baseline_subtracted
+            ydata = self.traces[traceIdx].lastRecord.record_baseline_subtracted
 
         if "Waterfall" in sbtext:
             spacing = self.waterfallDeltaSpin.value()
-            ydata = self.lastRecord[traceIdx].record_baseline_subtracted + traceIdx * spacing
+            ydata = self.traces[traceIdx].lastRecord.record_baseline_subtracted + traceIdx * spacing
             self.waterfallDeltaSpin.setEnabled(True)
         else:
             self.waterfallDeltaSpin.setEnabled(False)
 
-        self.curves[traceIdx].setData(x, ydata)
+        self.traces[traceIdx].curve.setData(x, ydata)
