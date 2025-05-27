@@ -62,24 +62,31 @@ class PlotWindow(QtWidgets.QWidget):
     YMIN = -35e3
     YMAX = 66e4
 
-    standardColors = (
-        # For most, use QColor to replace standard named colors with slightly darker versions
-        "black",
-        "#b400e6",  # Purple
-        "#0000b4",  # Blue
-        "#00bebe",  # Cyan
-        "darkgreen",
-        "#cdcd00",  # Gold
-        "#ff8000",  # Orange
-        "red",
-        "gray"
-    )
+    @staticmethod
+    def color(i):
+        _standardColors = (
+            # For most, replace standard named colors with slightly darker versions
+            "black",
+            "#b400e6",  # Purple
+            "#0000b4",  # Blue
+            "#00bebe",  # Cyan
+            "darkgreen",
+            "#cdcd00",  # Gold
+            "#ff8000",  # Orange
+            "red",
+            "gray"
+        )
+        # Last one in list will be used whenever index is either too large or negative
+        try:
+            return _standardColors[i]
+        except IndexError:
+            return _standardColors[-1]
 
     def __init__(self, parent, channel_groups, isTDM=False):
         QtWidgets.QWidget.__init__(self, parent)
         PyQt5.uic.loadUi(os.path.join(os.path.dirname(__file__), "ui/plotwindow.ui"), self)
         self.isTDM = isTDM
-        self.traces = [PlotTrace(self.standardColors[i]) for i in range(self.NUM_TRACES)]
+        self.traces = [PlotTrace(i, self.color(i)) for i in range(self.NUM_TRACES)]
         self.idx2trace = {}
         self.setupChannels(channel_groups)
         self.setupQuickSelect(channel_groups)
@@ -103,7 +110,7 @@ class PlotWindow(QtWidgets.QWidget):
                 i += 1
         self.highestChan = np.max([cg.lastChan for cg in channel_groups])
 
-        self.pens = [pg.mkPen(c, width=1) for c in self.standardColors]
+        self.pens = [pg.mkPen(self.color(i), width=1) for i in range(self.NUM_TRACES)]
         layout = self.channelNameLayout
         clear_grid_layout(layout)
         self.channelSpinners = []
@@ -111,7 +118,7 @@ class PlotWindow(QtWidgets.QWidget):
         for i in range(self.NUM_TRACES):
             c = "ABCDEFGHIJKL"[i]
             label = QtWidgets.QLabel(f"Trace {c}", self)
-            label.setStyleSheet(f"color: {self.standardColors[i]};")
+            label.setStyleSheet(f"color: {self.color(i)};")
             layout.addWidget(label, i, 0)
 
             s = QtWidgets.QSpinBox(self)
