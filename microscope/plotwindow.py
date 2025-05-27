@@ -151,8 +151,9 @@ class PlotWindow(QtWidgets.QWidget):
         i = 0
         for cg in channel_groups:
             for j in range(cg.nChan):
-                self.channel_index[j+cg.firstChan] = i
-                self.channel_number[i] = j+cg.firstChan
+                cnum = cg.firstChan + j
+                self.channel_index[cnum] = i
+                self.channel_number[i] = cnum
                 i += 1
         self.highestChan = np.max([cg.lastChan for cg in channel_groups])
 
@@ -231,10 +232,15 @@ class PlotWindow(QtWidgets.QWidget):
 
     @pyqtSlot(int)
     def quickChannel(self, index):
-        iserror = self.isTDM and self.sender() == self.quickErrComboBox
-        prefix = "Err " if iserror else "Ch "
         if index < 1:
             return
+        iserror = self.isTDM and self.sender() == self.quickErrComboBox
+        if iserror:
+            prefix = "Err "
+            self.quickFBComboBox.setCurrentIndex(0)
+        else:
+            prefix = "Ch "
+            self.quickErrComboBox.setCurrentIndex(0)
         cstart, cend = self.quickSelectIndex[index]
         for c in range(cstart, cend+1):
             i = c - cstart
