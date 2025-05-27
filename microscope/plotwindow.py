@@ -109,6 +109,7 @@ class PlotWindow(QtWidgets.QWidget):
             s.setPrefix("Ch ")
             s.setAlignment(Qt.AlignRight)
             s.setMinimumWidth(75)
+            s.setToolTip(f"Choose channel # for trace {c} (type '-1' to turn off)")
             s.valueChanged.connect(self.channelChanged)
             self.channelSpinners.append(s)
             layout.addWidget(s, i, 1)

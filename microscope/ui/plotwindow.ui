@@ -112,7 +112,11 @@
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="quickFBComboBox"/>
+        <widget class="QComboBox" name="quickFBComboBox">
+         <property name="toolTip">
+          <string>Select this consecutive run of channels</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QLabel" name="quickErrLabel">
@@ -122,7 +126,11 @@
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="quickErrComboBox"/>
+        <widget class="QComboBox" name="quickErrComboBox">
+         <property name="toolTip">
+          <string>Select this consecutive run of error channels</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
@@ -144,6 +152,9 @@
        <property name="enabled">
         <bool>false</bool>
        </property>
+       <property name="toolTip">
+        <string>Whether to average successive records</string>
+       </property>
        <property name="text">
         <string>Average Traces</string>
        </property>
@@ -153,6 +164,9 @@
       <widget class="QSpinBox" name="spinBox_nAverage">
        <property name="enabled">
         <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>How many successive records to average (if averaging)</string>
        </property>
        <property name="minimum">
         <number>1</number>
@@ -171,6 +185,10 @@
      </item>
      <item>
       <widget class="QComboBox" name="subtractBaselineMenu">
+       <property name="toolTip">
+        <string>Select y-axis scaling: use raw values, or set all
+baseline levels to zero or staggered values</string>
+       </property>
        <item>
         <property name="text">
          <string>Y: Raw pulses</string>
@@ -220,6 +238,9 @@
      </item>
      <item>
       <widget class="QComboBox" name="xPhysicalMenu">
+       <property name="toolTip">
+        <string>Select x axis scaling: raw samples or physical (milliseconds)</string>
+       </property>
        <item>
         <property name="text">
          <string>X: samples</string>
@@ -279,6 +300,9 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="toolTip">
+          <string>Temporarily pause updating traces</string>
+         </property>
          <property name="text">
           <string>Pause plots</string>
          </property>
@@ -295,6 +319,9 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="toolTip">
+          <string>Remove all plotted data and plot only future records</string>
+         </property>
          <property name="text">
           <string>Clear data</string>
          </property>
@@ -307,6 +334,9 @@
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>Close this plot window</string>
          </property>
          <property name="standardButtons">
           <set>QDialogButtonBox::Close</set>
