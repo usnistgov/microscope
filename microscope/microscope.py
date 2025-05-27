@@ -51,7 +51,7 @@ except ImportError:
     version_tuple = (0, 0, "unknown version")
 
 
-QCoreApplication.setOrganizationName("Quantum Sensors Group")
+QCoreApplication.setOrganizationName("NIST Quantum Sensors")
 QCoreApplication.setOrganizationDomain("nist.gov")
 QCoreApplication.setApplicationName("Microscope")
 

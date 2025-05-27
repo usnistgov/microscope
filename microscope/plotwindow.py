@@ -147,13 +147,19 @@ class PlotWindow(QtWidgets.QWidget):
     def setupChannels(self, channel_groups):
         self.channel_groups = channel_groups
         self.channel_index = {}
-        self.channel_number = {}
+        self.channel_name = {}
         i = 0
         for cg in channel_groups:
             for j in range(cg.nChan):
                 cnum = cg.firstChan + j
-                self.channel_index[cnum] = i
-                self.channel_number[i] = cnum
+                if self.isTDM:
+                    name = f"Err {cnum}"
+                    self.channel_index[name] = i
+                    self.channel_name[i] = name
+                    i += 1
+                name = f"Ch {cnum}"
+                self.channel_index[name] = i
+                self.channel_name[i] = name
                 i += 1
         self.highestChan = np.max([cg.lastChan for cg in channel_groups])
 
@@ -267,15 +273,10 @@ class PlotWindow(QtWidgets.QWidget):
     def channelListChanged(self):
         self.idx2trace = {}
         for traceIdx, spinner in enumerate(self.channelSpinners):
-            channum = spinner.value()
-            if self.isTDM:
-                chanidx = 2 * channum + 1
-                if self.checkers[traceIdx].isChecked():
-                    chanidx -= 1
-            else:
-                if channum not in self.channel_index:
-                    continue
-                chanidx = self.channel_index[channum]
+            channel_name = spinner.text()
+            if channel_name not in self.channel_index:
+                continue
+            chanidx = self.channel_index[channel_name]
             if chanidx in self.idx2trace:
                 self.idx2trace[chanidx].add(traceIdx)
             else:
