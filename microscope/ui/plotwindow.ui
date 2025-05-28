@@ -27,7 +27,7 @@
     <number>4</number>
    </property>
    <item>
-    <layout class="QVBoxLayout" name="chanSelectLayout" stretch="0,0,0,0,0,0,0,0,0,0">
+    <layout class="QVBoxLayout" name="chanSelectLayout" stretch="0,0,0,0,0,0,0,0,0,0,0">
      <property name="spacing">
       <number>6</number>
      </property>
@@ -177,6 +177,30 @@
        <property name="value">
         <number>10</number>
        </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="plotTypeComboBox">
+       <item>
+        <property name="text">
+         <string>Timeseries</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>PSD</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>sqrt(PSD)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Err vs FB</string>
+        </property>
+       </item>
       </widget>
      </item>
      <item>

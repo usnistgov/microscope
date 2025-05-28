@@ -42,6 +42,11 @@ class timeAxis:
 
 
 class PlotTrace(QObject):
+    TYPE_TIMESERIES = 0
+    TYPE_PSD = 1
+    TYPE_RT_PSD = 2
+    TYPE_ERR_FB = 3
+
     def __init__(self, idx, color, previousBufferLength):
         self.traceIdx = idx
         self.color = color
@@ -50,6 +55,7 @@ class PlotTrace(QObject):
         self.timeAx = None
         self.lastRecord = None
         self.previousRecords = DastardRecordsBuffer(previousBufferLength)
+        self.plotType = self.TYPE_TIMESERIES
 
     @pyqtSlot(int)
     def changeBufferLength(self, cap):
@@ -138,6 +144,7 @@ class PlotWindow(QtWidgets.QWidget):
         self.averageTraces.toggled.connect(self.spinBox_nAverage.setEnabled)
         self.averageTraces.toggled.connect(self.redrawAll)
         self.spinBox_nAverage.valueChanged.connect(self.changeAverage)
+        self.plotTypeComboBox.currentIndexChanged.connect(self.plotTypeChanged)
 
     @pyqtSlot(int)
     def changeAverage(self, n):
@@ -222,6 +229,8 @@ class PlotWindow(QtWidgets.QWidget):
                     self.quickErrComboBox.addItem(elabel)
 
     def setupPlot(self):
+        if not self.isTDM:
+            self.plotTypeComboBox.model().item(3).setEnabled(False)
         p1 = pg.PlotWidget()
         p1.setWindowTitle("LJH pulse record")
         self.plotFrame.layout().addWidget(p1)
@@ -284,6 +293,20 @@ class PlotWindow(QtWidgets.QWidget):
             else:
                 self.idx2trace[chanidx] = {traceIdx}
         self.updateSubscriptions.emit()
+
+    @pyqtSlot(int)
+    def plotTypeChanged(self, index):
+        if self.isTDM:
+            errvfb = (index == PlotTrace.TYPE_ERR_FB)
+            self.quickErrComboBox.setDisabled(errvfb)
+            for cb in self.checkers:
+                if errvfb:
+                    cb.setChecked(False)
+                cb.setDisabled(errvfb)
+
+        for trace in self.traces:
+            trace.plotType = index
+        self.redrawAll()
 
     @pyqtSlot(DastardRecord)
     def updateReceived(self, record):
