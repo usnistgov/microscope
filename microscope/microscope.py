@@ -57,7 +57,7 @@ QCoreApplication.setApplicationName("Microscope")
 
 
 class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
-    def __init__(self, settings, title, isTDM, channel_groups):
+    def __init__(self, settings, title, isTDM, channel_groups, host, port):
         self.settings = settings
         self.isTDM = isTDM
         self.set_channel_groups(channel_groups)
@@ -69,8 +69,6 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         PyQt5.uic.loadUi(os.path.join(my_dir, "ui/microscope.ui"), self)
         self.setWindowTitle(title)
 
-        host = "localhost"
-        port = 5502
         self.zmqthread = QtCore.QThread()
         self.zmqsubscriber = subscriber.ZMQSubscriber(host, port)
         self.zmqsubscriber.moveToThread(self.zmqthread)
@@ -177,6 +175,8 @@ def parsed_arguments():
     parser.add_argument("-i", "--indexing", action="store_true")
     parser.add_argument("-n", "--no-error-channel", action="store_true")
     parser.add_argument("-v", "--version", action="store_true")
+    parser.add_argument("host", metavar="host:port", nargs="?", default="localhost:5502",
+                        help="optional TCP host:port for pulse data (default localhost:5502)")
     args = parser.parse_args()
     args.tdm = not args.no_error_channel
     print(version_message())
@@ -238,7 +238,19 @@ def main():
 
     short_ver = __version__.split("+")[0]
     title = f"{args.appname} (version {short_ver})"
-    window = MainWindow(settings, title, args.tdm, args.channel_groups)
+
+    if ":" in args.host:
+        host, port = args.host.split(":")
+    else:
+        host, port = args.host, ""
+    if len(host) == 0:
+        host = "localhost"
+    if len(port) == 0:
+        port = 5502
+    else:
+        port = int(port)
+
+    window = MainWindow(settings, title, args.tdm, args.channel_groups, host, port)
 
     window.show()
     retval = app.exec_()
