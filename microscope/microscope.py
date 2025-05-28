@@ -55,6 +55,20 @@ QCoreApplication.setOrganizationDomain("nist.gov")
 QCoreApplication.setApplicationName("Microscope")
 
 
+class AboutDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("About Microscope")
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(QtWidgets.QLabel("<b>Microscope</b>"))
+        layout.addWidget(QtWidgets.QLabel(f"{parent.title} Python version"))
+        layout.addWidget(QtWidgets.QLabel("by Joe Fowler and NIST Boulder Labs, 2025"))
+        layout.addWidget(QtWidgets.QLabel("Not subject to copyright in the United States"))
+        self.setLayout(layout)
+
+
 class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
     def __init__(self, settings, title, isTDM, channel_groups, host, port):
         self.settings = settings
@@ -67,6 +81,8 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         self.setWindowIcon(QtGui.QIcon(os.path.join(my_dir, "ui/dc.png")))
         PyQt5.uic.loadUi(os.path.join(my_dir, "ui/microscope.ui"), self)
         self.setWindowTitle(title)
+        self.title = title
+        self.actionAbout.triggered.connect(self.show_about)
 
         self.subscribedChannels = set()
         self.zmqthread = QtCore.QThread()
@@ -79,6 +95,11 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         self.plotWindows = {}
         self.addPlotWindow()
         self.addPlotsButton.clicked.connect(self.addPlotWindow)
+
+    @pyqtSlot()
+    def show_about(self):
+        dialog = AboutDialog(self)
+        dialog.show()
 
     @pyqtSlot()
     def addPlotWindow(self):

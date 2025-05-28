@@ -87,7 +87,15 @@
     </item>
    </layout>
   </widget>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="layoutDirection">
+    <enum>Qt::LeftToRight</enum>
+   </property>
+  </widget>
   <widget class="QMenuBar" name="menubar">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>0</x>
@@ -111,18 +119,13 @@
    <property name="nativeMenuBar">
     <bool>false</bool>
    </property>
-   <widget class="QMenu" name="menuSave">
+   <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>File</string>
+     <string>Help</string>
     </property>
-    <addaction name="actionSave_plot"/>
+    <addaction name="actionAbout"/>
    </widget>
-   <addaction name="menuSave"/>
-  </widget>
-  <widget class="QStatusBar" name="statusbar">
-   <property name="layoutDirection">
-    <enum>Qt::LeftToRight</enum>
-   </property>
+   <addaction name="menuHelp"/>
   </widget>
   <action name="actionPulse_max">
    <property name="checkable">
@@ -289,25 +292,14 @@
     <string>Pulse mean</string>
    </property>
   </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections>
-  <connection>
-   <sender>actionSave_plot</sender>
-   <signal>triggered()</signal>
-   <receiver>plotWindow</receiver>
-   <slot>savePlot()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>354</x>
-     <y>215</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>closeButton</sender>
    <signal>clicked()</signal>
