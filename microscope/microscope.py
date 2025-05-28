@@ -31,7 +31,6 @@ import os
 import plotwindow
 import subscriber
 from channel_group import ChannelGroup
-from dastardrecord import DastardRecord
 # from . import disable_hyperactive
 # from . import rpc_client
 # from . import status_monitor

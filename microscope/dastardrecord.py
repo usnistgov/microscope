@@ -1,6 +1,17 @@
 import numpy as np
 import struct
 from dataclasses import dataclass, replace
+from functools import cache
+
+
+@cache
+def windowFunction(N):
+    return np.hanning(N)
+
+
+@cache
+def FFTFreq(N, dt):
+    return np.fft.rfftfreq(N, d=dt)
 
 
 @dataclass(frozen=True)
@@ -35,8 +46,16 @@ class DastardRecord:
         return DastardRecord(chanidx, datatype, nPresamples, nSamples, timebase, voltsPerArb,
                              triggerTime, frameIndex, data)
 
+    def PSD(self):
+        window = windowFunction(self.nSamples)
+        fft = np.fft.rfft(window*(self.record-self.record.mean()))
+        return np.abs(fft**2).real
 
-class DastardRecordsBuffer:
+    def FFTFreq(self):
+        return FFTFreq(self.nSamples, self.timebase)
+
+
+class ListBasedBuffer:
     def __init__(self, capacity):
         self.capacity = capacity
         self.buffer = []
@@ -50,6 +69,9 @@ class DastardRecordsBuffer:
             self.buffer = self.buffer[nextra:]
         self.buffer.append(x)
 
+    def last(self):
+        return self.buffer[-1]
+
     def clear(self):
         self.buffer = []
 
@@ -59,6 +81,21 @@ class DastardRecordsBuffer:
             nextra = len(self.buffer) - self.capacity
             self.buffer = self.buffer[nextra:]
 
+    def mean(self):
+        n = len(self.buffer)
+        if n <= 0:
+            return None
+
+        if n == 1:
+            return self.buffer[0]
+
+        raw = self.buffer[0].copy()
+        for dr in self.buffer[1:]:
+            raw += dr
+        return raw / n
+
+
+class DastardRecordsBuffer(ListBasedBuffer):
     def mean(self):
         n = len(self.buffer)
         if n <= 0:

@@ -9,7 +9,7 @@ import numpy as np
 import os
 from dataclasses import dataclass
 
-from dastardrecord import DastardRecord, DastardRecordsBuffer
+from dastardrecord import DastardRecord, ListBasedBuffer, DastardRecordsBuffer
 
 
 def clear_grid_layout(grid_layout):
@@ -55,11 +55,23 @@ class PlotTrace(QObject):
         self.timeAx = None
         self.lastRecord = None
         self.previousRecords = DastardRecordsBuffer(previousBufferLength)
+        self.previousPSD = ListBasedBuffer(previousBufferLength)
+        self.computingFFT = False
         self.plotType = self.TYPE_TIMESERIES
 
     @pyqtSlot(int)
     def changeBufferLength(self, cap):
         self.previousRecords.resize(cap)
+        self.previousPSD.resize(cap)
+
+    def needsFFT(self, FFT):
+        self.computingFFT = FFT
+        if FFT and len(self.previousPSD) == 0:
+            for record in self.previousRecords.buffer:
+                PSD = record.PSD()
+                self.previousPSD.push(PSD)
+        if not FFT:
+            self.previousPSD.clear()
 
     def plotrecord(self, record, plotWidget, xPhysical, sbtext, waterfallSpacing, average):
         if self.curve is None:
@@ -75,6 +87,9 @@ class PlotTrace(QObject):
                 self.timeAx = xaxis
         self.lastRecord = record
         self.previousRecords.push(record)
+        if self.computingFFT:
+            PSD = record.PSD()
+            self.previousPSD.push(PSD)
         self.drawStoredRecord(xPhysical, sbtext, waterfallSpacing, average)
 
     def drawStoredRecord(self, xPhysical, sbtext, waterfallSpacing, average):
@@ -84,17 +99,28 @@ class PlotTrace(QObject):
         xaxis = self.timeAx
         x = xaxis.x(xPhysical)
         record = self.lastRecord
-        if average:
-            record = self.previousRecords.mean()
-        if "Raw" in sbtext:
-            ydata = np.asarray(record.record, dtype=float)
+        if self.plotType == self.TYPE_TIMESERIES:
+            if average:
+                record = self.previousRecords.mean()
+            if "Raw" in sbtext:
+                ydata = np.asarray(record.record, dtype=float)
 
-        elif "Subtract" in sbtext:
-            ydata = record.record_baseline_subtracted
+            elif "Subtract" in sbtext:
+                ydata = record.record_baseline_subtracted
 
-        elif "Waterfall" in sbtext:
-            ydata = record.record_baseline_subtracted + self.traceIdx * waterfallSpacing
+            elif "Waterfall" in sbtext:
+                ydata = record.record_baseline_subtracted + self.traceIdx * waterfallSpacing
 
+        if self.plotType in (self.TYPE_PSD, self.TYPE_RT_PSD):
+            if average:
+                ydata = self.previousPSD.mean()
+            else:
+                ydata = self.previousPSD.last()
+            if self.plotType == self.TYPE_RT_PSD:
+                ydata = np.sqrt(ydata)
+            if "Waterfall" in sbtext:
+                ydata += self.traceIdx * waterfallSpacing
+            x = record.FFTFreq()
         self.curve.setData(x, ydata)
 
 
@@ -300,12 +326,18 @@ class PlotWindow(QtWidgets.QWidget):
             errvfb = (index == PlotTrace.TYPE_ERR_FB)
             self.quickErrComboBox.setDisabled(errvfb)
             for cb in self.checkers:
+                cb.setDisabled(errvfb)
                 if errvfb:
                     cb.setChecked(False)
-                cb.setDisabled(errvfb)
-
+        needsFFT = index in (PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD)
+        if needsFFT and self.subtractBaselineMenu.currentText().startswith("Y: subtract"):
+            self.subtractBaselineMenu.setCurrentIndex(0)
+        self.subtractBaselineMenu.model().item(1).setEnabled(not needsFFT)
+        if needsFFT:
+            pass  # TODO: convert plot to log-log style
         for trace in self.traces:
             trace.plotType = index
+            trace.needsFFT(needsFFT)
         self.redrawAll()
 
     @pyqtSlot(DastardRecord)
