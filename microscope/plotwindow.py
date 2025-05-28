@@ -275,14 +275,16 @@ class PlotWindow(QtWidgets.QWidget):
             pw.setLabel("bottom", "Frequency", units="Hz")
             self.xPhysicalMenu.setCurrentIndex(1)
             self.xPhysicalMenu.model().item(0).setEnabled(False)
-            pw.setXRange(1, 1e5)
+            pw.setLimits(xMin=1, xMax=1e6)
         else:
             self.xPhysicalMenu.model().item(0).setEnabled(True)
             if self.xPhysical:
                 pw.setLabel("bottom", "Time after trigger", units="s")
             else:
                 pw.setLabel("bottom", "Samples after trigger")
+            pw.setLimits(xMin=-1e5, xMax=1e5)
         if enableAutoRange:
+            pw.autoRange()
             pw.enableAutoRange()
 
     @pyqtSlot(bool)
@@ -342,6 +344,7 @@ class PlotWindow(QtWidgets.QWidget):
     @pyqtSlot(int)
     def plotTypeChanged(self, index):
         self.clearAllTraces()
+        self.setupXAxis()
         if self.isTDM:
             errvfb = (index == PlotTrace.TYPE_ERR_FB)
             self.quickErrComboBox.setDisabled(errvfb)
@@ -350,18 +353,20 @@ class PlotWindow(QtWidgets.QWidget):
                 if errvfb:
                     cb.setChecked(False)
         isspectrum = index in (PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD)
+        self.subtractBaselineMenu.model().item(1).setEnabled(not isspectrum)
         if isspectrum:
             self.subtractBaselineMenu.setCurrentIndex(0)
+            self.waterfallLabel.setText("Waterfall r.")
+            self.waterfallDeltaSpin.setToolTip("Ratio between traces in waterfall mode")
             self.waterfallDeltaSpin.setValue(2.0)
         else:
+            self.waterfallLabel.setText("<html><p>Waterfall &Delta;</p></html>")
+            self.waterfallDeltaSpin.setToolTip("Vertical spacing between traces in waterfall mode")
             self.waterfallDeltaSpin.setValue(1000.0)
-        self.subtractBaselineMenu.model().item(1).setEnabled(not isspectrum)
         self.plotWidget.setLogMode(isspectrum, isspectrum)
         for trace in self.traces:
             trace.plotType = index
             trace.needsFFT(isspectrum)
-        self.setupXAxis()
-        self.redrawAll()
 
     @pyqtSlot(DastardRecord)
     def updateReceived(self, record):
