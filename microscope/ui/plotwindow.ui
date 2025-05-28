@@ -246,18 +246,21 @@ baseline levels to zero or staggered values</string>
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QSpinBox" name="waterfallDeltaSpin">
+        <widget class="QDoubleSpinBox" name="waterfallDeltaSpin">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="toolTip">
           <string>Vertical spacing between traces in waterfall mode</string>
          </property>
+         <property name="minimum">
+          <double>1.000000000000000</double>
+         </property>
          <property name="maximum">
-          <number>8000</number>
+          <double>10000.000000000000000</double>
          </property>
          <property name="value">
-          <number>1000</number>
+          <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>

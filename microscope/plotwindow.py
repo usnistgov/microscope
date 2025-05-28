@@ -119,7 +119,7 @@ class PlotTrace:
             if self.plotType == self.TYPE_RT_PSD:
                 ydata = np.sqrt(ydata)
             if "Waterfall" in sbtext:
-                ydata += self.traceIdx * waterfallSpacing
+                ydata *= waterfallSpacing ** self.traceIdx
             x = record.FFTFreq()
         self.curve.setData(x, ydata)
 
@@ -349,8 +349,11 @@ class PlotWindow(QtWidgets.QWidget):
                 if errvfb:
                     cb.setChecked(False)
         isspectrum = index in (PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD)
-        if isspectrum and self.subtractBaselineMenu.currentIndex() == 1:
+        if isspectrum:
             self.subtractBaselineMenu.setCurrentIndex(0)
+            self.waterfallDeltaSpin.setValue(2.0)
+        else:
+            self.waterfallDeltaSpin.setValue(1000.0)
         self.subtractBaselineMenu.model().item(1).setEnabled(not isspectrum)
         self.plotWidget.setLogMode(isspectrum, isspectrum)
         for trace in self.traces:
