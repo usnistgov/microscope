@@ -1,6 +1,6 @@
 # Qt5 imports
 import PyQt5.uic
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal, QObject
+from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal
 from PyQt5 import QtWidgets
 import pyqtgraph as pg
 
@@ -158,6 +158,7 @@ class PlotWindow(QtWidgets.QWidget):
 
     def __init__(self, parent, channel_groups, isTDM=False):
         QtWidgets.QWidget.__init__(self, parent)
+        self.parent = parent
         PyQt5.uic.loadUi(os.path.join(os.path.dirname(__file__), "ui/plotwindow.ui"), self)
         self.isTDM = isTDM
         previousBufferLength = self.spinBox_nAverage.value()
@@ -267,7 +268,31 @@ class PlotWindow(QtWidgets.QWidget):
         pw.setLabel("left", "TES current")
         self.setupXAxis()
         pw.setLimits(yMin=self.YMIN, yMax=self.YMAX)
+        self.crosshairVLine = pg.InfiniteLine(angle=90, movable=False, pen=pg.mkColor("#aaaaaa"))
+        self.crosshairHLine = pg.InfiniteLine(angle=0, movable=False, pen=pg.mkColor("#aaaaaa"))
+        pw.addItem(self.crosshairVLine, ignoreBounds=True)
+        pw.addItem(self.crosshairHLine, ignoreBounds=True)
         self.plotFrame.layout().addWidget(pw)
+        pw.scene().sigMouseMoved.connect(self.mouseMoved)
+
+    def mouseMoved(self, evt):
+        pos = evt
+        p1 = self.plotWidget
+        vb = p1.getViewBox()
+        if p1.sceneBoundingRect().contains(pos):
+            mousePoint = vb.mapSceneToView(pos)
+            x = mousePoint.x()
+            y = mousePoint.y()
+            self.crosshairVLine.setPos(x)
+            self.crosshairHLine.setPos(y)
+            xlabel = p1.getAxis("bottom").labelString()
+            if "Samples after" in xlabel:
+                xunits = "samples"
+            else:
+                xunits = xlabel.split("(")[-1].split(")")[0]
+                x *= {"ms": 1000, "µs": 1e6, "kHz": 1e-3}.get(xunits, 1)
+            msg = f"x={x:.3f} {xunits}, y={y:.1f}"
+            self.parent.statusLabel1.setText(msg)
 
     def setupXAxis(self, enableAutoRange=True):
         pw = self.plotWidget

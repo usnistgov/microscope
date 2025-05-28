@@ -84,6 +84,11 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         self.title = title
         self.actionAbout.triggered.connect(self.show_about)
 
+        self.statusLabel1 = QtWidgets.QLabel("")
+        ss = "QLabel {{ color : black; size : 9}}"
+        self.statusLabel1.setStyleSheet(ss)
+        self.statusBar().addWidget(self.statusLabel1)
+
         self.subscribedChannels = set()
         self.zmqthread = QtCore.QThread()
         self.zmqsubscriber = subscriber.ZMQSubscriber(host, port)
