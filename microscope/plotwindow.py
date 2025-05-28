@@ -27,21 +27,21 @@ def clear_grid_layout(grid_layout):
 class timeAxis:
     nPresamples: int
     nSamples: int
-    timebase: float
+    timebase_sec: float
     xsamples: np.ndarray
-    xms: np.ndarray
+    xseconds: np.ndarray
 
     def x(self, isphysical):
-        return self.xms if isphysical else self.xsamples
+        return self.xseconds if isphysical else self.xsamples
 
     @staticmethod
-    def create(nPresamples, nSamples, timebase):
+    def create(nPresamples, nSamples, timebase_sec):
         xsamples = np.arange(nSamples) - nPresamples
-        xms = xsamples * timebase * 1000
-        return timeAxis(nPresamples, nSamples, timebase, xsamples, xms)
+        xseconds = xsamples * timebase_sec
+        return timeAxis(nPresamples, nSamples, timebase_sec, xsamples, xseconds)
 
 
-class PlotTrace(QObject):
+class PlotTrace:
     TYPE_TIMESERIES = 0
     TYPE_PSD = 1
     TYPE_RT_PSD = 2
@@ -82,7 +82,7 @@ class PlotTrace(QObject):
         else:
             xaxis = self.timeAx
             if (xaxis.nPresamples != record.nPresamples or xaxis.nSamples != record.nSamples or
-                    xaxis.timebase != record.timebase):
+                    xaxis.timebase_sec != record.timebase):
                 xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
                 self.timeAx = xaxis
         self.lastRecord = record
@@ -269,35 +269,20 @@ class PlotWindow(QtWidgets.QWidget):
         pw.setLimits(yMin=self.YMIN, yMax=self.YMAX)
         self.plotFrame.layout().addWidget(pw)
 
-    def setupXAxis(self):
+    def setupXAxis(self, enableAutoRange=True):
         pw = self.plotWidget
-        timeAxes = [t.timeAx for t in self.traces]
-        plot_is_empty = timeAxes.count(None) == self.NUM_TRACES
-        if plot_is_empty:
-            timebase = 0.01
-        else:
-            timebase = np.mean([ax.timebase for ax in timeAxes if ax is not None])
-
         if self.isSpectrum:
-            x_range = (10, 0.5/timebase)
             pw.setLabel("bottom", "Frequency", units="Hz")
             self.xPhysicalMenu.setCurrentIndex(1)
             self.xPhysicalMenu.model().item(0).setEnabled(False)
         else:
             self.xPhysicalMenu.model().item(0).setEnabled(True)
             if self.xPhysical:
-                pw.setLabel("bottom", "Time after trigger", units="ms")
+                pw.setLabel("bottom", "Time after trigger", units="s")
             else:
                 pw.setLabel("bottom", "Samples after trigger")
-
-            x_range, _ = pw.viewRange()
-            if self.xPhysical:
-                x_range[0] *= timebase * 1000
-                x_range[1] *= timebase * 1000
-            else:
-                x_range[0] /= timebase * 1000
-                x_range[1] /= timebase * 1000
-        pw.setXRange(x_range[0], x_range[1])
+        if enableAutoRange:
+            pw.enableAutoRange()
 
     @pyqtSlot(bool)
     def pausePressed(self, paused): pass
@@ -384,11 +369,17 @@ class PlotWindow(QtWidgets.QWidget):
         sbtext = self.subtractBaselineMenu.currentText()
         waterfallSpacing = self.waterfallDeltaSpin.value()
         average = self.averageTraces.isChecked()
+        plotWasEmpty = self.plot_is_empty
 
         if record.channelIndex in self.idx2trace:
             for traceIdx in self.idx2trace[record.channelIndex]:
                 trace = self.traces[traceIdx]
                 trace.plotrecord(record, self.plotWidget, self.xPhysical, sbtext, waterfallSpacing, average)
+        if plotWasEmpty:
+            pw = self.plotWidget
+            pw.autoRange()
+            ((xmin, xmax), _) = pw.viewRange()
+            pw.setLimits(xMin=xmin, xMax=xmax)
 
     @property
     def isSpectrum(self):
@@ -398,17 +389,31 @@ class PlotWindow(QtWidgets.QWidget):
     def xPhysical(self):
         return "physical" in self.xPhysicalMenu.currentText()
 
+    @property
+    def plot_is_empty(self):
+        return [t.timeAx for t in self.traces].count(None) == self.NUM_TRACES
+
     @pyqtSlot()
     def xPhysicalChanged(self):
         # Do something to choose x-axis ranges: current value AND max range
-        pw = self.plotWidget
-        timeAxes = [t.timeAx for t in self.traces]
-        plot_is_empty = timeAxes.count(None) == self.NUM_TRACES
-        if not plot_is_empty:
-            xmin = np.min([ax.x(self.xPhysical)[0] for ax in timeAxes if ax is not None])
-            xmax = np.max([ax.x(self.xPhysical)[-1] for ax in timeAxes if ax is not None])
-            pw.setLimits(xMin=xmin, xMax=xmax, yMin=self.YMIN, yMax=self.YMAX)
-        self.setupXAxis()
+        self.setupXAxis(enableAutoRange=False)
+        if not self.plot_is_empty:
+            timeAxes = [t.timeAx for t in self.traces]
+            timebase_sec = np.mean([ax.timebase_sec for ax in timeAxes if ax is not None])
+            pw = self.plotWidget
+            if self.xPhysical:
+                rescale = timebase_sec
+            else:
+                rescale = 1/timebase_sec
+            (xrangemin, xrangemax), _ = pw.viewRange()
+            (xlimitmin, xlimitmax) = pw.getViewBox().getState()["limits"]["xLimits"]
+            xlimitmin *= rescale
+            xlimitmax *= rescale
+
+            xrangemin *= rescale
+            xrangemax *= rescale
+            pw.setLimits(xMin=xlimitmin, xMax=xlimitmax)
+            pw.setXRange(xrangemin, xrangemax)
         self.redrawAll()
 
     @pyqtSlot()
