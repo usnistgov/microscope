@@ -275,6 +275,7 @@ class PlotWindow(QtWidgets.QWidget):
             pw.setLabel("bottom", "Frequency", units="Hz")
             self.xPhysicalMenu.setCurrentIndex(1)
             self.xPhysicalMenu.model().item(0).setEnabled(False)
+            pw.setXRange(1, 1e5)
         else:
             self.xPhysicalMenu.model().item(0).setEnabled(True)
             if self.xPhysical:
@@ -348,7 +349,7 @@ class PlotWindow(QtWidgets.QWidget):
                 if errvfb:
                     cb.setChecked(False)
         isspectrum = index in (PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD)
-        if isspectrum and self.subtractBaselineMenu.currentText().startswith("Y: subtract"):
+        if isspectrum and self.subtractBaselineMenu.currentIndex() == 1:
             self.subtractBaselineMenu.setCurrentIndex(0)
         self.subtractBaselineMenu.model().item(1).setEnabled(not isspectrum)
         self.plotWidget.setLogMode(isspectrum, isspectrum)
@@ -409,7 +410,6 @@ class PlotWindow(QtWidgets.QWidget):
             (xlimitmin, xlimitmax) = pw.getViewBox().getState()["limits"]["xLimits"]
             xlimitmin *= rescale
             xlimitmax *= rescale
-
             xrangemin *= rescale
             xrangemax *= rescale
             pw.setLimits(xMin=xlimitmin, xMax=xlimitmax)
