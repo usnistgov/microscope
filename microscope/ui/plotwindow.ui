@@ -606,7 +606,7 @@ baseline levels to zero or staggered values</string>
    <sender>clearDataButton</sender>
    <signal>clicked()</signal>
    <receiver>plotContainer</receiver>
-   <slot>clearGraphs()</slot>
+   <slot>clearAllTraces()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>492</x>
@@ -623,7 +623,7 @@ baseline levels to zero or staggered values</string>
   <slot>pausePressed(bool)</slot>
   <slot>xAxisLog(bool)</slot>
   <slot>yAxisLog(bool)</slot>
-  <slot>clearGraphs()</slot>
+  <slot>clearAllTraces()</slot>
   <slot>savePlot()</slot>
  </slots>
 </ui>

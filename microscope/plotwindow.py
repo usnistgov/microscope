@@ -341,6 +341,7 @@ class PlotWindow(QtWidgets.QWidget):
 
     @pyqtSlot(int)
     def plotTypeChanged(self, index):
+        self.clearAllTraces()
         if self.isTDM:
             errvfb = (index == PlotTrace.TYPE_ERR_FB)
             self.quickErrComboBox.setDisabled(errvfb)
@@ -420,7 +421,7 @@ class PlotWindow(QtWidgets.QWidget):
         self.redrawAll()
 
     @pyqtSlot()
-    def clearGraphs(self):
+    def clearAllTraces(self):
         for traceIdx in range(self.NUM_TRACES):
             self.clearTrace(traceIdx)
 
