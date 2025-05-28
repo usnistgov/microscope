@@ -275,7 +275,7 @@ baseline levels to zero or staggered values</string>
        </item>
        <item>
         <property name="text">
-         <string>X: ms</string>
+         <string>X: physical</string>
         </property>
        </item>
       </widget>

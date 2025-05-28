@@ -111,7 +111,7 @@ class PlotTrace(QObject):
             elif "Waterfall" in sbtext:
                 ydata = record.record_baseline_subtracted + self.traceIdx * waterfallSpacing
 
-        if self.plotType in (self.TYPE_PSD, self.TYPE_RT_PSD):
+        if self.isSpectrum:
             if average:
                 ydata = self.previousPSD.mean()
             else:
@@ -122,6 +122,10 @@ class PlotTrace(QObject):
                 ydata += self.traceIdx * waterfallSpacing
             x = record.FFTFreq()
         self.curve.setData(x, ydata)
+
+    @property
+    def isSpectrum(self):
+        return self.plotType in (self.TYPE_PSD, self.TYPE_RT_PSD)
 
 
 class PlotWindow(QtWidgets.QWidget):
@@ -257,14 +261,43 @@ class PlotWindow(QtWidgets.QWidget):
     def setupPlot(self):
         if not self.isTDM:
             self.plotTypeComboBox.model().item(3).setEnabled(False)
-        p1 = pg.PlotWidget()
-        p1.setWindowTitle("LJH pulse record")
-        self.plotFrame.layout().addWidget(p1)
-        p1.setLabel("left", "TES current")
-        p1.setLabel("bottom", "Samples after trigger")
-        # p1.addLegend()
-        self.plotWidget = p1
-        p1.setLimits(yMin=self.YMIN, yMax=self.YMAX)
+        pw = pg.PlotWidget()
+        self.plotWidget = pw
+        pw.setWindowTitle("LJH pulse record")
+        pw.setLabel("left", "TES current")
+        self.setupXAxis()
+        pw.setLimits(yMin=self.YMIN, yMax=self.YMAX)
+        self.plotFrame.layout().addWidget(pw)
+
+    def setupXAxis(self):
+        pw = self.plotWidget
+        timeAxes = [t.timeAx for t in self.traces]
+        plot_is_empty = timeAxes.count(None) == self.NUM_TRACES
+        if plot_is_empty:
+            timebase = 0.01
+        else:
+            timebase = np.mean([ax.timebase for ax in timeAxes if ax is not None])
+
+        if self.isSpectrum:
+            x_range = (10, 0.5/timebase)
+            pw.setLabel("bottom", "Frequency", units="Hz")
+            self.xPhysicalMenu.setCurrentIndex(1)
+            self.xPhysicalMenu.model().item(0).setEnabled(False)
+        else:
+            self.xPhysicalMenu.model().item(0).setEnabled(True)
+            if self.xPhysical:
+                pw.setLabel("bottom", "Time after trigger", units="ms")
+            else:
+                pw.setLabel("bottom", "Samples after trigger")
+
+            x_range, _ = pw.viewRange()
+            if self.xPhysical:
+                x_range[0] *= timebase * 1000
+                x_range[1] *= timebase * 1000
+            else:
+                x_range[0] /= timebase * 1000
+                x_range[1] /= timebase * 1000
+        pw.setXRange(x_range[0], x_range[1])
 
     @pyqtSlot(bool)
     def pausePressed(self, paused): pass
@@ -329,15 +362,15 @@ class PlotWindow(QtWidgets.QWidget):
                 cb.setDisabled(errvfb)
                 if errvfb:
                     cb.setChecked(False)
-        needsFFT = index in (PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD)
-        if needsFFT and self.subtractBaselineMenu.currentText().startswith("Y: subtract"):
+        isspectrum = index in (PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD)
+        if isspectrum and self.subtractBaselineMenu.currentText().startswith("Y: subtract"):
             self.subtractBaselineMenu.setCurrentIndex(0)
-        self.subtractBaselineMenu.model().item(1).setEnabled(not needsFFT)
-        if needsFFT:
-            pass  # TODO: convert plot to log-log style
+        self.subtractBaselineMenu.model().item(1).setEnabled(not isspectrum)
+        self.plotWidget.setLogMode(isspectrum, isspectrum)
         for trace in self.traces:
             trace.plotType = index
-            trace.needsFFT(needsFFT)
+            trace.needsFFT(isspectrum)
+        self.setupXAxis()
         self.redrawAll()
 
     @pyqtSlot(DastardRecord)
@@ -358,34 +391,24 @@ class PlotWindow(QtWidgets.QWidget):
                 trace.plotrecord(record, self.plotWidget, self.xPhysical, sbtext, waterfallSpacing, average)
 
     @property
+    def isSpectrum(self):
+        return self.plotTypeComboBox.currentIndex() in (PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD)
+
+    @property
     def xPhysical(self):
-        return "ms" in self.xPhysicalMenu.currentText()
+        return "physical" in self.xPhysicalMenu.currentText()
 
     @pyqtSlot()
     def xPhysicalChanged(self):
         # Do something to choose x-axis ranges: current value AND max range
         pw = self.plotWidget
-        x_range, _ = pw.viewRange()
         timeAxes = [t.timeAx for t in self.traces]
         plot_is_empty = timeAxes.count(None) == self.NUM_TRACES
-        if plot_is_empty:
-            timebase = 0.01
-        else:
-            timebase = np.mean([ax.timebase for ax in timeAxes if ax is not None])
-
-        if self.xPhysical:
-            x_range[0] *= timebase * 1000
-            x_range[1] *= timebase * 1000
-            pw.setLabel("bottom", "Time after trigger", units="ms")
-        else:
-            x_range[0] /= timebase * 1000
-            x_range[1] /= timebase * 1000
-            pw.setLabel("bottom", "Samples after trigger", units="")
         if not plot_is_empty:
             xmin = np.min([ax.x(self.xPhysical)[0] for ax in timeAxes if ax is not None])
             xmax = np.max([ax.x(self.xPhysical)[-1] for ax in timeAxes if ax is not None])
             pw.setLimits(xMin=xmin, xMax=xmax, yMin=self.YMIN, yMax=self.YMAX)
-        pw.setXRange(x_range[0], x_range[1])
+        self.setupXAxis()
         self.redrawAll()
 
     @pyqtSlot()
