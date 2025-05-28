@@ -175,7 +175,7 @@
         <number>128</number>
        </property>
        <property name="value">
-        <number>10</number>
+        <number>64</number>
        </property>
       </widget>
      </item>
@@ -239,7 +239,7 @@ baseline levels to zero or staggered values</string>
         <number>0</number>
        </property>
        <item row="0" column="0">
-        <widget class="QLabel" name="label">
+        <widget class="QLabel" name="waterfallLabel">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Waterfall &amp;Delta;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
