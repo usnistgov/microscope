@@ -81,7 +81,7 @@ class PlotTrace(QObject):
         if average:
             record = self.previousRecords.mean()
         if "Raw" in sbtext:
-            ydata = record.record
+            ydata = np.asarray(record.record, dtype=float)
 
         elif "Subtract" in sbtext:
             ydata = record.record_baseline_subtracted
@@ -98,7 +98,7 @@ class PlotWindow(QtWidgets.QWidget):
     NUM_TRACES = 8
     SPECIAL_INVALID = -1
     YMIN = -35e3
-    YMAX = 66e4
+    YMAX = 66e3
 
     @staticmethod
     def color(i):
