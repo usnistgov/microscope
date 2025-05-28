@@ -69,6 +69,7 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         PyQt5.uic.loadUi(os.path.join(my_dir, "ui/microscope.ui"), self)
         self.setWindowTitle(title)
 
+        self.subscribedChannels = set()
         self.zmqthread = QtCore.QThread()
         self.zmqsubscriber = subscriber.ZMQSubscriber(host, port)
         self.zmqsubscriber.moveToThread(self.zmqthread)
@@ -86,6 +87,7 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
             return
         pw = plotwindow.PlotWindow(self, self.channel_groups, isTDM=self.isTDM)
         self.zmqsubscriber.pulserecord.connect(pw.updateReceived)
+        pw.updateSubscriptions.connect(self.updateSubscriptions)
         for location in ((0, 0), (0, 1), (1, 0), (1, 1)):
             if location not in self.plotWindows:
                 self.plotWindows[location] = pw
@@ -103,6 +105,18 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
             if self.plotWindows.get(location, None) == sender:
                 del self.plotWindows[location]
                 self.addPlotsButton.setEnabled(True)
+
+    @pyqtSlot()
+    def updateSubscriptions(self):
+        newSubscriptions = set()
+        for pw in self.plotWindows.values():
+            newSubscriptions.update(pw.idx2trace.keys())
+
+        for chanidx in self.subscribedChannels.difference(newSubscriptions):
+            self.zmqsubscriber.unsubscribe(chanidx)
+        for chanidx in newSubscriptions.difference(self.subscribedChannels):
+            self.zmqsubscriber.subscribe(chanidx)
+        self.subscribedChannels = newSubscriptions
 
     def set_channel_groups(self, cgs):
         self.channel_groups = cgs

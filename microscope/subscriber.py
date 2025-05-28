@@ -2,6 +2,7 @@
 from PyQt5 import QtCore
 
 # Non-Qt imports
+import struct
 import zmq
 
 from dastardrecord import DastardRecord
@@ -25,11 +26,19 @@ class ZMQSubscriber(QtCore.QObject):
         self.socket.connect(self.address)
         print(f"Collecting updates from dastard at {self.address}")
 
-        self.socket.setsockopt_string(zmq.SUBSCRIBE, "")
-
         # self.messages_seen = collections.Counter()
         self.quit_once = False
         self.running = False
+
+    @staticmethod
+    def stringcode(chanindex):
+        return struct.pack("<H", chanindex).decode()
+
+    def subscribe(self, chanindex):
+        self.socket.setsockopt_string(zmq.SUBSCRIBE, self.stringcode(chanindex))
+
+    def unsubscribe(self, chanindex):
+        self.socket.setsockopt_string(zmq.UNSUBSCRIBE, self.stringcode(chanindex))
 
     def data_monitor_loop(self):
         if self.quit_once:

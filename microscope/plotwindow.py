@@ -270,6 +270,8 @@ class PlotWindow(QtWidgets.QWidget):
         self.channelSpinners[sender].setPrefix(prefix)
         self.channelListChanged()
 
+    updateSubscriptions = pyqtSignal()
+
     def channelListChanged(self):
         self.idx2trace = {}
         for traceIdx, spinner in enumerate(self.channelSpinners):
@@ -281,6 +283,7 @@ class PlotWindow(QtWidgets.QWidget):
                 self.idx2trace[chanidx].add(traceIdx)
             else:
                 self.idx2trace[chanidx] = {traceIdx}
+        self.updateSubscriptions.emit()
 
     @pyqtSlot(DastardRecord)
     def updateReceived(self, record):
