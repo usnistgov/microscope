@@ -35,17 +35,12 @@ class timeAxis:
     nPresamples: int
     nSamples: int
     timebase_sec: float
-    xsamples: np.ndarray
-    xseconds: np.ndarray
-
-    def x(self, isphysical: bool) -> np.ndarray:
-        return self.xseconds if isphysical else self.xsamples
+    x: np.ndarray
 
     @staticmethod
     def create(nPresamples: int, nSamples: int, timebase_sec: int | float) -> timeAxis:
         xsamples = np.arange(nSamples) - nPresamples
-        xseconds = xsamples * timebase_sec
-        return timeAxis(nPresamples, nSamples, timebase_sec, xsamples, xseconds)
+        return timeAxis(nPresamples, nSamples, timebase_sec, xsamples)
 
 
 class PlotTrace:
@@ -79,13 +74,12 @@ class PlotTrace:
         if not FFT:
             self.previousPSD.clear()
 
-    def plotrecord(self, record: DastardRecord, plotWidget: pg.PlotWidget, xPhysical: bool,
+    def plotrecord(self, record: DastardRecord, plotWidget: pg.PlotWidget,
                    sbtext: str, waterfallSpacing: int | float, average: bool) -> None:
         if self.curve is None or self.timeAx is None:
             xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
             self.timeAx = xaxis
-            x = xaxis.x(xPhysical)
-            self.curve = plotWidget.plot(x, record.record, pen=self.pen)
+            self.curve = plotWidget.plot(xaxis.x, record.record, pen=self.pen)
         else:
             xaxis = self.timeAx
             if (xaxis.nPresamples != record.nPresamples or xaxis.nSamples != record.nSamples or
@@ -96,15 +90,13 @@ class PlotTrace:
         if self.computingFFT:
             PSD = record.PSD()
             self.previousPSD.append(PSD)
-        self.drawStoredRecord(xPhysical, sbtext, waterfallSpacing, average)
+        self.drawStoredRecord(sbtext, waterfallSpacing, average)
 
-    def drawStoredRecord(self, xPhysical: bool, sbtext: str,
-                         waterfallSpacing: int | float, average: bool) -> None:
+    def drawStoredRecord(self, sbtext: str, waterfallSpacing: int | float, average: bool) -> None:
         xaxis = self.timeAx
         if self.curve is None or xaxis is None or len(self.previousRecords) == 0:
             return
 
-        x = xaxis.x(xPhysical)
         record = self.previousRecords[-1]
         if self.plotType == self.TYPE_TIMESERIES:
             if average:
@@ -117,6 +109,7 @@ class PlotTrace:
 
             elif "Waterfall" in sbtext:
                 ydata = record.record_baseline_subtracted + self.traceIdx * waterfallSpacing
+            x = xaxis.x
 
         if self.isSpectrum:
             if average:
@@ -290,7 +283,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.plotWidget = pw
         pw.setWindowTitle("LJH pulse record")
         pw.setLabel("left", "TES current")
-        self.setupXAxis()
+        self.xPhysicalChanged()
         pw.setLimits(yMin=self.YMIN, yMax=self.YMAX)
         self.crosshairVLine = pg.InfiniteLine(angle=90, movable=False, pen=pg.mkColor("#aaaaaa"))
         self.crosshairHLine = pg.InfiniteLine(angle=0, movable=False, pen=pg.mkColor("#aaaaaa"))
@@ -341,24 +334,6 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         elif y_axis_rect.contains(pos):
             whichaxis = "y"
         pw.enableAutoRange(whichaxis)
-
-    def setupXAxis(self, enableAutoRange: bool = True) -> None:
-        pw = self.plotWidget
-        if self.isSpectrum:
-            pw.setLabel("bottom", "Frequency", units="Hz")
-            self.xPhysicalCheck.setChecked(True)
-            self.xPhysicalCheck.setEnabled(False)
-            pw.setLimits(xMin=1, xMax=1e6)
-        else:
-            self.xPhysicalCheck.setEnabled(True)
-            if self.xPhysical:
-                pw.setLabel("bottom", "Time after trigger", units="s")
-            else:
-                pw.setLabel("bottom", "Samples after trigger")
-            pw.setLimits(xMin=-1e5, xMax=1e5)
-        if enableAutoRange:
-            pw.autoRange()
-            pw.enableAutoRange()
 
     @pyqtSlot(bool)
     def pausePressed(self, paused: bool) -> None: pass
@@ -455,7 +430,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     @pyqtSlot(int)
     def plotTypeChanged(self, index: int) -> None:
         self.clearAllTraces()
-        self.setupXAxis()
+        self.xPhysicalChanged()
         if self.isTDM:
             errvfb = (index == PlotTrace.TYPE_ERR_FB)
             self.quickErrComboBox.setDisabled(errvfb)
@@ -496,7 +471,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         if record.channelIndex in self.idx2trace:
             for traceIdx in self.idx2trace[record.channelIndex]:
                 trace = self.traces[traceIdx]
-                trace.plotrecord(record, self.plotWidget, self.xPhysical, sbtext, waterfallSpacing, average)
+                trace.plotrecord(record, self.plotWidget, sbtext, waterfallSpacing, average)
         if plotWasEmpty:
             pw = self.plotWidget
             pw.autoRange()
@@ -508,25 +483,30 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         return self.plotTypeComboBox.currentIndex() in {PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD}
 
     @property
-    def xPhysical(self) -> bool:
-        return False  # self.xPhysicalCheck.isChecked()
-
-    @property
     def plot_is_empty(self) -> bool:
         return [t.timeAx for t in self.traces].count(None) == self.NUM_TRACES
 
     @pyqtSlot()
     def xPhysicalChanged(self) -> None:
-        record = self.lastRecord
-        if record is None:
-            return
-        ax = self.plotWidget.getAxis("bottom")
-        if self.xPhysicalCheck.isChecked():
-            ax.setScale(record.timebase)
-            ax.setLabel("Time after trigger", units="s")
+        pw = self.plotWidget
+        ax = pw.getAxis("bottom")
+        self.xPhysicalCheck.setEnabled(not self.isSpectrum)
+        scale = 1.0
+        if self.isSpectrum:
+            label = "Frequency"
+            units = "Hz"
+        elif self.xPhysicalCheck.isChecked():
+            label = "Time after trigger"
+            units = "s"
+            record = self.lastRecord
+            if record is not None:
+                scale = record.timebase
         else:
-            ax.setScale(1.0)
-            ax.setLabel("Samples after trigger", units="")
+            label = "Samples after trigger"
+            units = ""
+        ax.setLabel(label, units=units)
+        ax.setScale(scale)
+        pw.enableAutoRange("x")
 
     @pyqtSlot()
     def yPhysicalChanged(self) -> None:
@@ -535,15 +515,18 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             return
         ax = self.plotWidget.getAxis("left")
         if self.yPhysicalCheck.isChecked():
+            scale = record.voltsPerArb
             if self.isTDM:
                 units = "V"
             else:
                 units = "<html>&phi;0</html>"
-            ax.setScale(record.voltsPerArb)
-            ax.setLabel("TES signal", units=units)
+            label = "TES signal"
         else:
-            ax.setScale(1.0)
-            ax.setLabel("TES signal", units="")
+            scale = 1.0
+            label = "TES signal"
+            units = ""
+        ax.setScale(scale)
+        ax.setLabel(label, units=units)
 
     @pyqtSlot()
     def clearAllTraces(self) -> None:
@@ -567,7 +550,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         spacing = self.waterfallDeltaSpin.value()
         average = self.averageTraces.isChecked()
         for trace in self.traces:
-            trace.drawStoredRecord(self.xPhysical, sbtext, spacing, average)
+            trace.drawStoredRecord(sbtext, spacing, average)
 
     closed = pyqtSignal()
 
