@@ -192,7 +192,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.setupChannels(channel_groups)
         self.setupQuickSelect(channel_groups)
         self.setupPlot()
-        self.xPhysicalMenu.currentIndexChanged.connect(self.xPhysicalChanged)
+        self.xPhysicalCheck.toggled.connect(self.xPhysicalChanged)
         self.subtractBaselineMenu.currentIndexChanged.connect(self.redrawAll)
         self.quickFBComboBox.currentIndexChanged.connect(self.quickChannel)
         self.quickErrComboBox.currentIndexChanged.connect(self.quickChannel)
@@ -347,8 +347,8 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         pw = self.plotWidget
         if self.isSpectrum:
             pw.setLabel("bottom", "Frequency", units="Hz")
-            self.xPhysicalMenu.setCurrentIndex(1)
-            self.xPhysicalMenu.model().item(0).setEnabled(False)
+            self.xPhysicalCheck.setChecked(True)
+            self.xPhysicalCheck.setEnabled(False)
             pw.setLimits(xMin=1, xMax=1e6)
         else:
             self.xPhysicalMenu.model().item(0).setEnabled(True)
@@ -469,7 +469,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
     @property
     def xPhysical(self) -> bool:
-        return "physical" in self.xPhysicalMenu.currentText()
+        return self.xPhysicalCheck.isChecked()
 
     @property
     def plot_is_empty(self) -> bool:
