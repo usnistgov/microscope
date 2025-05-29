@@ -185,10 +185,12 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.channel_groups: list[ChannelGroup] = []
         self.channel_index: dict[str, int] = {}
         self.channel_number: dict[int, int] = {}
+        self.lastRecord: DastardRecord | None = None
         self.setupChannels(channel_groups)
         self.setupQuickSelect(channel_groups)
         self.setupPlot()
         self.xPhysicalCheck.toggled.connect(self.xPhysicalChanged)
+        self.yPhysicalCheck.toggled.connect(self.yPhysicalChanged)
         self.subtractBaselineMenu.currentIndexChanged.connect(self.redrawAll)
         self.quickFBComboBox.currentIndexChanged.connect(self.quickChannel)
         self.quickErrComboBox.currentIndexChanged.connect(self.quickChannel)
@@ -489,6 +491,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         waterfallSpacing = self.waterfallDeltaSpin.value()
         average = self.averageTraces.isChecked()
         plotWasEmpty = self.plot_is_empty
+        self.lastRecord = record
 
         if record.channelIndex in self.idx2trace:
             for traceIdx in self.idx2trace[record.channelIndex]:
@@ -506,7 +509,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
     @property
     def xPhysical(self) -> bool:
-        return self.xPhysicalCheck.isChecked()
+        return False  # self.xPhysicalCheck.isChecked()
 
     @property
     def plot_is_empty(self) -> bool:
@@ -514,25 +517,33 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
     @pyqtSlot()
     def xPhysicalChanged(self) -> None:
-        # Do something to choose x-axis ranges: current value AND max range
-        self.setupXAxis(enableAutoRange=False)
-        if not self.plot_is_empty:
-            timeAxes = [t.timeAx for t in self.traces]
-            timebase_sec = np.mean([ax.timebase_sec for ax in timeAxes if ax is not None])
-            pw = self.plotWidget
-            if self.xPhysical:
-                rescale = timebase_sec
+        record = self.lastRecord
+        if record is None:
+            return
+        ax = self.plotWidget.getAxis("bottom")
+        if self.xPhysicalCheck.isChecked():
+            ax.setScale(record.timebase)
+            ax.setLabel("Time after trigger", units="s")
+        else:
+            ax.setScale(1.0)
+            ax.setLabel("Samples after trigger", units="")
+
+    @pyqtSlot()
+    def yPhysicalChanged(self) -> None:
+        record = self.lastRecord
+        if record is None:
+            return
+        ax = self.plotWidget.getAxis("left")
+        if self.yPhysicalCheck.isChecked():
+            if self.isTDM:
+                units = "V"
             else:
-                rescale = 1 / timebase_sec
-            (xrangemin, xrangemax), _ = pw.viewRange()
-            (xlimitmin, xlimitmax) = pw.getViewBox().getState()["limits"]["xLimits"]
-            xlimitmin *= rescale
-            xlimitmax *= rescale
-            xrangemin *= rescale
-            xrangemax *= rescale
-            pw.setLimits(xMin=xlimitmin, xMax=xlimitmax)
-            pw.setXRange(xrangemin, xrangemax)
-        self.redrawAll()
+                units = "<html>&phi;0</html>"
+            ax.setScale(record.voltsPerArb)
+            ax.setLabel("TES signal", units=units)
+        else:
+            ax.setScale(1.0)
+            ax.setLabel("TES signal", units="")
 
     @pyqtSlot()
     def clearAllTraces(self) -> None:

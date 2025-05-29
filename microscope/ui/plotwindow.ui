@@ -282,7 +282,7 @@ baseline levels to zero or staggered values</string>
        <item>
         <widget class="QCheckBox" name="yPhysicalCheck">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="text">
           <string>y axis</string>
