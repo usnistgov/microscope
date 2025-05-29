@@ -33,7 +33,7 @@ class DastardRecord:
     data_type = (np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, np.int64, np.uint64)
 
     @property
-    def record_baseline_subtracted(self) -> DastardRecord:
+    def record_baseline_subtracted(self) -> np.ndarray:
         return self.record - self.record[:self.nPresamples - 1].mean()
 
     @classmethod
@@ -87,8 +87,8 @@ class ListBasedBuffer(Generic[T]):
             self.buffer = self.buffer[nextra:]
 
 
-class DastardRecordsBuffer(ListBasedBuffer):
-    def mean(self) -> DastardRecordsBuffer:
+class DastardRecordsBuffer(ListBasedBuffer[DastardRecord]):
+    def mean(self) -> DastardRecord:
         n = len(self.buffer)
         assert n > 0
 

@@ -17,7 +17,6 @@ Original C++ version May 2018-May 2025
 import PyQt5.uic
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QSettings, pyqtSlot, QCoreApplication
-# from PyQt5.QtWidgets import QFileDialog
 import pyqtgraph as pg
 
 # Non-Qt imports
@@ -56,7 +55,7 @@ QCoreApplication.setApplicationName("Microscope")
 
 
 class AboutDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
         self.setWindowTitle("About Microscope")
@@ -70,9 +69,13 @@ class AboutDialog(QtWidgets.QDialog):
 
 
 class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
-    def __init__(self, settings, title, isTDM, channel_groups, host, port):
+    def __init__(self, settings: QSettings, title: str, isTDM: bool, channel_groups: list[ChannelGroup],
+                 host: str, port: int) -> None:
         self.settings = settings
         self.isTDM = isTDM
+        self.channel_groups: list[ChannelGroup] = []
+        self.channel_index: dict[int, int] = {}
+        self.channel_number: dict[int, int] = {}
         self.set_channel_groups(channel_groups)
 
         parent = None
@@ -87,9 +90,11 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         self.statusLabel1 = QtWidgets.QLabel("")
         ss = "QLabel {{ color : black; size : 9}}"
         self.statusLabel1.setStyleSheet(ss)
-        self.statusBar().addWidget(self.statusLabel1)
+        sb = self.statusBar()
+        if sb is not None:
+            sb.addWidget(self.statusLabel1)
 
-        self.subscribedChannels = set()
+        self.subscribedChannels: set[int] = set()
         self.zmqthread = QtCore.QThread()
         self.zmqsubscriber = subscriber.ZMQSubscriber(host, port)
         self.zmqsubscriber.moveToThread(self.zmqthread)
@@ -97,17 +102,17 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         self.zmqthread.started.connect(self.zmqsubscriber.data_monitor_loop)
         QtCore.QTimer.singleShot(0, self.zmqthread.start)
 
-        self.plotWindows = {}
+        self.plotWindows: dict[tuple[int, int], plotwindow.PlotWindow] = {}
         self.addPlotWindow()
         self.addPlotsButton.clicked.connect(self.addPlotWindow)
 
     @pyqtSlot()
-    def show_about(self):
+    def show_about(self) -> None:
         dialog = AboutDialog(self)
         dialog.show()
 
     @pyqtSlot()
-    def addPlotWindow(self):
+    def addPlotWindow(self) -> None:
         if len(self.plotWindows) >= 4:
             return
         pw = plotwindow.PlotWindow(self, self.channel_groups, isTDM=self.isTDM)
@@ -124,7 +129,7 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
                 return
 
     @pyqtSlot()
-    def removePlotWindow(self):
+    def removePlotWindow(self) -> None:
         sender = self.sender()
         for location in ((0, 0), (0, 1), (1, 0), (1, 1)):
             if self.plotWindows.get(location, None) == sender:
@@ -132,8 +137,8 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
                 self.addPlotsButton.setEnabled(True)
 
     @pyqtSlot()
-    def updateSubscriptions(self):
-        newSubscriptions = set()
+    def updateSubscriptions(self) -> None:
+        newSubscriptions: set[int] = set()
         for pw in self.plotWindows.values():
             newSubscriptions.update(pw.idx2trace.keys())
 
@@ -143,7 +148,7 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
             self.zmqsubscriber.subscribe(chanidx)
         self.subscribedChannels = newSubscriptions
 
-    def set_channel_groups(self, cgs):
+    def set_channel_groups(self, cgs: list[ChannelGroup]) -> None:
         self.channel_groups = cgs
         self.channel_index = {}
         self.channel_number = {}
@@ -155,33 +160,22 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
                 i += 1
 
     @pyqtSlot()
-    def savePlot(self): pass
-
-    # @pyqtSlot(DastardRecord)
-    # def updateReceived(self, record):
-    #     """
-    #     Slot to handle one data record for one channel.
-
-    #     It ingests the data and feeds it to the BaselineFinder object for the channel.
-    #     """
-    #     print(f"Received chan {record.channelIndex:3d} with data len={len(record.record)} and nPre={record.nPresamples}")
-
-    @pyqtSlot()
-    def closeEvent(self, event):
+    def closeEvent(self, event: QtCore.QEvent | None) -> None:
         """Cleanly close the zmqlistener and block certain signals in the
         trigger config widget."""
         # self.triggerTab._closing()
         self.zmqsubscriber.running = False
         self.zmqthread.quit()
         self.zmqthread.wait()
-        event.accept()
+        if event is not None:
+            event.accept()
 
 
-def version_message():
+def version_message() -> str:
     return f"This is microscope version {__version__}"
 
 
-def read_channels_json_file(args):
+def read_channels_json_file(args: argparse.Namespace):
     try:
         HOME = pathlib.Path.home()
         with open(f"{HOME}/.dastard/channels.json", "r", encoding="ascii") as fp:
@@ -202,7 +196,7 @@ def read_channels_json_file(args):
         raise ValueError("could not read ~/.dastard/channels.json")
 
 
-def parsed_arguments():
+def parsed_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog='Microscope',
         description='A GUI for plotting microcalorimeter pulses live'
@@ -262,7 +256,7 @@ def parsed_arguments():
     return args
 
 
-def main():
+def main() -> None:
     args = parsed_arguments()
     settings = QSettings("NIST Quantum Sensors", "Microscope")
 

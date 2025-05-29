@@ -1,21 +1,25 @@
+from __future__ import annotations
+
 # Qt5 imports
 import PyQt5.uic
-from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal
+from PyQt5.QtCore import Qt, QEvent, pyqtSlot, pyqtSignal
 from PyQt5 import QtWidgets
 import pyqtgraph as pg
 
 # other non-user imports
 import numpy as np
-from numpy.typing import ArrayLike
 import os
 from dataclasses import dataclass
 
 from dastardrecord import DastardRecord, ListBasedBuffer, DastardRecordsBuffer
+from channel_group import ChannelGroup
 
 
-def clear_grid_layout(grid_layout):
+def clear_grid_layout(grid_layout: QtWidgets.QGridLayout) -> None:
     while grid_layout.count():
         item = grid_layout.itemAt(0)
+        if item is None:
+            continue
         widget = item.widget()
         if widget is not None:
             grid_layout.removeWidget(widget)
@@ -32,11 +36,11 @@ class timeAxis:
     xsamples: np.ndarray
     xseconds: np.ndarray
 
-    def x(self, isphysical):
+    def x(self, isphysical: bool) -> np.ndarray:
         return self.xseconds if isphysical else self.xsamples
 
     @staticmethod
-    def create(nPresamples, nSamples, timebase_sec):
+    def create(nPresamples: int, nSamples: int, timebase_sec: int | float) -> timeAxis:
         xsamples = np.arange(nSamples) - nPresamples
         xseconds = xsamples * timebase_sec
         return timeAxis(nPresamples, nSamples, timebase_sec, xsamples, xseconds)
@@ -48,24 +52,24 @@ class PlotTrace:
     TYPE_RT_PSD = 2
     TYPE_ERR_FB = 3
 
-    def __init__(self, idx, color, previousBufferLength):
+    def __init__(self, idx: int, color: str, previousBufferLength: int) -> None:
         self.traceIdx = idx
         self.color = color
         self.pen = pg.mkPen(color, width=1)
-        self.curve = None
-        self.timeAx = None
-        self.lastRecord = None
+        self.curve: pg.PlotDataItem | None = None
+        self.timeAx: timeAxis | None = None
+        self.lastRecord: DastardRecord | None = None
         self.previousRecords = DastardRecordsBuffer(previousBufferLength)
-        self.previousPSD = ListBasedBuffer(previousBufferLength)
+        self.previousPSD: ListBasedBuffer[np.ndarray] = ListBasedBuffer(previousBufferLength)
         self.computingFFT = False
         self.plotType = self.TYPE_TIMESERIES
 
     @pyqtSlot(int)
-    def changeBufferLength(self, cap):
+    def changeBufferLength(self, cap: int) -> None:
         self.previousRecords.resize(cap)
         self.previousPSD.resize(cap)
 
-    def needsFFT(self, FFT):
+    def needsFFT(self, FFT: bool) -> None:
         self.computingFFT = FFT
         if FFT and len(self.previousPSD) == 0:
             for record in self.previousRecords.buffer:
@@ -74,8 +78,9 @@ class PlotTrace:
         if not FFT:
             self.previousPSD.clear()
 
-    def plotrecord(self, record, plotWidget, xPhysical, sbtext, waterfallSpacing, average):
-        if self.curve is None:
+    def plotrecord(self, record: DastardRecord, plotWidget: pg.PlotWidget, xPhysical: bool,
+                   sbtext: str, waterfallSpacing: int | float, average: bool) -> None:
+        if self.curve is None or self.timeAx is None:
             xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
             self.timeAx = xaxis
             x = xaxis.x(xPhysical)
@@ -93,13 +98,14 @@ class PlotTrace:
             self.previousPSD.push(PSD)
         self.drawStoredRecord(xPhysical, sbtext, waterfallSpacing, average)
 
-    def drawStoredRecord(self, xPhysical, sbtext, waterfallSpacing, average):
-        if self.curve is None:
+    def drawStoredRecord(self, xPhysical: bool, sbtext: str,
+                         waterfallSpacing: int | float, average: bool) -> None:
+        xaxis = self.timeAx
+        record = self.lastRecord
+        if self.curve is None or xaxis is None or record is None:
             return
 
-        xaxis = self.timeAx
         x = xaxis.x(xPhysical)
-        record = self.lastRecord
         if self.plotType == self.TYPE_TIMESERIES:
             if average:
                 record = self.previousRecords.mean()
@@ -125,11 +131,11 @@ class PlotTrace:
         self.curve.setData(x, ydata)
 
     @property
-    def isSpectrum(self):
+    def isSpectrum(self) -> bool:
         return self.plotType in (self.TYPE_PSD, self.TYPE_RT_PSD)
 
 
-def meanPSD(psdbuffer: ListBasedBuffer[ArrayLike]) -> ArrayLike:
+def meanPSD(psdbuffer: ListBasedBuffer[np.ndarray]) -> np.ndarray:
     n = len(psdbuffer)
     assert n > 0
 
@@ -151,7 +157,7 @@ class PlotWindow(QtWidgets.QWidget):
     YMAX = 66e3
 
     @staticmethod
-    def color(i):
+    def color(i: int) -> str:
         _standardColors = (
             # For most, replace standard named colors with slightly darker versions
             "black",
@@ -170,14 +176,18 @@ class PlotWindow(QtWidgets.QWidget):
         except IndexError:
             return _standardColors[-1]
 
-    def __init__(self, parent, channel_groups, isTDM=False):
+    def __init__(self, parent: QtWidgets.QWidget | None,
+                 channel_groups, isTDM=False) -> None:
         QtWidgets.QWidget.__init__(self, parent)
-        self.parent = parent
+        self.mainwindow = parent
         PyQt5.uic.loadUi(os.path.join(os.path.dirname(__file__), "ui/plotwindow.ui"), self)
         self.isTDM = isTDM
         previousBufferLength = self.spinBox_nAverage.value()
         self.traces = [PlotTrace(i, self.color(i), previousBufferLength) for i in range(self.NUM_TRACES)]
-        self.idx2trace = {}
+        self.idx2trace: dict[int, set[int]] = {}
+        self.channel_groups: list[ChannelGroup] = []
+        self.channel_index: dict[str, int] = {}
+        self.channel_number: dict[int, int] = {}
         self.setupChannels(channel_groups)
         self.setupQuickSelect(channel_groups)
         self.setupPlot()
@@ -192,11 +202,11 @@ class PlotWindow(QtWidgets.QWidget):
         self.plotTypeComboBox.currentIndexChanged.connect(self.plotTypeChanged)
 
     @pyqtSlot(int)
-    def changeAverage(self, n):
+    def changeAverage(self, n: int) -> None:
         for trace in self.traces:
             trace.changeBufferLength(n)
 
-    def setupChannels(self, channel_groups):
+    def setupChannels(self, channel_groups: list[ChannelGroup]) -> None:
         self.channel_groups = channel_groups
         self.channel_index = {}
         self.channel_name = {}
@@ -248,12 +258,12 @@ class PlotWindow(QtWidgets.QWidget):
                 box.setEnabled(False)
                 box.hide()
 
-    def setupQuickSelect(self, channel_groups):
+    def setupQuickSelect(self, channel_groups: list[ChannelGroup]) -> None:
         if not self.isTDM:
             self.quickErrLabel.hide()
             self.quickErrComboBox.hide()
             self.quickFBLabel.setText("Quick select Chan #")
-        self.quickSelectIndex = [None]
+        self.quickSelectIndex: list[tuple[int, int]] = [(-1, -1)]
         for box in (self.quickFBComboBox, self.quickErrComboBox):
             box.clear()
             box.addItem("")
@@ -273,7 +283,7 @@ class PlotWindow(QtWidgets.QWidget):
                     elabel = f"Err {cstart}-{cend} (group {i})"
                     self.quickErrComboBox.addItem(elabel)
 
-    def setupPlot(self):
+    def setupPlot(self) -> None:
         if not self.isTDM:
             self.plotTypeComboBox.model().item(3).setEnabled(False)
         pw = pg.PlotWidget()
@@ -289,7 +299,7 @@ class PlotWindow(QtWidgets.QWidget):
         self.plotFrame.layout().addWidget(pw)
         pw.scene().sigMouseMoved.connect(self.mouseMoved)
 
-    def mouseMoved(self, evt):
+    def mouseMoved(self, evt) -> None:
         pos = evt
         p1 = self.plotWidget
         vb = p1.getViewBox()
@@ -306,9 +316,9 @@ class PlotWindow(QtWidgets.QWidget):
                 xunits = xlabel.split("(")[-1].split(")")[0]
                 x *= {"ms": 1000, "µs": 1e6, "kHz": 1e-3}.get(xunits, 1)
             msg = f"x={x:.3f} {xunits}, y={y:.1f}"
-            self.parent.statusLabel1.setText(msg)
+            self.mainwindow.statusLabel1.setText(msg)
 
-    def setupXAxis(self, enableAutoRange=True):
+    def setupXAxis(self, enableAutoRange: bool = True) -> None:
         pw = self.plotWidget
         if self.isSpectrum:
             pw.setLabel("bottom", "Frequency", units="Hz")
@@ -327,12 +337,10 @@ class PlotWindow(QtWidgets.QWidget):
             pw.enableAutoRange()
 
     @pyqtSlot(bool)
-    def pausePressed(self, paused): pass
-    @pyqtSlot()
-    def savePlot(self): pass
+    def pausePressed(self, paused: bool) -> None: pass
 
     @pyqtSlot(int)
-    def quickChannel(self, index):
+    def quickChannel(self, index: int) -> None:
         # Do not act if the empty menu item is chosen.
         if index < 1:
             return
@@ -352,13 +360,13 @@ class PlotWindow(QtWidgets.QWidget):
             self.checkers[i].setChecked(iserror)
 
     @pyqtSlot(int)
-    def channelChanged(self, value):
+    def channelChanged(self, value: int) -> None:
         sender = self.channelSpinners.index(self.sender())
         self.clearTrace(sender)
         self.channelListChanged()
 
     @pyqtSlot(bool)
-    def errStateChanged(self, value):
+    def errStateChanged(self, _: bool) -> None:
         sender = self.checkers.index(self.sender())
         self.clearTrace(sender)
         prefix = "Err " if self.checkers[sender].isChecked() else "Ch "
@@ -367,7 +375,7 @@ class PlotWindow(QtWidgets.QWidget):
 
     updateSubscriptions = pyqtSignal()
 
-    def channelListChanged(self):
+    def channelListChanged(self) -> None:
         self.idx2trace = {}
         for traceIdx, spinner in enumerate(self.channelSpinners):
             channel_name = spinner.text()
@@ -381,7 +389,7 @@ class PlotWindow(QtWidgets.QWidget):
         self.updateSubscriptions.emit()
 
     @pyqtSlot(int)
-    def plotTypeChanged(self, index):
+    def plotTypeChanged(self, index: int) -> None:
         self.clearAllTraces()
         self.setupXAxis()
         if self.isTDM:
@@ -408,7 +416,7 @@ class PlotWindow(QtWidgets.QWidget):
             trace.needsFFT(isspectrum)
 
     @pyqtSlot(DastardRecord)
-    def updateReceived(self, record):
+    def updateReceived(self, record: DastardRecord) -> None:
         """
         Slot to handle one data record for one channel.
         It ingests the data and feeds it to the BaselineFinder object for the channel.
@@ -431,19 +439,19 @@ class PlotWindow(QtWidgets.QWidget):
             pw.setLimits(xMin=xmin, xMax=xmax)
 
     @property
-    def isSpectrum(self):
+    def isSpectrum(self) -> bool:
         return self.plotTypeComboBox.currentIndex() in (PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD)
 
     @property
-    def xPhysical(self):
+    def xPhysical(self) -> bool:
         return "physical" in self.xPhysicalMenu.currentText()
 
     @property
-    def plot_is_empty(self):
+    def plot_is_empty(self) -> bool:
         return [t.timeAx for t in self.traces].count(None) == self.NUM_TRACES
 
     @pyqtSlot()
-    def xPhysicalChanged(self):
+    def xPhysicalChanged(self) -> None:
         # Do something to choose x-axis ranges: current value AND max range
         self.setupXAxis(enableAutoRange=False)
         if not self.plot_is_empty:
@@ -465,11 +473,11 @@ class PlotWindow(QtWidgets.QWidget):
         self.redrawAll()
 
     @pyqtSlot()
-    def clearAllTraces(self):
+    def clearAllTraces(self) -> None:
         for traceIdx in range(self.NUM_TRACES):
             self.clearTrace(traceIdx)
 
-    def clearTrace(self, traceIdx):
+    def clearTrace(self, traceIdx: int) -> None:
         trace = self.traces[traceIdx]
         curve = trace.curve
         if curve is None:
@@ -480,7 +488,7 @@ class PlotWindow(QtWidgets.QWidget):
         trace.previousRecords.clear()
 
     @pyqtSlot()
-    def redrawAll(self):
+    def redrawAll(self) -> None:
         sbtext = self.subtractBaselineMenu.currentText()
         iswaterfall = "Waterfall" in sbtext
         self.waterfallDeltaSpin.setEnabled(iswaterfall)
@@ -492,6 +500,7 @@ class PlotWindow(QtWidgets.QWidget):
     closed = pyqtSignal()
 
     @pyqtSlot()
-    def closeEvent(self, event):
+    def closeEvent(self, event: QEvent | None):
         self.closed.emit()
-        event.accept()
+        if event is not None:
+            event.accept()

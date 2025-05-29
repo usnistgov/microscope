@@ -555,22 +555,6 @@ baseline levels to zero or staggered values</string>
  <resources/>
  <connections>
   <connection>
-   <sender>actionSave_plot</sender>
-   <signal>triggered()</signal>
-   <receiver>plotContainer</receiver>
-   <slot>savePlot()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>354</x>
-     <y>215</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>closeButtonBox</sender>
    <signal>rejected()</signal>
    <receiver>plotContainer</receiver>
