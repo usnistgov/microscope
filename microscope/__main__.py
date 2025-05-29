@@ -1,0 +1,2 @@
+import microscope
+microscope.main()

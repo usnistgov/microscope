@@ -10,4 +10,4 @@ microscope.pro.user.-1
 *.autosave
 moc_predefs.h
 _version.py
-
+*.egg-info
