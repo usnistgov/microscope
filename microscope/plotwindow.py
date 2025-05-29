@@ -10,10 +10,11 @@ import pyqtgraph as pg
 import numpy as np
 import os
 from dataclasses import dataclass
+from collections import deque
 
 # Microscope imports
 from channel_group import ChannelGroup
-from dastardrecord import DastardRecord, ListBasedBuffer, DastardRecordsBuffer
+from dastardrecord import DastardRecord, meanDastardRecord
 
 
 def clear_grid_layout(grid_layout: QtWidgets.QGridLayout) -> None:
@@ -53,29 +54,28 @@ class PlotTrace:
     TYPE_RT_PSD = 2
     TYPE_ERR_FB = 3
 
-    def __init__(self, idx: int, color: str, previousBufferLength: int) -> None:
+    def __init__(self, idx: int, color: str, traceHistoryLength: int) -> None:
         self.traceIdx = idx
         self.color = color
         self.pen = pg.mkPen(color, width=1)
         self.curve: pg.PlotDataItem | None = None
         self.timeAx: timeAxis | None = None
-        self.lastRecord: DastardRecord | None = None
-        self.previousRecords = DastardRecordsBuffer(previousBufferLength)
-        self.previousPSD: ListBasedBuffer[np.ndarray] = ListBasedBuffer(previousBufferLength)
+        self.previousRecords: deque[DastardRecord] = deque([], traceHistoryLength)
+        self.previousPSD: deque[np.ndarray] = deque([], traceHistoryLength)
         self.computingFFT = False
         self.plotType = self.TYPE_TIMESERIES
 
     @pyqtSlot(int)
     def changeBufferLength(self, cap: int) -> None:
-        self.previousRecords.resize(cap)
-        self.previousPSD.resize(cap)
+        self.previousRecords = deque(self.previousRecords, cap)
+        self.previousPSD = deque(self.previousPSD, cap)
 
     def needsFFT(self, FFT: bool) -> None:
         self.computingFFT = FFT
         if FFT and len(self.previousPSD) == 0:
-            for record in self.previousRecords.buffer:
+            for record in self.previousRecords:
                 PSD = record.PSD()
-                self.previousPSD.push(PSD)
+                self.previousPSD.append(PSD)
         if not FFT:
             self.previousPSD.clear()
 
@@ -92,24 +92,23 @@ class PlotTrace:
                     xaxis.timebase_sec != record.timebase):
                 xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
                 self.timeAx = xaxis
-        self.lastRecord = record
-        self.previousRecords.push(record)
+        self.previousRecords.append(record)
         if self.computingFFT:
             PSD = record.PSD()
-            self.previousPSD.push(PSD)
+            self.previousPSD.append(PSD)
         self.drawStoredRecord(xPhysical, sbtext, waterfallSpacing, average)
 
     def drawStoredRecord(self, xPhysical: bool, sbtext: str,
                          waterfallSpacing: int | float, average: bool) -> None:
         xaxis = self.timeAx
-        record = self.lastRecord
-        if self.curve is None or xaxis is None or record is None:
+        if self.curve is None or xaxis is None or len(self.previousRecords) == 0:
             return
 
         x = xaxis.x(xPhysical)
+        record = self.previousRecords[-1]
         if self.plotType == self.TYPE_TIMESERIES:
             if average:
-                record = self.previousRecords.mean()
+                record = meanDastardRecord(self.previousRecords)
             if "Raw" in sbtext:
                 ydata = np.asarray(record.record, dtype=float)
 
@@ -123,7 +122,7 @@ class PlotTrace:
             if average:
                 ydata = meanPSD(self.previousPSD)
             else:
-                ydata = self.previousPSD.last()
+                ydata = self.previousPSD[-1]
             if self.plotType == self.TYPE_RT_PSD:
                 ydata = np.sqrt(ydata)
             if "Waterfall" in sbtext:
@@ -136,15 +135,12 @@ class PlotTrace:
         return self.plotType in {self.TYPE_PSD, self.TYPE_RT_PSD}
 
 
-def meanPSD(psdbuffer: ListBasedBuffer[np.ndarray]) -> np.ndarray:
+def meanPSD(psdbuffer: deque[np.ndarray]) -> np.ndarray:
     n = len(psdbuffer)
     assert n > 0
 
-    if n == 1:
-        return psdbuffer.buffer[0]
-
-    raw = psdbuffer.buffer[0].copy()
-    for dr in psdbuffer.buffer[1:]:
+    raw = np.zeros_like(psdbuffer[0], dtype=float)
+    for dr in psdbuffer:
         raw += dr
     return raw / n
 
@@ -183,8 +179,8 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.mainwindow = parent
         PyQt5.uic.loadUi(os.path.join(os.path.dirname(__file__), "ui/plotwindow.ui"), self)
         self.isTDM = isTDM
-        previousBufferLength = self.spinBox_nAverage.value()
-        self.traces = [PlotTrace(i, self.color(i), previousBufferLength) for i in range(self.NUM_TRACES)]
+        traceHistoryLength = self.spinBox_nAverage.value()
+        self.traces = [PlotTrace(i, self.color(i), traceHistoryLength) for i in range(self.NUM_TRACES)]
         self.idx2trace: dict[int, set[int]] = {}
         self.channel_groups: list[ChannelGroup] = []
         self.channel_index: dict[str, int] = {}
@@ -351,7 +347,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             self.xPhysicalCheck.setEnabled(False)
             pw.setLimits(xMin=1, xMax=1e6)
         else:
-            self.xPhysicalMenu.model().item(0).setEnabled(True)
+            self.xPhysicalCheck.setEnabled(True)
             if self.xPhysical:
                 pw.setLabel("bottom", "Time after trigger", units="s")
             else:
@@ -509,7 +505,6 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             return
         self.plotWidget.removeItem(curve)
         trace.curve = None
-        trace.lastRecord = None
         trace.previousRecords.clear()
 
     @pyqtSlot()

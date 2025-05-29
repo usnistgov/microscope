@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import TypeVar
 import numpy as np
 import struct
+from collections import deque
 from dataclasses import dataclass, replace
 from functools import cache
 
@@ -57,46 +57,14 @@ class DastardRecord:
         return FFTFreq(self.nSamples, self.timebase)
 
 
-T = TypeVar('T')
+def meanDastardRecord(buffer: deque[DastardRecord]) -> DastardRecord:
+    n = len(buffer)
+    assert n > 0
 
+    if n == 1:
+        return buffer[0]
 
-class ListBasedBuffer[T]:
-    def __init__(self, capacity: int) -> None:
-        self.capacity = capacity
-        self.buffer: list[T] = []
-
-    def __len__(self) -> int:
-        return len(self.buffer)
-
-    def push(self, x: T) -> None:
-        if len(self.buffer) >= self.capacity:
-            nextra = len(self.buffer) - self.capacity + 1
-            self.buffer = self.buffer[nextra:]
-        self.buffer.append(x)
-
-    def last(self) -> T:
-        return self.buffer[-1]
-
-    def clear(self) -> None:
-        self.buffer = []
-
-    def resize(self, s: int) -> None:
-        self.capacity = s
-        if len(self.buffer) > self.capacity:
-            nextra = len(self.buffer) - self.capacity
-            self.buffer = self.buffer[nextra:]
-
-
-class DastardRecordsBuffer(ListBasedBuffer[DastardRecord]):
-    def mean(self) -> DastardRecord:
-        n = len(self.buffer)
-        assert n > 0
-
-        if n == 1:
-            return self.buffer[0]
-
-        r = replace(self.buffer[0])
-        raw = np.asarray(r.record, dtype=float)
-        for dr in self.buffer[1:]:
-            raw += dr.record
-        return replace(r, record=raw / n)
+    raw = np.zeros_like(buffer[0].record, dtype=float)
+    for dr in buffer:
+        raw += dr.record
+    return replace(buffer[0], record=raw / n)
