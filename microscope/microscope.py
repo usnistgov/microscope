@@ -25,21 +25,12 @@ import json
 import pathlib
 import sys
 import os
+import importlib.resources
 
 # # User code imports
 import plotwindow
 import subscriber
 from channel_group import ChannelGroup
-# from . import disable_hyperactive
-# from . import rpc_client
-# from . import status_monitor
-# from . import special_channels
-# from . import trigger_config
-# from . import trigger_config_simple
-# from . import writing
-# from . import projectors
-# from . import observe
-# from . import workflow
 
 try:
     from _version import version as __version__
@@ -68,6 +59,11 @@ class AboutDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
 
+def find_resource(filename):
+    package_name = "microscope"
+    return str(importlib.resources.files(package_name).joinpath(filename))
+
+
 class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
     def __init__(self, settings: QSettings, title: str, isTDM: bool, channel_groups: list[ChannelGroup],
                  host: str, port: int) -> None:
@@ -80,9 +76,9 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
 
         parent = None
         QtWidgets.QMainWindow.__init__(self, parent)
-        my_dir = os.path.dirname(__file__)
-        self.setWindowIcon(QtGui.QIcon(os.path.join(my_dir, "ui/dc.png")))
-        PyQt5.uic.loadUi(os.path.join(my_dir, "ui/microscope.ui"), self)
+        icon = QtGui.QIcon(find_resource("ui/microscope.png"))
+        self.setWindowIcon(icon)
+        PyQt5.uic.loadUi(find_resource("ui/microscope.ui"), self)
         self.setWindowTitle(title)
         self.title = title
         self.actionAbout.triggered.connect(self.show_about)
@@ -98,7 +94,6 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         self.zmqthread = QtCore.QThread()
         self.zmqsubscriber = subscriber.ZMQSubscriber(host, port)
         self.zmqsubscriber.moveToThread(self.zmqthread)
-        # self.zmqsubscriber.pulserecord.connect(self.updateReceived)
         self.zmqthread.started.connect(self.zmqsubscriber.data_monitor_loop)
         QtCore.QTimer.singleShot(0, self.zmqthread.start)
 
@@ -265,9 +260,10 @@ def main() -> None:
     pg.setConfigOptions(antialias=True)
 
     app = QtWidgets.QApplication(sys.argv)
-    app.setWindowIcon(QtGui.QIcon("../ui/microscope.png"))
     app.setApplicationName(args.appname)
     app.setApplicationDisplayName(args.appname)
+    icon = QtGui.QIcon(QtGui.QPixmap(find_resource("ui/microscope.png")))
+    app.setWindowIcon(icon)
 
     short_ver = __version__.split("+")[0]
     title = f"{args.appname} (version {short_ver})"

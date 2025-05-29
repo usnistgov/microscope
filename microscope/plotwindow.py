@@ -11,8 +11,9 @@ import numpy as np
 import os
 from dataclasses import dataclass
 
-from dastardrecord import DastardRecord, ListBasedBuffer, DastardRecordsBuffer
+# Microscope imports
 from channel_group import ChannelGroup
+from dastardrecord import DastardRecord, ListBasedBuffer, DastardRecordsBuffer
 
 
 def clear_grid_layout(grid_layout: QtWidgets.QGridLayout) -> None:

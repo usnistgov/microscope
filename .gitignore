@@ -11,3 +11,4 @@ microscope.pro.user.-1
 moc_predefs.h
 _version.py
 *.egg-info
+build/
