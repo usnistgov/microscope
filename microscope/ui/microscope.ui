@@ -123,6 +123,7 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="actionPlot_tips"/>
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuHelp"/>
@@ -295,6 +296,11 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionPlot_tips">
+   <property name="text">
+    <string>Plot tips</string>
    </property>
   </action>
  </widget>
