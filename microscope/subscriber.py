@@ -13,7 +13,7 @@ class ZMQSubscriber(QtCore.QObject):
 
     pulserecord = QtCore.pyqtSignal(DastardRecord)
 
-    def __init__(self, host, port):
+    def __init__(self, host: str, port: str | int) -> None:
         QtCore.QObject.__init__(self)
 
         # Socket to talk to server
@@ -26,21 +26,20 @@ class ZMQSubscriber(QtCore.QObject):
         self.socket.connect(self.address)
         print(f"Collecting updates from dastard at {self.address}")
 
-        # self.messages_seen = collections.Counter()
         self.quit_once = False
         self.running = False
 
     @staticmethod
-    def stringcode(chanindex):
+    def stringcode(chanindex: int) -> str:
         return struct.pack("<H", chanindex).decode()
 
-    def subscribe(self, chanindex):
+    def subscribe(self, chanindex: int) -> None:
         self.socket.setsockopt_string(zmq.SUBSCRIBE, self.stringcode(chanindex))
 
-    def unsubscribe(self, chanindex):
+    def unsubscribe(self, chanindex: int) -> None:
         self.socket.setsockopt_string(zmq.UNSUBSCRIBE, self.stringcode(chanindex))
 
-    def data_monitor_loop(self):
+    def data_monitor_loop(self) -> None:
         if self.quit_once:
             raise ValueError("Cannot run a ZMQListener.loop more than once!")
         self.running = True

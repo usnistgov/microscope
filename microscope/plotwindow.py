@@ -6,6 +6,7 @@ import pyqtgraph as pg
 
 # other non-user imports
 import numpy as np
+from numpy.typing import ArrayLike
 import os
 from dataclasses import dataclass
 
@@ -113,7 +114,7 @@ class PlotTrace:
 
         if self.isSpectrum:
             if average:
-                ydata = self.previousPSD.mean()
+                ydata = meanPSD(self.previousPSD)
             else:
                 ydata = self.previousPSD.last()
             if self.plotType == self.TYPE_RT_PSD:
@@ -126,6 +127,19 @@ class PlotTrace:
     @property
     def isSpectrum(self):
         return self.plotType in (self.TYPE_PSD, self.TYPE_RT_PSD)
+
+
+def meanPSD(psdbuffer: ListBasedBuffer[ArrayLike]) -> ArrayLike:
+    n = len(psdbuffer)
+    assert n > 0
+
+    if n == 1:
+        return psdbuffer.buffer[0]
+
+    raw = psdbuffer.buffer[0].copy()
+    for dr in psdbuffer.buffer[1:]:
+        raw += dr
+    return raw / n
 
 
 class PlotWindow(QtWidgets.QWidget):

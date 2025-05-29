@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import TypeVar, Generic
 import numpy as np
 import struct
 from dataclasses import dataclass, replace
@@ -5,12 +7,12 @@ from functools import cache
 
 
 @cache
-def windowFunction(N):
+def windowFunction(N: int) -> np.ndarray:
     return np.hanning(N)
 
 
 @cache
-def FFTFreq(N, dt):
+def FFTFreq(N: int, dt: int | float) -> np.ndarray:
     return np.fft.rfftfreq(N, d=dt)
 
 
@@ -31,11 +33,11 @@ class DastardRecord:
     data_type = (np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, np.int64, np.uint64)
 
     @property
-    def record_baseline_subtracted(self):
+    def record_baseline_subtracted(self) -> DastardRecord:
         return self.record - self.record[:self.nPresamples - 1].mean()
 
     @classmethod
-    def fromBinary(cls, header, contents):
+    def fromBinary(cls, header: bytes, contents: bytes) -> DastardRecord:
         values = struct.unpack(cls.header_fmt, header)
         chanidx, version, typecode, nPresamples, nSamples, timebase, voltsPerArb, triggerTime, frameIndex = values
         assert version == 0
@@ -46,60 +48,49 @@ class DastardRecord:
         return DastardRecord(chanidx, datatype, nPresamples, nSamples, timebase, voltsPerArb,
                              triggerTime, frameIndex, data)
 
-    def PSD(self):
+    def PSD(self) -> np.ndarray:
         window = windowFunction(self.nSamples)
         fft = np.fft.rfft(window*(self.record-self.record.mean()))
         return np.abs(fft**2).real
 
-    def FFTFreq(self):
+    def FFTFreq(self) -> np.ndarray:
         return FFTFreq(self.nSamples, self.timebase)
 
 
-class ListBasedBuffer:
-    def __init__(self, capacity):
-        self.capacity = capacity
-        self.buffer = []
+T = TypeVar('T')
 
-    def __len__(self):
+
+class ListBasedBuffer(Generic[T]):
+    def __init__(self, capacity: int) -> None:
+        self.capacity = capacity
+        self.buffer: list[T] = []
+
+    def __len__(self) -> int:
         return len(self.buffer)
 
-    def push(self, x):
+    def push(self, x: T) -> None:
         if len(self.buffer) >= self.capacity:
             nextra = len(self.buffer) - self.capacity + 1
             self.buffer = self.buffer[nextra:]
         self.buffer.append(x)
 
-    def last(self):
+    def last(self) -> T:
         return self.buffer[-1]
 
-    def clear(self):
+    def clear(self) -> None:
         self.buffer = []
 
-    def resize(self, s):
+    def resize(self, s: int) -> None:
         self.capacity = s
         if len(self.buffer) > self.capacity:
             nextra = len(self.buffer) - self.capacity
             self.buffer = self.buffer[nextra:]
 
-    def mean(self):
-        n = len(self.buffer)
-        if n <= 0:
-            return None
-
-        if n == 1:
-            return self.buffer[0]
-
-        raw = self.buffer[0].copy()
-        for dr in self.buffer[1:]:
-            raw += dr
-        return raw / n
-
 
 class DastardRecordsBuffer(ListBasedBuffer):
-    def mean(self):
+    def mean(self) -> DastardRecordsBuffer:
         n = len(self.buffer)
-        if n <= 0:
-            return None
+        assert n > 0
 
         if n == 1:
             return self.buffer[0]
