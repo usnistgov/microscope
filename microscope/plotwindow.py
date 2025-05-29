@@ -299,8 +299,9 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         pw.addItem(self.crosshairHLine, ignoreBounds=True)
         self.plotFrame.layout().addWidget(pw)
         pw.scene().sigMouseMoved.connect(self.mouseMoved)
+        pw.scene().sigMouseClicked.connect(self.mouseClicked)
 
-    def mouseMoved(self, evt) -> None:
+    def mouseMoved(self, evt: QEvent) -> None:
         pos = evt
         p1 = self.plotWidget
         vb = p1.getViewBox()
@@ -318,6 +319,29 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
                 x *= {"ms": 1000, "µs": 1e6, "kHz": 1e-3}.get(xunits, 1)
             msg = f"x={x:.3f} {xunits}, y={y:.1f}"
             self.mainwindow.statusLabel1.setText(msg)
+
+    def mouseClicked(self, evt: QEvent) -> None:
+        """If user double clicks, start auto-ranging the plot.
+        If double-click on an axis label/tick area, auto-range that axis
+        If double-click on the plot area, auto-range both axes
+        """
+        # For now, ignore single-click events.
+        if not evt.double():
+            return
+
+        pos = evt.scenePos()
+        pw = self.plotWidget
+        # If you needed to know the position in graphed coordinates, use:
+        # view_pos = pw.getViewBox().mapSceneToView(pos)
+
+        whichaxis = "xy"
+        x_axis_rect = pw.getAxis("bottom").sceneBoundingRect()
+        y_axis_rect = pw.getAxis("left").sceneBoundingRect()
+        if x_axis_rect.contains(pos):
+            whichaxis = "x"
+        elif y_axis_rect.contains(pos):
+            whichaxis = "y"
+        pw.enableAutoRange(whichaxis)
 
     def setupXAxis(self, enableAutoRange: bool = True) -> None:
         pw = self.plotWidget
