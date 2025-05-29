@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TypeVar, Generic
+from typing import TypeVar
 import numpy as np
 import struct
 from dataclasses import dataclass, replace
@@ -50,7 +50,7 @@ class DastardRecord:
 
     def PSD(self) -> np.ndarray:
         window = windowFunction(self.nSamples)
-        fft = np.fft.rfft(window*(self.record-self.record.mean()))
+        fft = np.fft.rfft(window * (self.record - self.record.mean()))
         return np.abs(fft**2).real
 
     def FFTFreq(self) -> np.ndarray:
@@ -60,7 +60,7 @@ class DastardRecord:
 T = TypeVar('T')
 
 
-class ListBasedBuffer(Generic[T]):
+class ListBasedBuffer[T]:
     def __init__(self, capacity: int) -> None:
         self.capacity = capacity
         self.buffer: list[T] = []

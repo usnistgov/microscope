@@ -132,7 +132,7 @@ class PlotTrace:
 
     @property
     def isSpectrum(self) -> bool:
-        return self.plotType in (self.TYPE_PSD, self.TYPE_RT_PSD)
+        return self.plotType in {self.TYPE_PSD, self.TYPE_RT_PSD}
 
 
 def meanPSD(psdbuffer: ListBasedBuffer[np.ndarray]) -> np.ndarray:
@@ -148,7 +148,7 @@ def meanPSD(psdbuffer: ListBasedBuffer[np.ndarray]) -> np.ndarray:
     return raw / n
 
 
-class PlotWindow(QtWidgets.QWidget):
+class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     """Provide the UI inside each Plot Window."""
 
     NUM_TRACES = 8
@@ -399,7 +399,7 @@ class PlotWindow(QtWidgets.QWidget):
                 cb.setDisabled(errvfb)
                 if errvfb:
                     cb.setChecked(False)
-        isspectrum = index in (PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD)
+        isspectrum = index in {PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD}
         self.subtractBaselineMenu.model().item(1).setEnabled(not isspectrum)
         if isspectrum:
             self.subtractBaselineMenu.setCurrentIndex(0)
@@ -440,7 +440,7 @@ class PlotWindow(QtWidgets.QWidget):
 
     @property
     def isSpectrum(self) -> bool:
-        return self.plotTypeComboBox.currentIndex() in (PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD)
+        return self.plotTypeComboBox.currentIndex() in {PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD}
 
     @property
     def xPhysical(self) -> bool:
@@ -461,7 +461,7 @@ class PlotWindow(QtWidgets.QWidget):
             if self.xPhysical:
                 rescale = timebase_sec
             else:
-                rescale = 1/timebase_sec
+                rescale = 1 / timebase_sec
             (xrangemin, xrangemax), _ = pw.viewRange()
             (xlimitmin, xlimitmax) = pw.getViewBox().getState()["limits"]["xLimits"]
             xlimitmin *= rescale
