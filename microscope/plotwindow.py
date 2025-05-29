@@ -197,6 +197,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.averageTraces.toggled.connect(self.redrawAll)
         self.spinBox_nAverage.valueChanged.connect(self.changeAverage)
         self.plotTypeComboBox.currentIndexChanged.connect(self.plotTypeChanged)
+        self.quickChanEdit.editingFinished.connect(self.channelTextChanged)
 
     @pyqtSlot(int)
     def changeAverage(self, n: int) -> None:
@@ -379,6 +380,33 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             self.channelSpinners[i].setValue(c)
             self.channelSpinners[i].setPrefix(prefix)
             self.checkers[i].setChecked(iserror)
+
+    @pyqtSlot()
+    def channelTextChanged(self) -> None:
+        self.quickFBComboBox.setCurrentIndex(0)
+        self.quickErrComboBox.setCurrentIndex(0)
+        cnum = [self.SPECIAL_INVALID] * self.NUM_TRACES
+        iserr = [False] * self.NUM_TRACES
+        try:
+            terms = self.quickChanEdit.text().lower().split(",")
+            for i, term in enumerate(terms):
+                if i >= self.NUM_TRACES:
+                    break
+                if term.startswith("e"):
+                    term = term.lstrip("er ")
+                    iserr[i] = True
+                try:
+                    cnum[i] = int(term)
+                except ValueError:
+                    continue
+
+        finally:
+            for checker, check in zip(self.checkers, iserr):
+                checker.setChecked(check)
+            for spin, cnum, err in zip(self.channelSpinners, cnum, iserr):
+                spin.setValue(cnum)
+                prefix = "Err " if err else "Ch "
+                spin.setPrefix(prefix)
 
     @pyqtSlot(int)
     def channelChanged(self, value: int) -> None:

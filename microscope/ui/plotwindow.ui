@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>614</width>
-    <height>399</height>
+    <height>415</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -74,33 +74,15 @@
         </widget>
        </item>
        <item>
-        <widget class="QTextEdit" name="quickChanEdit">
-         <property name="enabled">
-          <bool>true</bool>
+        <widget class="QLineEdit" name="quickChanEdit">
+         <property name="maxLength">
+          <number>100</number>
          </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
+         <property name="placeholderText">
+          <string>-</string>
          </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>40</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>60</height>
-          </size>
-         </property>
-         <property name="baseSize">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
+         <property name="clearButtonEnabled">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -562,7 +544,6 @@ baseline levels to zero or staggered values</string>
   </action>
  </widget>
  <tabstops>
-  <tabstop>quickChanEdit</tabstop>
   <tabstop>quickFBComboBox</tabstop>
   <tabstop>quickErrComboBox</tabstop>
   <tabstop>pauseButton</tabstop>
