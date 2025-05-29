@@ -386,6 +386,18 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.clearTrace(sender)
         self.channelListChanged()
 
+    def updateQuickTypeText(self) -> None:
+        items = []
+        for spinbox in self.channelSpinners:
+            val = spinbox.value()
+            if val == self.SPECIAL_INVALID:
+                items.append("-")
+            elif spinbox.text().startswith("Err"):
+                items.append(f"e{val}")
+            else:
+                items.append(f"{val}")
+        self.quickChanEdit.setText(",".join(items))
+
     @pyqtSlot(bool)
     def errStateChanged(self, _: bool) -> None:
         sender = self.checkers.index(self.sender())
@@ -408,6 +420,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             else:
                 self.idx2trace[chanidx] = {traceIdx}
         self.updateSubscriptions.emit()
+        self.updateQuickTypeText()
 
     @pyqtSlot(int)
     def plotTypeChanged(self, index: int) -> None:
