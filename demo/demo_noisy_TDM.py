@@ -46,8 +46,9 @@ while True:
     errindex = 2 * (chnum - chanmin)
     fbindex = errindex + 1
 
-    for chindex in (fbindex, errindex):
-        thisdata = np.asarray(messagedata[chindex] + rng.integers(-500, 500, size=samples), dtype=messagedata[chindex].dtype)
+    for chindex, noiselevel in zip((fbindex, errindex), (200, 50)):
+        noise = noiselevel * rng.standard_normal(size=samples)
+        thisdata = np.asarray(messagedata[chindex] + noise, dtype=messagedata[chindex].dtype)
         header = pulseRecord[chindex].packheader(thisdata)
         socket.send(header, zmq.SNDMORE)
         socket.send(thisdata.data[:])
