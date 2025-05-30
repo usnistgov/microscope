@@ -13,8 +13,10 @@ import sys
 import time
 import message_definition
 
-chanmin, chanmax = 1, 25
-samples, presamples = 1000, 200
+chanmin, chanmax = 1, 24
+samples, presamples = 4000, 200
+noiserms = 100.0
+timebase = 2.5e-6
 
 port = "5502"
 if len(sys.argv) > 1:
@@ -26,13 +28,14 @@ socket = context.socket(zmq.PUB)
 socket.bind(f"tcp://*:{port}")
 
 rng = np.random.default_rng()
-pulseRecord = {ch: message_definition.DastardPulse(ch - chanmin, presamples, 2.5e-6, 1. / 65535) for ch in range(chanmin, chanmax)}
+pulseRecord = {ch: message_definition.DastardPulse(ch - chanmin, presamples, timebase, 1. / 65535) for ch in range(chanmin, 1+chanmax)}
 
 while True:
-    channel = random.randrange(1, 21)
-    noise = rng.standard_normal(2 + samples) * 200
+    channel = random.randrange(chanmin, 1 + chanmax)
+    noise = rng.standard_normal(2 + samples)
+    lowpassnoise = (noise[:-2] + 2 * noise[1:-1] + noise[2:]) * 0.25 * noiserms
 
-    thisdata = np.asarray(10000 + 1000 * channel + noise[:-2] + 2 * noise[1:-1] + noise[2:], dtype=np.uint16)
+    thisdata = np.asarray(10000 + 1000 * channel + lowpassnoise, dtype=np.uint16)
     header = pulseRecord[channel].packheader(thisdata)
     print(f"chan {channel:3d} message length {len(thisdata)}")
     socket.send(header, zmq.SNDMORE)
