@@ -354,6 +354,8 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     @pyqtSlot(int)
     def plotTypeChanged(self, index: int) -> None:
         self.clearAllTraces()
+        isspectrum = self.isSpectrum
+        self.plotWidget.setLogMode(isspectrum, isspectrum)
         self.xPhysicalChanged()
         self.yPhysicalChanged()
         if self.isTDM:
@@ -365,7 +367,6 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
                     cb.setChecked(False)
             self.channelListChanged()
 
-        isspectrum = index in {PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD}
         self.subtractBaselineMenu.model().item(1).setEnabled(not isspectrum)
         if isspectrum:
             self.subtractBaselineMenu.setCurrentIndex(0)
@@ -376,7 +377,6 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             self.waterfallLabel.setText("<html><p>Waterfall &Delta;</p></html>")
             self.waterfallDeltaSpin.setToolTip("Vertical spacing between traces in waterfall mode")
             self.waterfallDeltaSpin.setValue(1000.0)
-        self.plotWidget.setLogMode(isspectrum, isspectrum)
         for trace in self.traces:
             trace.plotType = index
             trace.needsFFT(isspectrum)
@@ -409,6 +409,10 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             pw = self.plotWidget
             if self.isErrvsFB:
                 pw.setLimits(xMin=self.YMIN, xMax=self.YMAX / 2)
+            elif self.isSpectrum:
+                # Can't figure out how to set zoom/pan limits that make sense in log and linear space.
+                # So (for now), don't try.
+                pw.setLimits(xMin=0, xMax=1e7)
             else:
                 N = record.nSamples
                 t0 = -record.nPresamples - N * .04
