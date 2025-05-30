@@ -102,6 +102,30 @@ class DastardRecord:
     def FFTFreq(self) -> np.ndarray:
         return FFTFreq(self.nSamples, self.timebase)
 
+    def incompatible(self, other: DastardRecord, rtol: float = 1e-2) -> bool:
+        """incompatible - Does this DastardRecord have records incompatible with `other`?
+
+        Parameters
+        ----------
+        other : DastardRecord
+            An earlier record for comparison
+
+        rtol : float
+            The relative tolerance on sample rates.
+
+        Returns
+        -------
+        bool
+            Whether the `other` is incompatible with this record. Will be True if
+            the number of samples or of pretrigger samples are unequal, or if the
+            sample time differs by more than relative tolerance `rtol`.
+
+        """
+        if (self.nPresamples != other.nPresamples) or \
+                (self.nSamples != other.nSamples):
+            return True
+        return abs(other.timebase/self.timebase - 1) > rtol
+
 
 def meanDastardRecord(buffer: deque[DastardRecord]) -> DastardRecord:
     """meanDastardRecord - Compute a DastardRecord equal to the mean of the records in `buffer`.

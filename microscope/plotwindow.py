@@ -74,8 +74,22 @@ class PlotTrace:
         if not FFT:
             self.previousPSD.clear()
 
+    def saverecord(self, record: DastardRecord) -> None:
+        # If the record is not compatible with previous, clear the queue.
+        if len(self.previousRecords) > 0:
+            if record.incompatible(self.previousRecords[-1]):
+                self.previousRecords.clear()
+                self.previousPSD.clear()
+
+        self.previousRecords.append(record)
+        if self.computingFFT:
+            PSD = record.PSD()
+            self.previousPSD.append(PSD)
+
     def plotrecord(self, record: DastardRecord, plotWidget: pg.PlotWidget,
                    sbtext: str, waterfallSpacing: int | float, average: bool) -> None:
+
+        self.saverecord(record)
         if self.curve is None or self.timeAx is None:
             xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
             self.timeAx = xaxis
@@ -86,10 +100,6 @@ class PlotTrace:
                     xaxis.timebase_sec != record.timebase):
                 xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
                 self.timeAx = xaxis
-        self.previousRecords.append(record)
-        if self.computingFFT:
-            PSD = record.PSD()
-            self.previousPSD.append(PSD)
         self.drawStoredRecord(sbtext, waterfallSpacing, average)
 
     def drawStoredRecord(self, sbtext: str, waterfallSpacing: int | float, average: bool) -> None:
