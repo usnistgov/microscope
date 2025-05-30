@@ -50,10 +50,12 @@ def windowFunction(N: int) -> np.ndarray:
         An appropriate window function, normalized.
 
     When multiplying data by a window function, the amount of power in the signal can be
-    changed.  To compensate for this, the mean(window[i]^2) is scaled to 1.
+    changed.  To compensate for this, the mean(window[i]^2) is scaled to 1. Then to
+    account for np.fft's normalizations, where power scales as the number of samples,
+    we also divide by sqrt(N). Overall, this means dividing by sqrt(sum(window^2))
     """
     window = np.hanning(N)
-    window *= 1 / np.sqrt((window**2).mean())
+    window /= np.sqrt((window**2).sum())
     return window
 
 
@@ -97,7 +99,9 @@ class DastardRecord:
     def PSD(self) -> np.ndarray:
         window = windowFunction(self.nSamples)
         fft = np.fft.rfft(window * (self.record - self.record.mean()))
-        return np.abs(fft**2).real
+        power = np.abs(fft**2).real
+        # mulitply by power by (2Δt) to divide by the bandwidth Δf = 1/(2Δt) and get spectral density
+        return power * 2 * self.timebase
 
     def FFTFreq(self) -> np.ndarray:
         return FFTFreq(self.nSamples, self.timebase)
