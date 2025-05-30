@@ -161,6 +161,10 @@ class PlotTrace:
     def isSpectrum(self) -> bool:
         return self.plotType in {self.TYPE_PSD, self.TYPE_RT_PSD}
 
+    @property
+    def isPSD(self) -> bool:
+        return self.plotType == self.TYPE_PSD
+
 
 def meanPSD(psdbuffer: deque[np.ndarray]) -> np.ndarray:
     n = len(psdbuffer)
@@ -538,7 +542,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         if self.plot_is_empty:
             pw = self.plotWidget
             if self.isErrvsFB:
-                pw.setLimits(xMin=-9e99, xMax=9e99)
+                pw.setLimits(xMin=self.YMIN, xMax=self.YMAX/2)
             else:
                 N = record.nSamples
                 t0 = -record.nPresamples - N * .04
@@ -557,14 +561,20 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
     @pyqtSlot()
     def xPhysicalChanged(self) -> None:
-        pw = self.plotWidget
-        ax = pw.getAxis("bottom")
-        self.xPhysicalCheck.setEnabled(not self.isSpectrum)
+        self.xPhysicalCheck.setEnabled(not self.isSpectrum and not self.isErrvsFB)
+        self.yPhysicalCheck.setEnabled(not self.isErrvsFB)
         scale = 1.0
         if self.isSpectrum:
+                ylabel = "Power spectral density"
+            else:
+                ylabel = "sqrt(PSD)"
             label = "Frequency"
             units = "Hz"
             self.xPhysicalCheck.setChecked(True)
+            label = "Feedback"
+            units = "arbs"
+            self.xPhysicalCheck.setChecked(False)
+            self.yPhysicalCheck.setChecked(False)
         elif self.xPhysicalCheck.isChecked():
             label = "Time after trigger"
             units = "s"
@@ -574,6 +584,8 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         else:
             label = "Samples after trigger"
             units = ""
+        pw = self.plotWidget
+        ax = pw.getAxis("bottom")
         ax.setLabel(label, units=units)
         ax.setScale(scale)
         pw.enableAutoRange("x")
