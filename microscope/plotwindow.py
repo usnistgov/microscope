@@ -414,26 +414,38 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.quickErrComboBox.setCurrentIndex(0)
         cnum = [self.SPECIAL_INVALID] * self.NUM_TRACES
         iserr = [False] * self.NUM_TRACES
+        normterms = []
         try:
             terms = self.quickChanEdit.text().lower().split(",")
             for i, term in enumerate(terms):
+                term = term.replace(" ", "")
                 if i >= self.NUM_TRACES:
                     break
                 if term.startswith("e"):
-                    term = term.lstrip("er ")
-                    iserr[i] = True
+                    term = term.lstrip("ero")
+                    if not self.isErrvsFB:
+                        iserr[i] = True
                 try:
-                    cnum[i] = int(term)
+                    t = int(term)
+                    if t >= 0 and t <= self.highestChan:
+                        cnum[i] = t
+                        prefix = "e" if iserr[i] else ""
+                        normterms.append(f"{prefix}{t}")
+                    else:
+                        normterms.append("-")
                 except ValueError:
+                    normterms.append("-")
                     continue
 
         finally:
-            for checker, check in zip(self.checkers, iserr):
-                checker.setChecked(check)
-            for spin, cnum, err in zip(self.channelSpinners, cnum, iserr):
+            for spin, checker, cnum, err in zip(self.channelSpinners, self.checkers, cnum, iserr):
                 spin.setValue(cnum)
+                checker.setChecked(err)
                 prefix = "Err " if err else "Ch "
                 spin.setPrefix(prefix)
+            while normterms[-1] == "-":
+                normterms.pop()
+            self.quickChanEdit.setText(",".join(normterms))
 
     @pyqtSlot(int)
     def channelChanged(self, value: int) -> None:
