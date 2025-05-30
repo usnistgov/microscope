@@ -150,7 +150,8 @@ class PlotTrace:
             if partner.incompatible(record) or (partner.frameIndex != record.frameIndex):
                 return
             if average:
-                raise NotImplementedError("Cannot yet average Err vs FB plots")
+                record = meanDastardRecord(self.previousRecords)
+                partner = meanDastardRecord(self.previousPartners)
             x = np.asarray(record.record, dtype=float)
             ydata = np.asarray(partner.record, dtype=float)
 
