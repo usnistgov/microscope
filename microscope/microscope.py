@@ -154,6 +154,10 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
         self.zmqsubscriber.running = False
         self.zmqthread.quit()
         self.zmqthread.wait()
+
+        windows = [v for v in self.plotWindows.values() if v is not None]
+        for pw in windows:
+            pw.close()
         if event is not None:
             event.accept()
 

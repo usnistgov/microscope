@@ -283,7 +283,15 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.plotWidget = pw
         pw.setWindowTitle("LJH pulse record")
         pw.setLabel("left", "TES current")
+        xphys = self.mainwindow.settings.value("lastplot/xphysical", False)
+        yphys = self.mainwindow.settings.value("lastplot/yphysical", False)
+        self.xPhysicalCheck.setChecked(xphys)
+        self.yPhysicalCheck.setChecked(yphys)
         self.xPhysicalChanged()
+
+        xgrid = self.mainwindow.settings.value("lastplot/xgrid", True)
+        ygrid = self.mainwindow.settings.value("lastplot/ygrid", True)
+        pw.showGrid(x=xgrid, y=ygrid)
         pw.setLimits(yMin=self.YMIN, yMax=self.YMAX)
         self.crosshairVLine = pg.InfiniteLine(angle=90, movable=False, pen=pg.mkColor("#aaaaaa"))
         self.crosshairHLine = pg.InfiniteLine(angle=0, movable=False, pen=pg.mkColor("#aaaaaa"))
@@ -495,6 +503,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         if self.isSpectrum:
             label = "Frequency"
             units = "Hz"
+            self.xPhysicalCheck.setChecked(True)
         elif self.xPhysicalCheck.isChecked():
             label = "Time after trigger"
             units = "s"
@@ -507,6 +516,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         ax.setLabel(label, units=units)
         ax.setScale(scale)
         pw.enableAutoRange("x")
+        self.mainwindow.settings.setValue("lastplot/xphysical", self.xPhysicalCheck.isChecked())
 
     @pyqtSlot()
     def yPhysicalChanged(self) -> None:
@@ -527,6 +537,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             units = ""
         ax.setScale(scale)
         ax.setLabel(label, units=units)
+        self.mainwindow.settings.setValue("lastplot/yphysical", self.yPhysicalCheck.isChecked())
 
     @pyqtSlot()
     def clearAllTraces(self) -> None:
@@ -556,6 +567,12 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
     @pyqtSlot()
     def closeEvent(self, event: QEvent | None):
+        plitem = self.plotWidget.getPlotItem()
+        xgrid = plitem.axes["bottom"]["item"].grid
+        ygrid = plitem.axes["left"]["item"].grid
+        self.mainwindow.settings.setValue("lastplot/xgrid", xgrid)
+        self.mainwindow.settings.setValue("lastplot/ygrid", ygrid)
+
         self.closed.emit()
         if event is not None:
             event.accept()
