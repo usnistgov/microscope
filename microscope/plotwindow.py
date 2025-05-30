@@ -161,10 +161,6 @@ class PlotTrace:
     def isSpectrum(self) -> bool:
         return self.plotType in {self.TYPE_PSD, self.TYPE_RT_PSD}
 
-    @property
-    def isPSD(self) -> bool:
-        return self.plotType == self.TYPE_PSD
-
 
 def meanPSD(psdbuffer: deque[np.ndarray]) -> np.ndarray:
     n = len(psdbuffer)
@@ -321,12 +317,12 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.plotWidget = pw
         self.plot_is_empty = True
         pw.setWindowTitle("LJH pulse record")
-        pw.setLabel("left", "TES current")
         xphys = self.mainwindow.settings.value("lastplot/xphysical", False)
         yphys = self.mainwindow.settings.value("lastplot/yphysical", False)
         self.xPhysicalCheck.setChecked(xphys)
         self.yPhysicalCheck.setChecked(yphys)
         self.xPhysicalChanged()
+        self.yPhysicalChanged()
 
         xgrid = self.mainwindow.settings.value("lastplot/xgrid", True)
         ygrid = self.mainwindow.settings.value("lastplot/ygrid", True)
@@ -490,6 +486,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     def plotTypeChanged(self, index: int) -> None:
         self.clearAllTraces()
         self.xPhysicalChanged()
+        self.yPhysicalChanged()
         if self.isTDM:
             errvfb = (index == PlotTrace.TYPE_ERR_FB)
             self.quickErrComboBox.setDisabled(errvfb)
@@ -549,11 +546,17 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
                 tf = t0 + N * 1.08
                 pw.setLimits(xMin=t0, xMax=tf)
             pw.enableAutoRange()
+            self.xPhysicalChanged()
+            self.yPhysicalChanged()
         self.plot_is_empty = False
 
     @property
     def isSpectrum(self) -> bool:
         return self.plotTypeComboBox.currentIndex() in {PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD}
+
+    @property
+    def isPSD(self) -> bool:
+        return self.plotTypeComboBox.currentIndex() == PlotTrace.TYPE_PSD
 
     @property
     def isErrvsFB(self) -> bool:
@@ -562,19 +565,15 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     @pyqtSlot()
     def xPhysicalChanged(self) -> None:
         self.xPhysicalCheck.setEnabled(not self.isSpectrum and not self.isErrvsFB)
-        self.yPhysicalCheck.setEnabled(not self.isErrvsFB)
         scale = 1.0
         if self.isSpectrum:
-                ylabel = "Power spectral density"
-            else:
-                ylabel = "sqrt(PSD)"
             label = "Frequency"
             units = "Hz"
             self.xPhysicalCheck.setChecked(True)
+        elif self.isErrvsFB:
             label = "Feedback"
             units = "arbs"
             self.xPhysicalCheck.setChecked(False)
-            self.yPhysicalCheck.setChecked(False)
         elif self.xPhysicalCheck.isChecked():
             label = "Time after trigger"
             units = "s"
@@ -593,21 +592,44 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
     @pyqtSlot()
     def yPhysicalChanged(self) -> None:
-        record = self.lastRecord
-        if record is None:
-            return
-        ax = self.plotWidget.getAxis("left")
-        if self.yPhysicalCheck.isChecked():
-            scale = record.voltsPerArb
+        self.yPhysicalCheck.setEnabled(not self.isErrvsFB)
+        phys = self.yPhysicalCheck.isChecked()
+        if phys:
+            record = self.lastRecord
+            if record is None:
+                return
+            vperarb = record.voltsPerArb
+
+        label = "TES signal"
+        units = ""
+        scale = 1.0
+        if self.isSpectrum:
+            if phys:
+                scale = vperarb
+                units = "V"
+            else:
+                units = "arbs"
+
+            if self.isPSD:
+                label = "Power spectral density"
+                scale *= scale
+                units += "^2 / Hz"
+            else:
+                label = "sqrt(PSD)"
+                units += " / sqrt(Hz)"
+
+        elif self.isErrvsFB:
+            self.yPhysicalCheck.setChecked(False)
+            label = "TES signal"
+
+        elif phys:
+            scale = vperarb
             if self.isTDM:
                 units = "V"
             else:
                 units = "<html>&phi;0</html>"
-            label = "TES signal"
-        else:
-            scale = 1.0
-            label = "TES signal"
-            units = ""
+
+        ax = self.plotWidget.getAxis("left")
         ax.setScale(scale)
         ax.setLabel(label, units=units)
         self.mainwindow.settings.setValue("lastplot/yphysical", self.yPhysicalCheck.isChecked())
