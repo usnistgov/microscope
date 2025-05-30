@@ -56,6 +56,7 @@ class PlotTrace:
         self.curve: pg.PlotDataItem | None = None
         self.timeAx: timeAxis | None = None
         self.previousRecords: deque[DastardRecord] = deque([], traceHistoryLength)
+        self.previousPartners: deque[DastardRecord] = deque([], traceHistoryLength)
         self.previousPSD: deque[np.ndarray] = deque([], traceHistoryLength)
         self.computingFFT = False
         self.plotType = self.TYPE_TIMESERIES
@@ -63,6 +64,7 @@ class PlotTrace:
     @pyqtSlot(int)
     def changeBufferLength(self, cap: int) -> None:
         self.previousRecords = deque(self.previousRecords, cap)
+        self.previousPartners = deque(self.previousPartners, cap)
         self.previousPSD = deque(self.previousPSD, cap)
 
     def needsFFT(self, FFT: bool) -> None:
@@ -121,7 +123,7 @@ class PlotTrace:
                 ydata = record.record_baseline_subtracted + self.traceIdx * waterfallSpacing
             x = xaxis.x
 
-        if self.isSpectrum:
+        elif self.isSpectrum:
             if average:
                 ydata = meanPSD(self.previousPSD)
             else:
@@ -463,6 +465,8 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
                 cb.setDisabled(errvfb)
                 if errvfb:
                     cb.setChecked(False)
+            self.channelListChanged()
+
         isspectrum = index in {PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD}
         self.subtractBaselineMenu.model().item(1).setEnabled(not isspectrum)
         if isspectrum:
@@ -483,25 +487,27 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     def updateReceived(self, record: DastardRecord) -> None:
         """
         Slot to handle one data record for one channel.
-        It ingests the data and feeds it to the BaselineFinder object for the channel.
+        It ingests the data and feeds it to the one or more `PlotTrace` objects for the channel.
         """
         if self.pauseButton.isChecked():
             return
+        if record.channelIndex not in self.idx2trace:
+            return
+
         sbtext = self.subtractBaselineMenu.currentText()
         waterfallSpacing = self.waterfallDeltaSpin.value()
         average = self.averageTraces.isChecked()
         plotWasEmpty = self.plot_is_empty
         self.lastRecord = record
 
-        if record.channelIndex in self.idx2trace:
-            for traceIdx in self.idx2trace[record.channelIndex]:
-                trace = self.traces[traceIdx]
+        for traceIdx in self.idx2trace[record.channelIndex]:
+            trace = self.traces[traceIdx]
                 trace.plotrecord(record, self.plotWidget, sbtext, waterfallSpacing, average)
         if plotWasEmpty:
             pw = self.plotWidget
             pw.autoRange()
             ((xmin, xmax), _) = pw.viewRange()
-            pw.setLimits(xMin=xmin, xMax=xmax)
+            # pw.setLimits(xMin=xmin, xMax=xmax)
 
     @property
     def isSpectrum(self) -> bool:
