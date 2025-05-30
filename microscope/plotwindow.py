@@ -304,21 +304,28 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     def mouseMoved(self, evt: QEvent) -> None:
         pos = evt
         p1 = self.plotWidget
+        if not p1.sceneBoundingRect().contains(pos):
+            return
+
         vb = p1.getViewBox()
-        if p1.sceneBoundingRect().contains(pos):
-            mousePoint = vb.mapSceneToView(pos)
-            x = mousePoint.x()
-            y = mousePoint.y()
-            self.crosshairVLine.setPos(x)
-            self.crosshairHLine.setPos(y)
-            xlabel = p1.getAxis("bottom").labelString()
-            if "Samples after" in xlabel:
-                xunits = "samples"
-            else:
-                xunits = xlabel.split("(")[-1].split(")")[0]
-                x *= {"ms": 1000, "µs": 1e6, "kHz": 1e-3}.get(xunits, 1)
-            msg = f"x={x:.3f} {xunits}, y={y:.1f}"
-            self.mainwindow.statusLabel1.setText(msg)
+        mousePoint = vb.mapSceneToView(pos)
+        x = mousePoint.x()
+        y = mousePoint.y()
+        self.crosshairVLine.setPos(x)
+        self.crosshairHLine.setPos(y)
+        logx, logy = vb.getState()["logMode"]
+        if logx:
+            x = 10**x
+        if logy:
+            y = 10**y
+        xlabel = p1.getAxis("bottom").labelString()
+        if "Samples after" in xlabel:
+            xunits = "samples"
+        else:
+            xunits = xlabel.split("(")[-1].split(")")[0]
+            x *= {"ms": 1000, "µs": 1e6, "kHz": 1e-3}.get(xunits, 1)
+        msg = f"x={x:.3f} {xunits}, y={y:.1f}"
+        self.mainwindow.statusLabel1.setText(msg)
 
     def mouseClicked(self, evt: QEvent) -> None:
         """If user double clicks, start auto-ranging the plot.
