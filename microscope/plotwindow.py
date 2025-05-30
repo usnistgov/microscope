@@ -100,7 +100,6 @@ class PlotTrace:
 
     def plotrecord(self, record: DastardRecord, plotWidget: pg.PlotWidget,
                    sbtext: str, waterfallSpacing: int | float, average: bool) -> None:
-
         self.saverecord(record)
         if self.curve is None or self.timeAx is None:
             xaxis = timeAxis.create(record.nPresamples, record.nSamples, record.timebase)
@@ -148,7 +147,7 @@ class PlotTrace:
             if len(self.previousPartners) == 0:
                 return
             partner = self.previousPartners[-1]
-            if partner.incompatible(record):
+            if partner.incompatible(record) or (partner.frameIndex != record.frameIndex):
                 return
             if average:
                 raise NotImplementedError("Cannot yet average Err vs FB plots")
@@ -315,6 +314,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             self.plotTypeComboBox.model().item(3).setEnabled(False)
         pw = pg.PlotWidget()
         self.plotWidget = pw
+        self.plot_is_empty = True
         pw.setWindowTitle("LJH pulse record")
         pw.setLabel("left", "TES current")
         xphys = self.mainwindow.settings.value("lastplot/xphysical", False)
@@ -524,27 +524,27 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         sbtext = self.subtractBaselineMenu.currentText()
         waterfallSpacing = self.waterfallDeltaSpin.value()
         average = self.averageTraces.isChecked()
-        plotWasEmpty = self.plot_is_empty
         self.lastRecord = record
 
         for traceIdx in self.idx2trace[record.channelIndex]:
             trace = self.traces[traceIdx]
             # Test if we're currently plotting err vs FB and this is an error
-            if self.isErrvsFB and record.channelIndex % 2 == 0:
+            thisIsPartner = self.isErrvsFB and record.channelIndex % 2 == 0
+            if thisIsPartner:
                 trace.plotpartner(record, sbtext, waterfallSpacing, average)
             else:
                 trace.plotrecord(record, self.plotWidget, sbtext, waterfallSpacing, average)
-        if plotWasEmpty:
+        if self.plot_is_empty:
             pw = self.plotWidget
             if self.isErrvsFB:
                 pw.setLimits(xMin=-9e99, xMax=9e99)
-                print("ErrvFB")
             else:
                 N = record.nSamples
                 t0 = -record.nPresamples - N * .04
                 tf = t0 + N * 1.08
                 pw.setLimits(xMin=t0, xMax=tf)
-            pw.autoRange()
+            pw.enableAutoRange()
+        self.plot_is_empty = False
 
     @property
     def isSpectrum(self) -> bool:
@@ -553,10 +553,6 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     @property
     def isErrvsFB(self) -> bool:
         return self.isTDM and (self.plotTypeComboBox.currentIndex() == PlotTrace.TYPE_ERR_FB)
-
-    @property
-    def plot_is_empty(self) -> bool:
-        return [t.timeAx for t in self.traces].count(None) == self.NUM_TRACES
 
     @pyqtSlot()
     def xPhysicalChanged(self) -> None:
@@ -607,6 +603,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     def clearAllTraces(self) -> None:
         for traceIdx in range(self.NUM_TRACES):
             self.clearTrace(traceIdx)
+        self.plot_is_empty = True
 
     def clearTrace(self, traceIdx: int) -> None:
         trace = self.traces[traceIdx]
