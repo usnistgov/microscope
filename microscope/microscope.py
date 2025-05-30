@@ -130,8 +130,10 @@ class MainWindow(QtWidgets.QMainWindow):  # noqa: PLR0904
             newSubscriptions.update(pw.idx2trace.keys())
 
         for chanidx in self.subscribedChannels.difference(newSubscriptions):
+            # print(f"Unsubscribing  idx {chanidx}")
             self.zmqsubscriber.unsubscribe(chanidx)
         for chanidx in newSubscriptions.difference(self.subscribedChannels):
+            # print(f"Subscribing to idx {chanidx}")
             self.zmqsubscriber.subscribe(chanidx)
         self.subscribedChannels = newSubscriptions
 

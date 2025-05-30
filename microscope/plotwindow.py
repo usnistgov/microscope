@@ -76,17 +76,27 @@ class PlotTrace:
         if not FFT:
             self.previousPSD.clear()
 
-    def saverecord(self, record: DastardRecord) -> None:
+    def saverecord(self, record: DastardRecord, isPartner: bool = False) -> None:
         # If the record is not compatible with previous, clear the queue.
         if len(self.previousRecords) > 0:
             if record.incompatible(self.previousRecords[-1]):
                 self.previousRecords.clear()
+                self.previousPartners.clear()
                 self.previousPSD.clear()
+
+        if isPartner:
+            self.previousPartners.append(record)
+            return
 
         self.previousRecords.append(record)
         if self.computingFFT:
             PSD = record.PSD()
             self.previousPSD.append(PSD)
+
+    def plotpartner(self, partner: DastardRecord, sbtext: str,
+                    waterfallSpacing: int | float, average: bool) -> None:
+        self.saverecord(partner, isPartner=True)
+        self.drawStoredRecord(sbtext, waterfallSpacing, average)
 
     def plotrecord(self, record: DastardRecord, plotWidget: pg.PlotWidget,
                    sbtext: str, waterfallSpacing: int | float, average: bool) -> None:
@@ -133,6 +143,18 @@ class PlotTrace:
             if "Waterfall" in sbtext:
                 ydata *= waterfallSpacing ** self.traceIdx
             x = record.FFTFreq()
+
+        elif self.plotType == self.TYPE_ERR_FB:
+            if len(self.previousPartners) == 0:
+                return
+            partner = self.previousPartners[-1]
+            if partner.incompatible(record):
+                return
+            if average:
+                raise NotImplementedError("Cannot yet average Err vs FB plots")
+            x = np.asarray(record.record, dtype=float)
+            ydata = np.asarray(partner.record, dtype=float)
+
         self.curve.setData(x, ydata)
 
     @property
@@ -447,10 +469,15 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             if channel_name not in self.channel_index:
                 continue
             chanidx = self.channel_index[channel_name]
-            if chanidx in self.idx2trace:
+            if chanidx not in self.idx2trace:
+                self.idx2trace[chanidx] = set()
+            self.idx2trace[chanidx].add(traceIdx)
+            if self.isErrvsFB:
+                chanidx -= 1
+                if chanidx not in self.idx2trace:
+                    self.idx2trace[chanidx] = set()
                 self.idx2trace[chanidx].add(traceIdx)
-            else:
-                self.idx2trace[chanidx] = {traceIdx}
+
         self.updateSubscriptions.emit()
         self.updateQuickTypeText()
 
@@ -502,16 +529,30 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
         for traceIdx in self.idx2trace[record.channelIndex]:
             trace = self.traces[traceIdx]
+            # Test if we're currently plotting err vs FB and this is an error
+            if self.isErrvsFB and record.channelIndex % 2 == 0:
+                trace.plotpartner(record, sbtext, waterfallSpacing, average)
+            else:
                 trace.plotrecord(record, self.plotWidget, sbtext, waterfallSpacing, average)
         if plotWasEmpty:
             pw = self.plotWidget
+            if self.isErrvsFB:
+                pw.setLimits(xMin=-9e99, xMax=9e99)
+                print("ErrvFB")
+            else:
+                N = record.nSamples
+                t0 = -record.nPresamples - N * .04
+                tf = t0 + N * 1.08
+                pw.setLimits(xMin=t0, xMax=tf)
             pw.autoRange()
-            ((xmin, xmax), _) = pw.viewRange()
-            # pw.setLimits(xMin=xmin, xMax=xmax)
 
     @property
     def isSpectrum(self) -> bool:
         return self.plotTypeComboBox.currentIndex() in {PlotTrace.TYPE_PSD, PlotTrace.TYPE_RT_PSD}
+
+    @property
+    def isErrvsFB(self) -> bool:
+        return self.isTDM and (self.plotTypeComboBox.currentIndex() == PlotTrace.TYPE_ERR_FB)
 
     @property
     def plot_is_empty(self) -> bool:
