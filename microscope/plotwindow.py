@@ -417,8 +417,8 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         normterms = []
         try:
             terms = self.quickChanEdit.text().lower().split(",")
-            for i, term in enumerate(terms):
-                term = term.replace(" ", "")
+            for i, rawterm in enumerate(terms):
+                term = rawterm.replace(" ", "")
                 if i >= self.NUM_TRACES:
                     break
                 if term.startswith("e"):
@@ -551,7 +551,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         if self.plot_is_empty:
             pw = self.plotWidget
             if self.isErrvsFB:
-                pw.setLimits(xMin=self.YMIN, xMax=self.YMAX/2)
+                pw.setLimits(xMin=self.YMIN, xMax=self.YMAX / 2)
             else:
                 N = record.nSamples
                 t0 = -record.nPresamples - N * .04

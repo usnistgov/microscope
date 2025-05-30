@@ -53,7 +53,7 @@ def windowFunction(N: int) -> np.ndarray:
     changed.  To compensate for this, the mean(window[i]^2) is scaled to 1.
     """
     window = np.hanning(N)
-    window *= 1/np.sqrt((window**2).mean())
+    window *= 1 / np.sqrt((window**2).mean())
     return window
 
 
@@ -124,7 +124,7 @@ class DastardRecord:
         if (self.nPresamples != other.nPresamples) or \
                 (self.nSamples != other.nSamples):
             return True
-        return abs(other.timebase/self.timebase - 1) > rtol
+        return abs(other.timebase / self.timebase - 1) > rtol
 
 
 def meanDastardRecord(buffer: deque[DastardRecord]) -> DastardRecord:

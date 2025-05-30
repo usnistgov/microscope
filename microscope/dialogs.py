@@ -1,8 +1,7 @@
 
 # Qt5 imports
 import PyQt5.uic
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QSettings, pyqtSlot, QCoreApplication
+from PyQt5 import QtWidgets
 
 import importlib.resources
 
