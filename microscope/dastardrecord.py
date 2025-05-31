@@ -72,7 +72,7 @@ class DastardRecord:
     nSamples: int
     timebase: float
     voltsPerArb: float
-    triggerTime: np.uint64
+    triggerTime_ns: np.uint64
     frameIndex: np.uint16
     record: np.ndarray
 
@@ -87,14 +87,14 @@ class DastardRecord:
     @classmethod
     def fromBinary(cls, header: bytes, contents: bytes) -> DastardRecord:
         values = struct.unpack(cls.header_fmt, header)
-        chanidx, version, typecode, nPresamples, nSamples, timebase, voltsPerArb, triggerTime, frameIndex = values
+        chanidx, version, typecode, nPresamples, nSamples, timebase, voltsPerArb, triggerTime_ns, frameIndex = values
         assert version == 0
         data_fmt = cls.data_fmt[typecode]
         datatype = cls.data_type[typecode]
         data = np.frombuffer(contents, dtype=data_fmt)
 
         return DastardRecord(chanidx, datatype, nPresamples, nSamples, timebase, voltsPerArb,
-                             triggerTime, frameIndex, data)
+                             triggerTime_ns, frameIndex, data)
 
     def PSD(self) -> np.ndarray:
         window = windowFunction(self.nSamples)

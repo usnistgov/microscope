@@ -32,6 +32,8 @@ class PlotTrace:
     TYPE_RT_PSD = 2
     TYPE_ERR_FB = 3
 
+    DEFAULT_REDRAW_TIME = 0.25  # seconds
+
     def __init__(self, idx: int, color: str, traceHistoryLength: int) -> None:
         self.traceIdx = idx
         self.color = color
@@ -43,6 +45,8 @@ class PlotTrace:
         self.previousPSD: deque[np.ndarray] = deque([], traceHistoryLength)
         self.computingFFT = False
         self.plotType = self.TYPE_TIMESERIES
+        self.redrawTime_ns = 1e9 * self.DEFAULT_REDRAW_TIME
+        self.lastdrawTime_ns = np.uint64(0)
 
     @pyqtSlot(int)
     def changeBufferLength(self, cap: int) -> None:
@@ -101,7 +105,14 @@ class PlotTrace:
         if self.curve is None or xaxis is None or len(self.previousRecords) == 0:
             return
 
+        # Don't draw this record if one was drawn too recently
+        # Currently, "too recent" is a fixed time. In the future, this could be user-selectable.
         record = self.previousRecords[-1]
+        dt_ns = record.triggerTime_ns - self.lastdrawTime_ns
+        if dt_ns < self.redrawTime_ns:
+            return
+        self.lastdrawTime_ns = record.triggerTime_ns
+
         if self.plotType == self.TYPE_TIMESERIES:
             if average:
                 record = meanDastardRecord(self.previousRecords)
