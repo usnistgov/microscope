@@ -279,6 +279,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
                 if i >= self.NUM_TRACES:
                     break
                 if term.startswith("e"):
+                    # remove any leading combination of ero, such as "error" or "err"
                     term = term.lstrip("ero")
                     if not self.isErrvsFB:
                         iserr[i] = True
