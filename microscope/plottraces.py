@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from collections import deque
 
 # local imports
-from dastardrecord import DastardRecord, meanDastardRecord
+from .dastardrecord import DastardRecord, meanDastardRecord
 
 
 @dataclass(frozen=True)

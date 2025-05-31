@@ -21,11 +21,11 @@ keywords = ["microscope", "dastard"]
 Homepage = "https://github.com/usnistgov/microscope"
 
 [project.scripts]
-microscope = "microscope:main"
+microscope = "microscope.microscope:main"
 
 # This block tells setuptools to install microscope/ but not demo/
 [tool.setuptools.packages.find]
-where = ["microscope"]  # list of folders that contain the packages (["."] by default)
+exclude = ["demo"]
 
 [build-system]
 requires = [

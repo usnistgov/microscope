@@ -24,8 +24,8 @@ import pathlib
 import sys
 
 # User code imports
-from channel_group import ChannelGroup
-from mainwindow import MainWindow, find_resource
+from .channel_group import ChannelGroup
+from .mainwindow import MainWindow, find_resource
 
 try:
     from _version import version as __version__

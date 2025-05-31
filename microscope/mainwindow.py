@@ -7,10 +7,10 @@ from PyQt5.QtCore import QSettings, pyqtSlot
 import pyqtgraph as pg
 
 # User code imports
-import plotwindow
-import subscriber
-from dialogs import AboutDialog, HelpDialog
-from channel_group import ChannelGroup
+from . import plotwindow
+from . import subscriber
+from .dialogs import AboutDialog, HelpDialog
+from .channel_group import ChannelGroup
 
 
 def find_resource(filename):

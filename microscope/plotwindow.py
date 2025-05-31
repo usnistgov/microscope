@@ -11,9 +11,9 @@ import numpy as np
 import os
 
 # Microscope imports
-from channel_group import ChannelGroup
-from dastardrecord import DastardRecord
-from plottraces import PlotTrace
+from .channel_group import ChannelGroup
+from .dastardrecord import DastardRecord
+from .plottraces import PlotTrace
 
 
 def clear_grid_layout(grid_layout: QtWidgets.QGridLayout) -> None:

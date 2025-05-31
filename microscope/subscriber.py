@@ -5,7 +5,7 @@ from PyQt5 import QtCore
 import struct
 import zmq
 
-from dastardrecord import DastardRecord
+from .dastardrecord import DastardRecord
 
 
 class ZMQSubscriber(QtCore.QObject):
