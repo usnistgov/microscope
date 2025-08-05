@@ -1,0 +1,42 @@
+[project]
+name = "microscope"
+dynamic = ["version"]
+description = "Microcalorimeter Pulse Graphing."
+authors = [
+    {name = "Joe Fowler", email = "drjoefowler@gmail.com"},
+    {name = "Galen O'Neil", email = "galen.oneil@nist.gov"},
+]
+dependencies = [
+    "pyqtgraph",
+    "numpy",
+    "pyyaml",
+    "pyzmq",
+]
+requires-python = ">=3.9"
+readme = "README.md"
+license = "MIT"
+keywords = ["microscope", "dastard"]
+
+[project.urls]
+Homepage = "https://github.com/usnistgov/microscope"
+
+[project.scripts]
+microscope = "microscope.microscope:main"
+
+# This block tells setuptools to install microscope/ but not demo/
+[tool.setuptools.packages.find]
+exclude = ["demo"]
+
+[build-system]
+requires = [
+    "setuptools>=61",
+    "setuptools_scm>=8",
+    "wheel"
+    ]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+microscope = ["ui/*.ui", "ui/*.png"]
+
+[tool.setuptools_scm]
+version_file = "microscope/_version.py"

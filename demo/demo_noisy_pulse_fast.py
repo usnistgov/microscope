@@ -13,7 +13,7 @@ import sys
 import time
 import message_definition
 
-chanmin, chanmax = 1, 25
+chanmin, chanmax = 1, 8
 samples, presamples = 1000, 200
 
 port = "5502"
@@ -36,7 +36,6 @@ while True:
     channel = random.randrange(chanmin, chanmax + 1)
     thisdata = np.asarray(messagedata[channel] + rng.integers(-500, 500, size=samples), dtype=np.uint16)
     header = pulseRecord[channel].packheader(thisdata)
-    print(f"chan {channel:3d} message length {len(thisdata)}")
     socket.send(header, zmq.SNDMORE)
     socket.send(thisdata.data[:])
-    time.sleep(0.1)
+    time.sleep(0.005)
