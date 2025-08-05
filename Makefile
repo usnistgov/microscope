@@ -9,7 +9,7 @@ TARGET        = microscope
 
 
 clean: 
-	-$(DEL_FILE) *.o moc_*.cpp
+	-$(DEL_FILE) *.o moc_*.cpp moc_*.h ui_plotwindow.h qrc_resources.cpp
 	-$(DEL_FILE) *~ core *.core
 	-$(DEL_FILE) $(TARGET) 
 	-$(DEL_FILE) .qmake.stash
