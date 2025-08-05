@@ -174,16 +174,15 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.plotWidget = pw
         self.plot_is_empty = True
         pw.setWindowTitle("LJH pulse record")
-        xphys = self.mainwindow.settings.value("lastplot/xphysical", False)
-        yphys = self.mainwindow.settings.value("lastplot/yphysical", False)
-        print(f"oh no! {xphys=}. {yphys=}")
+        xphys = self.mainwindow.settings.value("lastplot/xphysical", False, type=bool)
+        yphys = self.mainwindow.settings.value("lastplot/yphysical", False, type=bool)
         self.xPhysicalCheck.setChecked(xphys)
         self.yPhysicalCheck.setChecked(yphys)
         self.xPhysicalChanged()
         self.yPhysicalChanged()
 
-        xgrid = self.mainwindow.settings.value("lastplot/xgrid", True)
-        ygrid = self.mainwindow.settings.value("lastplot/ygrid", True)
+        xgrid = self.mainwindow.settings.value("lastplot/xgrid", True, type=bool)
+        ygrid = self.mainwindow.settings.value("lastplot/ygrid", True, type=bool)
         pw.showGrid(x=xgrid, y=ygrid)
         pw.setLimits(yMin=self.YMIN, yMax=self.YMAX)
         self.crosshairVLine = pg.InfiniteLine(angle=90, movable=False, pen=pg.mkColor("#aaaaaa"))
