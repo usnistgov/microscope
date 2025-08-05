@@ -28,8 +28,8 @@ from .channel_group import ChannelGroup
 from .mainwindow import MainWindow, find_resource
 
 try:
-    from _version import version as __version__
-    from _version import version_tuple
+    from microscope._version import version as __version__
+    from microscope._version import version_tuple
 except ImportError:
     __version__ = "unknown version"
     version_tuple = (0, 0, "unknown version")
