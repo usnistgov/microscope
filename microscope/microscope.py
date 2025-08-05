@@ -138,6 +138,8 @@ def main() -> None:
     short_ver = __version__.split("+")[0]
     title = f"{args.appname} (version {short_ver})"
 
+    # Remove a leading tcp:// from the URL
+    args.host = args.host.lstrip("tcp://")
     if ":" in args.host:
         host, port = args.host.split(":")
     else:
