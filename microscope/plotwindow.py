@@ -176,6 +176,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         pw.setWindowTitle("LJH pulse record")
         xphys = self.mainwindow.settings.value("lastplot/xphysical", False)
         yphys = self.mainwindow.settings.value("lastplot/yphysical", False)
+        print(f"oh no! {xphys=}. {yphys=}")
         self.xPhysicalCheck.setChecked(xphys)
         self.yPhysicalCheck.setChecked(yphys)
         self.xPhysicalChanged()
