@@ -127,7 +127,7 @@ def parsed_arguments() -> argparse.Namespace:
 
 def main() -> None:
     args = parsed_arguments()
-    settings = QSettings("NIST Quantum Sensors", "Microscope")
+    settings = QSettings("NIST Quantum Sensors", "Microscope2")
 
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName(args.appname)
