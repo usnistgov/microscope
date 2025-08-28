@@ -45,7 +45,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             "#b400e6",  # Purple
             "#0000b4",  # Blue
             "#00bebe",  # Cyan
-            "darkgreen",
+            "#00aa00",  # Dark green
             "#cdcd00",  # Gold
             "#ff8000",  # Orange
             "red",
@@ -70,6 +70,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.channel_index: dict[str, int] = {}
         self.channel_number: dict[int, int] = {}
         self.lastRecord: DastardRecord | None = None
+        self.plotLimits: list[float] = [0, 1, 0, 1]
         self.setupChannels(channel_groups)
         self.setupQuickSelect(channel_groups)
         self.setupPlot()
@@ -184,7 +185,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         xgrid = self.mainwindow.settings.value("lastplot/xgrid", True, type=bool)
         ygrid = self.mainwindow.settings.value("lastplot/ygrid", True, type=bool)
         pw.showGrid(x=xgrid, y=ygrid)
-        pw.setLimits(yMin=self.YMIN, yMax=self.YMAX)
+        self.setLimits(yMin=self.YMIN, yMax=self.YMAX)
         self.crosshairVLine = pg.InfiniteLine(angle=90, movable=False, pen=pg.mkColor("#aaaaaa"))
         self.crosshairHLine = pg.InfiniteLine(angle=0, movable=False, pen=pg.mkColor("#aaaaaa"))
         pw.addItem(self.crosshairVLine, ignoreBounds=True)
@@ -406,23 +407,35 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
                 trace.plotpartner(record, sbtext, waterfallSpacing, average)
             else:
                 trace.plotrecord(record, self.plotWidget, sbtext, waterfallSpacing, average)
-        if self.plot_is_empty:
+        if self.isErrvsFB:
+            self.setLimits(xMin=self.YMIN, xMax=self.YMAX / 2)
+        elif self.isSpectrum:
+            # Can't figure out how to set zoom/pan limits that make sense in log and linear space.
+            # So (for now), don't try.
+            self.setLimits(xMin=0, xMax=1e7)
+        else:
+            N = record.nSamples
+            margin = 0.03
+            t0 = -record.nPresamples - N * margin
+            tf = t0 + N * (1.0 + 2 * margin)
+            self.setLimits(xMin=t0, xMax=tf)
+        self.plot_is_empty = False
+
+    def setLimits(self, xMin: float | None = None, xMax: float | None = None,
+                  yMin: float | None = None, yMax: float | None = None) -> bool:
+        relimit = False
+        for i, new, old in zip(range(4), (xMin, xMax, yMin, yMax), self.plotLimits):
+            if new is not None and new != old:
+                relimit = True
+                self.plotLimits[i] = new
+        if relimit:
             pw = self.plotWidget
-            if self.isErrvsFB:
-                pw.setLimits(xMin=self.YMIN, xMax=self.YMAX / 2)
-            elif self.isSpectrum:
-                # Can't figure out how to set zoom/pan limits that make sense in log and linear space.
-                # So (for now), don't try.
-                pw.setLimits(xMin=0, xMax=1e7)
-            else:
-                N = record.nSamples
-                t0 = -record.nPresamples - N * .04
-                tf = t0 + N * 1.08
-                pw.setLimits(xMin=t0, xMax=tf)
+            pw.setLimits(xMin=self.plotLimits[0], xMax=self.plotLimits[1],
+                         yMin=self.plotLimits[2], yMax=self.plotLimits[3])
             pw.enableAutoRange()
             self.xPhysicalChanged()
             self.yPhysicalChanged()
-        self.plot_is_empty = False
+        return relimit
 
     @property
     def isSpectrum(self) -> bool:

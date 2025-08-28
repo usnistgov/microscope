@@ -18,14 +18,14 @@ it's installed, and the environment of your choice is active.
 
 ```bash
 # Install for normal users
-pip install git+https://github.com/usnistgov/microscope.git@master
+uv pip install git+https://github.com/usnistgov/microscope.git@master
 
 
 # Install for developers (i.e., you expect to modify the code on your system)
 # First change directory to where you'd like the code to reside.
 git clone https://github.com/usnistgov/microscope
 cd microscope
-pip install -e .
+uv pip install -e .
 ```
 
 There are ways for developers to have pip decide where to put the code. You could do that, instead.
