@@ -173,7 +173,6 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             self.plotTypeComboBox.model().item(3).setEnabled(False)
         pw = pg.PlotWidget()
         self.plotWidget = pw
-        self.plot_is_empty = True
         pw.setWindowTitle("LJH pulse record")
         xphys = self.mainwindow.settings.value("lastplot/xphysical", False, type=bool)
         yphys = self.mainwindow.settings.value("lastplot/yphysical", False, type=bool)
@@ -419,7 +418,6 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             t0 = -record.nPresamples - N * margin
             tf = t0 + N * (1.0 + 2 * margin)
             self.setLimits(xMin=t0, xMax=tf)
-        self.plot_is_empty = False
 
     def setLimits(self, xMin: float | None = None, xMax: float | None = None,
                   yMin: float | None = None, yMax: float | None = None) -> bool:
@@ -525,7 +523,6 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     def clearAllTraces(self) -> None:
         for traceIdx in range(self.NUM_TRACES):
             self.clearTrace(traceIdx)
-        self.plot_is_empty = True
 
     def clearTrace(self, traceIdx: int) -> None:
         trace = self.traces[traceIdx]
