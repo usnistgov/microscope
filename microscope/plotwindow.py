@@ -3,7 +3,7 @@ from __future__ import annotations
 # Qt5 imports
 import PyQt5.uic
 from PyQt5.QtCore import Qt, QEvent, pyqtSlot, pyqtSignal
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 import pyqtgraph as pg
 
 # other non-user imports
@@ -112,8 +112,8 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
         layout = self.channelNameLayout
         clear_grid_layout(layout)
-        self.channelSpinners = []
-        self.checkers = []
+        self.channelSpinners: list[QtWidgets.QSpinBox] = []
+        self.checkers: list[QtWidgets.QCheckBox] = []
         for i in range(self.NUM_TRACES):
             c = "ABCDEFGHIJKL"[i]
             label = QtWidgets.QLabel(f"Trace {c}", self)
@@ -125,7 +125,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             s.setSpecialValueText("--")
             s.setValue(self.SPECIAL_INVALID)
             s.setPrefix("Ch ")
-            s.setAlignment(Qt.AlignRight)
+            s.setAlignment(Qt.AlignmentFlag.AlignRight)
             s.setMinimumWidth(75)
             s.setToolTip(f"Choose channel # for trace {c} (type '-1' to turn off)")
             s.valueChanged.connect(self.channelChanged)
@@ -174,6 +174,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         pw = pg.PlotWidget()
         self.plotWidget = pw
         pw.setWindowTitle("LJH pulse record")
+        assert self.mainwindow is not None
         xphys = self.mainwindow.settings.value("lastplot/xphysical", False, type=bool)
         yphys = self.mainwindow.settings.value("lastplot/yphysical", False, type=bool)
         self.xPhysicalCheck.setChecked(xphys)
@@ -217,18 +218,19 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             xunits = xlabel.split("(")[-1].split(")")[0]
             x *= {"ms": 1000, "µs": 1e6, "kHz": 1e-3}.get(xunits, 1)
         msg = f"x={x:.3f} {xunits}, y={y:.1f}"
-        self.mainwindow.statusLabel1.setText(msg)
+        if self.mainwindow is not None:
+            self.mainwindow.statusLabel1.setText(msg)
 
-    def mouseClicked(self, evt: QEvent) -> None:
+    def mouseDoubleClickEvent(self, evt: QtGui.QMouseEvent | None) -> None:
         """If user double clicks, start auto-ranging the plot.
         If double-click on an axis label/tick area, auto-range that axis
         If double-click on the plot area, auto-range both axes
         """
         # For now, ignore single-click events.
-        if not evt.double():
+        if evt is None:
             return
 
-        pos = evt.scenePos()
+        pos = evt.pos()
         pw = self.plotWidget
         # If you needed to know the position in graphed coordinates, use:
         # view_pos = pw.getViewBox().mapSceneToView(pos)
@@ -269,7 +271,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     def channelTextChanged(self) -> None:
         self.quickFBComboBox.setCurrentIndex(0)
         self.quickErrComboBox.setCurrentIndex(0)
-        cnum = [self.SPECIAL_INVALID] * self.NUM_TRACES
+        ch_numbers = [self.SPECIAL_INVALID] * self.NUM_TRACES
         iserr = [False] * self.NUM_TRACES
         normterms = []
         try:
@@ -286,7 +288,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
                 try:
                     t = int(term)
                     if t >= 0 and t <= self.highestChan:
-                        cnum[i] = t
+                        ch_numbers[i] = t
                         prefix = "e" if iserr[i] else ""
                         normterms.append(f"{prefix}{t}")
                     else:
@@ -296,7 +298,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
                     continue
 
         finally:
-            for spin, checker, cnum, err in zip(self.channelSpinners, self.checkers, cnum, iserr):
+            for spin, checker, cnum, err in zip(self.channelSpinners, self.checkers, ch_numbers, iserr):
                 spin.setValue(cnum)
                 checker.setChecked(err)
                 prefix = "Err " if err else "Ch "
@@ -307,7 +309,9 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
     @pyqtSlot(int)
     def channelChanged(self, value: int) -> None:
-        sender = self.channelSpinners.index(self.sender())
+        sending_object = self.sender()
+        assert isinstance(sending_object, QtWidgets.QSpinBox)
+        sender = self.channelSpinners.index(sending_object)
         self.clearTrace(sender)
         self.channelListChanged()
 
@@ -325,7 +329,9 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
     @pyqtSlot(bool)
     def errStateChanged(self, _: bool) -> None:
-        sender = self.checkers.index(self.sender())
+        sending_object = self.sender()
+        assert isinstance(sending_object, QtWidgets.QCheckBox)
+        sender = self.checkers.index(sending_object)
         self.clearTrace(sender)
         prefix = "Err " if self.checkers[sender].isChecked() else "Ch "
         self.channelSpinners[sender].setPrefix(prefix)
@@ -473,7 +479,8 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         ax.setLabel(label, units=units)
         ax.setScale(scale)
         pw.enableAutoRange("x")
-        self.mainwindow.settings.setValue("lastplot/xphysical", self.xPhysicalCheck.isChecked())
+        if self.mainwindow is not None:
+            self.mainwindow.settings.setValue("lastplot/xphysical", self.xPhysicalCheck.isChecked())
 
     @pyqtSlot()
     def yPhysicalChanged(self) -> None:
@@ -517,7 +524,8 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         ax = self.plotWidget.getAxis("left")
         ax.setScale(scale)
         ax.setLabel(label, units=units)
-        self.mainwindow.settings.setValue("lastplot/yphysical", self.yPhysicalCheck.isChecked())
+        if self.mainwindow is not None:
+            self.mainwindow.settings.setValue("lastplot/yphysical", self.yPhysicalCheck.isChecked())
 
     @pyqtSlot()
     def clearAllTraces(self) -> None:
@@ -550,8 +558,9 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         plitem = self.plotWidget.getPlotItem()
         xgrid = plitem.axes["bottom"]["item"].grid
         ygrid = plitem.axes["left"]["item"].grid
-        self.mainwindow.settings.setValue("lastplot/xgrid", xgrid)
-        self.mainwindow.settings.setValue("lastplot/ygrid", ygrid)
+        if self.mainwindow is not None:
+            self.mainwindow.settings.setValue("lastplot/xgrid", xgrid)
+            self.mainwindow.settings.setValue("lastplot/ygrid", ygrid)
 
         self.closed.emit()
         if event is not None:

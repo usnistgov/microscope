@@ -40,3 +40,10 @@ microscope = ["ui/*.ui", "ui/*.png"]
 
 [tool.setuptools_scm]
 version_file = "microscope/_version.py"
+
+[tool.mypy]
+disable_error_code = ["import-untyped"]
+exclude = [
+    "demo"
+    ]
+disallow_untyped_defs = true
