@@ -58,7 +58,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             return _standardColors[-1]
 
     def __init__(self, parent: QtWidgets.QWidget | None,
-                 channel_groups, isTDM=False) -> None:
+                 channel_groups: list[ChannelGroup], isTDM: bool = False):
         QtWidgets.QWidget.__init__(self, parent)
         self.mainwindow = parent
         PyQt5.uic.loadUi(os.path.join(os.path.dirname(__file__), "ui/plotwindow.ui"), self)
@@ -221,7 +221,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         if self.mainwindow is not None:
             self.mainwindow.statusLabel1.setText(msg)
 
-    def mouseDoubleClickEvent(self, evt: QtGui.QMouseEvent | None) -> None:
+    def mouseClicked(self, evt: QtGui.QMouseEvent | None) -> None:
         """If user double clicks, start auto-ranging the plot.
         If double-click on an axis label/tick area, auto-range that axis
         If double-click on the plot area, auto-range both axes
@@ -554,7 +554,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     closed = pyqtSignal()
 
     @pyqtSlot()
-    def closeEvent(self, event: QEvent | None):
+    def closeEvent(self, event: QEvent | None) -> None:
         plitem = self.plotWidget.getPlotItem()
         xgrid = plitem.axes["bottom"]["item"].grid
         ygrid = plitem.axes["left"]["item"].grid

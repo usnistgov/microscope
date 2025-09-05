@@ -7,5 +7,5 @@ class ChannelGroup:
     nChan: int
 
     @property
-    def lastChan(self):
+    def lastChan(self) -> int:
         return self.firstChan + self.nChan - 1

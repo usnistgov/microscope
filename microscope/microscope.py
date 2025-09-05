@@ -44,7 +44,7 @@ def version_message() -> str:
     return f"This is microscope version {__version__}"
 
 
-def read_channels_json_file(args: argparse.Namespace):
+def read_channels_json_file(args: argparse.Namespace) -> None:
     try:
         HOME = pathlib.Path.home()
         with open(f"{HOME}/.dastard/channels.json", "r", encoding="ascii") as fp:

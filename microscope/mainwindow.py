@@ -13,7 +13,7 @@ from .dialogs import AboutDialog, HelpDialog
 from .channel_group import ChannelGroup
 
 
-def find_resource(filename):
+def find_resource(filename: str) -> str:
     package_name = "microscope"
     return str(importlib.resources.files(package_name).joinpath(filename))
 
