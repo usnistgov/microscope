@@ -30,14 +30,14 @@ class ZMQSubscriber(QtCore.QObject):
         self.running = False
 
     @staticmethod
-    def stringcode(chanindex: int) -> str:
-        return struct.pack("<H", chanindex).decode()
+    def stringcode(chanindex: int) -> bytes:
+        return struct.pack("<H", chanindex)
 
     def subscribe(self, chanindex: int) -> None:
-        self.socket.setsockopt_string(zmq.SUBSCRIBE, self.stringcode(chanindex))
+        self.socket.setsockopt(zmq.SUBSCRIBE, self.stringcode(chanindex))
 
     def unsubscribe(self, chanindex: int) -> None:
-        self.socket.setsockopt_string(zmq.UNSUBSCRIBE, self.stringcode(chanindex))
+        self.socket.setsockopt(zmq.UNSUBSCRIBE, self.stringcode(chanindex))
 
     def data_monitor_loop(self) -> None:
         if self.quit_once:
