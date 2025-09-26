@@ -534,12 +534,12 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
     def clearTrace(self, traceIdx: int) -> None:
         trace = self.traces[traceIdx]
+        trace.clearhistory()
         curve = trace.curve
         if curve is None:
             return
         self.plotWidget.removeItem(curve)
         trace.curve = None
-        trace.previousRecords.clear()
 
     @pyqtSlot()
     def redrawAll(self) -> None:

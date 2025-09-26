@@ -63,13 +63,16 @@ class PlotTrace:
         if not FFT:
             self.previousPSD.clear()
 
+    def clearhistory(self) -> None:
+        self.previousRecords.clear()
+        self.previousPartners.clear()
+        self.previousPSD.clear()
+
     def saverecord(self, record: DastardRecord, isPartner: bool = False) -> None:
         # If the record is not compatible with previous, clear the queue.
         if len(self.previousRecords) > 0:
             if record.incompatible(self.previousRecords[-1]):
-                self.previousRecords.clear()
-                self.previousPartners.clear()
-                self.previousPSD.clear()
+                self.clearhistory()
 
         if isPartner:
             self.previousPartners.append(record)
