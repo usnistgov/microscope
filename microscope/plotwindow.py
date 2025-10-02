@@ -173,6 +173,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         if not self.isTDM:
             self.plotTypeComboBox.model().item(3).setEnabled(False)
         pw = pg.PlotWidget()
+        pw.setMinimumSize(300, 200)
         self.plotWidget = pw
         pw.setWindowTitle("LJH pulse record")
         assert self.mainwindow is not None
