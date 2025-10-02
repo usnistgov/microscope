@@ -86,6 +86,9 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.spinBox_nAverage.valueChanged.connect(self.changeAverage)
         self.plotTypeComboBox.currentIndexChanged.connect(self.plotTypeChanged)
         self.quickChanEdit.editingFinished.connect(self.channelTextChanged)
+        self.first_click_location = None
+        self.xy_message = ""
+        self.delta_message = ""
 
     @pyqtSlot(int)
     def changeAverage(self, n: int) -> None:
@@ -220,31 +223,56 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             xunits = xlabel.split("(")[-1].split(")")[0]
             x *= {"ms": 1000, "µs": 1e6, "kHz": 1e-3}.get(xunits, 1)
         msg = f"x={x:.3f} {xunits}, y={y:.1f}"
+        self.display_status_message(msg)
+
+    def display_status_message(self, xy: str | None = None, delta: str | None = None) -> None:
+        if xy is not None:
+            self.xy_message = xy
+        if delta is not None:
+            self.delta_message = delta
         if self.mainwindow is not None:
+            msg = self.xy_message
+            if len(self.delta_message) > 0:
+                msg = f"{msg}.    {self.delta_message}"
+            # print(f"{xy=}, {delta=}  {msg=}")
             self.mainwindow.statusLabel1.setText(msg)
 
-    def mouseClicked(self, evt: QtGui.QMouseEvent | None) -> None:
+    def mouseClicked(self, event: QtGui.QMouseEvent | None) -> None:
         """If user double clicks, start auto-ranging the plot.
         If double-click on an axis label/tick area, auto-range that axis
         If double-click on the plot area, auto-range both axes
         """
-        # For now, ignore single-click events.
-        if evt is None:
+        if event is None:
             return
 
-        pos = evt.pos()
+        # Ignore non-left-button events.
+        if event.button() != Qt.LeftButton:
+            return
+
+        pos = event.scenePos()
         pw = self.plotWidget
+
+        # Handle single-click as a way to find delta-x,y and print in status bar.
+        if not event.double():
+            click_location = pw.plotItem.vb.mapSceneToView(pos)
+            if self.first_click_location is None:
+                self.first_click_location = click_location
+                self.display_status_message(delta="")
+            else:
+                dx = click_location.x() - self.first_click_location.x()
+                dy = click_location.y() - self.first_click_location.y()
+                D = "\u0394"
+                delta_msg = f"{D}x={dx:.3f}, {D}y={dy:.3f}"
+                self.first_click_location = None
+                self.display_status_message(delta=delta_msg)
+            return
+
+        items = pw.scene().items(pos)
+        x = pw.getAxis("bottom") in items
+        y = pw.getAxis("left") in items
         # If you needed to know the position in graphed coordinates, use:
         # view_pos = pw.getViewBox().mapSceneToView(pos)
-
-        whichaxis = "xy"
-        x_axis_rect = pw.getAxis("bottom").sceneBoundingRect()
-        y_axis_rect = pw.getAxis("left").sceneBoundingRect()
-        if x_axis_rect.contains(pos):
-            whichaxis = "x"
-        elif y_axis_rect.contains(pos):
-            whichaxis = "y"
-        pw.enableAutoRange(whichaxis)
+        pw.enableAutoRange(x=x, y=y)
 
     @pyqtSlot(bool)
     def pausePressed(self, paused: bool) -> None: pass
