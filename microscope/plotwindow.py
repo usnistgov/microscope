@@ -568,7 +568,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
                 xmin = value["xmin"]
             if value["xmax"] is not None:
                 xmax = value["xmax"]
-            pw.setYRange(xmin, xmax)
+            pw.setXRange(xmin, xmax)
 
     @pyqtSlot()
     def redrawAll(self) -> None:

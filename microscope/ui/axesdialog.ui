@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Axis ranges</string>
+   <string>Axis ranges (enter in raw units)</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
