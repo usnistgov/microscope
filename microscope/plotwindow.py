@@ -548,8 +548,27 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             value = dialog.get_values()
             print(f"Value from dialog: {value}")
-        else:
-            print("Dialog canceled.")
+            self.setAxesRanges(value)
+
+    def setAxesRanges(self, value: dict[str, float | None]) -> None:
+        pw = self.plotWidget
+        auto_x = value["xmax"] is None and value["xmin"] is None
+        auto_y = value["ymax"] is None and value["ymin"] is None
+        pw.enableAutoRange("x", enable=auto_x)
+        pw.enableAutoRange("y", enable=auto_y)
+        [xmin, xmax], [ymin, ymax] = pw.viewRange()
+        if not auto_y:
+            if value["ymin"] is not None:
+                ymin = value["ymin"]
+            if value["ymax"] is not None:
+                ymax = value["ymax"]
+            pw.setYRange(ymin, ymax)
+        if not auto_x:
+            if value["xmin"] is not None:
+                xmin = value["xmin"]
+            if value["xmax"] is not None:
+                xmax = value["xmax"]
+            pw.setYRange(xmin, xmax)
 
     @pyqtSlot()
     def redrawAll(self) -> None:
