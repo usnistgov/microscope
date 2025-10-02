@@ -216,14 +216,34 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             x = 10**x
         if logy:
             y = 10**y
-        xlabel = p1.getAxis("bottom").labelString()
+        x, xunits = self.xwithunits(x)
+        y, yunits = self.ywithunits(y)
+        msg = f"x={x:.3f} {xunits}, y={y:.1f} {yunits}"
+        self.display_status_message(msg)
+
+    def xwithunits(self, x: float) -> tuple[float, str]:
+        ax = self.plotWidget.getAxis("bottom")
+        xlabel = ax.labelString()
         if "Samples after" in xlabel:
             xunits = "samples"
+            scale = 1.0
         else:
             xunits = xlabel.split("(")[-1].split(")")[0]
-            x *= {"ms": 1000, "µs": 1e6, "kHz": 1e-3}.get(xunits, 1)
-        msg = f"x={x:.3f} {xunits}, y={y:.1f}"
-        self.display_status_message(msg)
+            scale = ax.scale
+            scale *= {"ms": 1e3, "µs": 1e6, "kHz": 1e-3}.get(xunits, 1)
+        return x * scale, xunits
+
+    def ywithunits(self, y: float) -> tuple[float, str]:
+        ax = self.plotWidget.getAxis("left")
+        ylabel = ax.labelString()
+        if "(" in ylabel:
+            yunits = ylabel.split("(")[-1].split(")")[0]
+            scale = ax.scale
+            scale *= {"mV": 1e3, "µV": 1e6}.get(yunits, 1)
+        else:
+            scale = 1.0
+            yunits = "\b"
+        return y * scale, yunits
 
     def display_status_message(self, xy: str | None = None, delta: str | None = None) -> None:
         if xy is not None:
@@ -234,7 +254,6 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             msg = self.xy_message
             if len(self.delta_message) > 0:
                 msg = f"{msg}.    {self.delta_message}"
-            # print(f"{xy=}, {delta=}  {msg=}")
             self.mainwindow.statusLabel1.setText(msg)
 
     def mouseClicked(self, event: QtGui.QMouseEvent | None) -> None:
@@ -261,8 +280,10 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             else:
                 dx = click_location.x() - self.first_click_location.x()
                 dy = click_location.y() - self.first_click_location.y()
+                dx, xunits = self.xwithunits(dx)
+                dy, yunits = self.ywithunits(dy)
                 D = "\u0394"
-                delta_msg = f"{D}x={dx:.3f}, {D}y={dy:.3f}"
+                delta_msg = f"{D}x={dx:.3f} {xunits}, {D}y={dy:.3f} {yunits}"
                 self.first_click_location = None
                 self.display_status_message(delta=delta_msg)
             return
@@ -543,6 +564,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         elif self.isErrvsFB:
             self.yPhysicalCheck.setChecked(False)
             label = "TES signal"
+            units = ""
 
         elif phys:
             scale = vperarb
