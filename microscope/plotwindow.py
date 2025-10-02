@@ -9,6 +9,7 @@ import pyqtgraph as pg
 # other non-user imports
 import numpy as np
 import os
+import re
 
 # Microscope imports
 from .channel_group import ChannelGroup
@@ -224,22 +225,35 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     def xwithunits(self, x: float) -> tuple[float, str]:
         ax = self.plotWidget.getAxis("bottom")
         xlabel = ax.labelString()
+        match = re.search(r"\((.*?)\)", xlabel)
         if "Samples after" in xlabel:
             xunits = "samples"
             scale = 1.0
-        else:
-            xunits = xlabel.split("(")[-1].split(")")[0]
+        elif match is not None:
+            xunits = match.group(0)[1:-1]
             scale = ax.scale
-            scale *= {"ms": 1e3, "µs": 1e6, "kHz": 1e-3}.get(xunits, 1)
+            if xunits[0] == "m":
+                scale *= 1000
+            elif xunits[0] == "µ":
+                scale *= 1e6
+            elif xunits[0] == "k":
+                scale *= 1e-3
         return x * scale, xunits
 
     def ywithunits(self, y: float) -> tuple[float, str]:
         ax = self.plotWidget.getAxis("left")
         ylabel = ax.labelString()
-        if "(" in ylabel:
-            yunits = ylabel.split("(")[-1].split(")")[0]
+        match = re.search(r"\((.*?)\)", ylabel)
+        if match is not None:
+            yunits = match.group(0)[1:-1]
+            print(f"Units: {yunits=}")
             scale = ax.scale
-            scale *= {"mV": 1e3, "µV": 1e6}.get(yunits, 1)
+            if yunits[0] == "m":
+                scale *= 1000
+            elif yunits[0] == "µ":
+                scale *= 1e6
+            elif yunits[0] == "k":
+                scale *= 1e-3
         else:
             scale = 1.0
             yunits = "\b"
