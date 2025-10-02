@@ -338,6 +338,22 @@ baseline levels to zero or staggered values</string>
      <item>
       <layout class="QHBoxLayout" name="belowPlotHLayout">
        <item>
+        <widget class="QPushButton" name="axesButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>Open dialog to fix axis ranges</string>
+         </property>
+         <property name="text">
+          <string>Axes...</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="pauseButton">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -616,6 +632,22 @@ baseline levels to zero or staggered values</string>
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>axesButton</sender>
+   <signal>clicked()</signal>
+   <receiver>plotContainer</receiver>
+   <slot>launchAxesDialog()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>216</x>
+     <y>388</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>175</x>
+     <y>390</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>pausePressed(bool)</slot>
@@ -623,5 +655,6 @@ baseline levels to zero or staggered values</string>
   <slot>yAxisLog(bool)</slot>
   <slot>clearAllTraces()</slot>
   <slot>savePlot()</slot>
+  <slot>launchAxesDialog()</slot>
  </slots>
 </ui>

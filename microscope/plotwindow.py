@@ -14,6 +14,7 @@ import os
 from .channel_group import ChannelGroup
 from .dastardrecord import DastardRecord
 from .plottraces import PlotTrace
+from .dialogs import AxisRangeDialog
 
 
 def clear_grid_layout(grid_layout: QtWidgets.QGridLayout) -> None:
@@ -540,6 +541,15 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             return
         self.plotWidget.removeItem(curve)
         trace.curve = None
+
+    @pyqtSlot()
+    def launchAxesDialog(self) -> None:
+        dialog = AxisRangeDialog(self)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            value = dialog.get_values()
+            print(f"Value from dialog: {value}")
+        else:
+            print("Dialog canceled.")
 
     @pyqtSlot()
     def redrawAll(self) -> None:
