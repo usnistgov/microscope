@@ -246,7 +246,6 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         match = re.search(r"\((.*?)\)", ylabel)
         if match is not None:
             yunits = match.group(0)[1:-1]
-            print(f"Units: {yunits=}")
             scale = ax.scale
             if yunits[0] == "m":
                 scale *= 1000
@@ -612,7 +611,6 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         dialog = AxisRangeDialog(self)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             value = dialog.get_values()
-            print(f"Value from dialog: {value}")
             self.setAxesRanges(value)
 
     def setAxesRanges(self, value: dict[str, float | None]) -> None:
