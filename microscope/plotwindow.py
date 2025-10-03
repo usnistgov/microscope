@@ -9,11 +9,13 @@ import pyqtgraph as pg
 # other non-user imports
 import numpy as np
 import os
+import re
 
 # Microscope imports
 from .channel_group import ChannelGroup
 from .dastardrecord import DastardRecord
 from .plottraces import PlotTrace
+from .dialogs import AxisRangeDialog
 
 
 def clear_grid_layout(grid_layout: QtWidgets.QGridLayout) -> None:
@@ -85,6 +87,9 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.spinBox_nAverage.valueChanged.connect(self.changeAverage)
         self.plotTypeComboBox.currentIndexChanged.connect(self.plotTypeChanged)
         self.quickChanEdit.editingFinished.connect(self.channelTextChanged)
+        self.first_click_location = None
+        self.xy_message = ""
+        self.delta_message = ""
 
     @pyqtSlot(int)
     def changeAverage(self, n: int) -> None:
@@ -172,6 +177,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         if not self.isTDM:
             self.plotTypeComboBox.model().item(3).setEnabled(False)
         pw = pg.PlotWidget()
+        pw.setMinimumSize(300, 200)
         self.plotWidget = pw
         pw.setWindowTitle("LJH pulse record")
         assert self.mainwindow is not None
@@ -211,38 +217,97 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             x = 10**x
         if logy:
             y = 10**y
-        xlabel = p1.getAxis("bottom").labelString()
+        x, xunits = self.xwithunits(x)
+        y, yunits = self.ywithunits(y)
+        msg = f"x={x:.3f} {xunits}, y={y:.1f} {yunits}"
+        self.display_status_message(msg)
+
+    def xwithunits(self, x: float) -> tuple[float, str]:
+        ax = self.plotWidget.getAxis("bottom")
+        xlabel = ax.labelString()
+        match = re.search(r"\((.*?)\)", xlabel)
         if "Samples after" in xlabel:
             xunits = "samples"
+            scale = 1.0
+        elif match is not None:
+            xunits = match.group(0)[1:-1]
+            scale = ax.scale
+            if xunits[0] == "m":
+                scale *= 1000
+            elif xunits[0] == "µ":
+                scale *= 1e6
+            elif xunits[0] == "k":
+                scale *= 1e-3
+        return x * scale, xunits
+
+    def ywithunits(self, y: float) -> tuple[float, str]:
+        ax = self.plotWidget.getAxis("left")
+        ylabel = ax.labelString()
+        match = re.search(r"\((.*?)\)", ylabel)
+        if match is not None:
+            yunits = match.group(0)[1:-1]
+            print(f"Units: {yunits=}")
+            scale = ax.scale
+            if yunits[0] == "m":
+                scale *= 1000
+            elif yunits[0] == "µ":
+                scale *= 1e6
+            elif yunits[0] == "k":
+                scale *= 1e-3
         else:
-            xunits = xlabel.split("(")[-1].split(")")[0]
-            x *= {"ms": 1000, "µs": 1e6, "kHz": 1e-3}.get(xunits, 1)
-        msg = f"x={x:.3f} {xunits}, y={y:.1f}"
+            scale = 1.0
+            yunits = "\b"
+        return y * scale, yunits
+
+    def display_status_message(self, xy: str | None = None, delta: str | None = None) -> None:
+        if xy is not None:
+            self.xy_message = xy
+        if delta is not None:
+            self.delta_message = delta
         if self.mainwindow is not None:
+            msg = self.xy_message
+            if len(self.delta_message) > 0:
+                msg = f"{msg}.    {self.delta_message}"
             self.mainwindow.statusLabel1.setText(msg)
 
-    def mouseClicked(self, evt: QtGui.QMouseEvent | None) -> None:
+    def mouseClicked(self, event: QtGui.QMouseEvent | None) -> None:
         """If user double clicks, start auto-ranging the plot.
         If double-click on an axis label/tick area, auto-range that axis
         If double-click on the plot area, auto-range both axes
         """
-        # For now, ignore single-click events.
-        if evt is None:
+        if event is None:
             return
 
-        pos = evt.pos()
+        # Ignore non-left-button events.
+        if event.button() != Qt.LeftButton:
+            return
+
+        pos = event.scenePos()
         pw = self.plotWidget
+
+        # Handle single-click as a way to find delta-x,y and print in status bar.
+        if not event.double():
+            click_location = pw.plotItem.vb.mapSceneToView(pos)
+            if self.first_click_location is None:
+                self.first_click_location = click_location
+                self.display_status_message(delta="")
+            else:
+                dx = click_location.x() - self.first_click_location.x()
+                dy = click_location.y() - self.first_click_location.y()
+                dx, xunits = self.xwithunits(dx)
+                dy, yunits = self.ywithunits(dy)
+                D = "\u0394"
+                delta_msg = f"{D}x={dx:.3f} {xunits}, {D}y={dy:.3f} {yunits}"
+                self.first_click_location = None
+                self.display_status_message(delta=delta_msg)
+            return
+
+        items = pw.scene().items(pos)
+        x = pw.getAxis("bottom") in items
+        y = pw.getAxis("left") in items
         # If you needed to know the position in graphed coordinates, use:
         # view_pos = pw.getViewBox().mapSceneToView(pos)
-
-        whichaxis = "xy"
-        x_axis_rect = pw.getAxis("bottom").sceneBoundingRect()
-        y_axis_rect = pw.getAxis("left").sceneBoundingRect()
-        if x_axis_rect.contains(pos):
-            whichaxis = "x"
-        elif y_axis_rect.contains(pos):
-            whichaxis = "y"
-        pw.enableAutoRange(whichaxis)
+        pw.enableAutoRange(x=x, y=y)
 
     @pyqtSlot(bool)
     def pausePressed(self, paused: bool) -> None: pass
@@ -513,6 +578,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         elif self.isErrvsFB:
             self.yPhysicalCheck.setChecked(False)
             label = "TES signal"
+            units = ""
 
         elif phys:
             scale = vperarb
@@ -540,6 +606,34 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             return
         self.plotWidget.removeItem(curve)
         trace.curve = None
+
+    @pyqtSlot()
+    def launchAxesDialog(self) -> None:
+        dialog = AxisRangeDialog(self)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            value = dialog.get_values()
+            print(f"Value from dialog: {value}")
+            self.setAxesRanges(value)
+
+    def setAxesRanges(self, value: dict[str, float | None]) -> None:
+        pw = self.plotWidget
+        auto_x = value["xmax"] is None and value["xmin"] is None
+        auto_y = value["ymax"] is None and value["ymin"] is None
+        pw.enableAutoRange("x", enable=auto_x)
+        pw.enableAutoRange("y", enable=auto_y)
+        [xmin, xmax], [ymin, ymax] = pw.viewRange()
+        if not auto_y:
+            if value["ymin"] is not None:
+                ymin = value["ymin"]
+            if value["ymax"] is not None:
+                ymax = value["ymax"]
+            pw.setYRange(ymin, ymax)
+        if not auto_x:
+            if value["xmin"] is not None:
+                xmin = value["xmin"]
+            if value["xmax"] is not None:
+                xmax = value["xmax"]
+            pw.setXRange(xmin, xmax)
 
     @pyqtSlot()
     def redrawAll(self) -> None:

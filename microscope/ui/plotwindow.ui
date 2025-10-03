@@ -7,8 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>614</width>
-    <height>415</height>
+    <height>380</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
@@ -27,12 +33,12 @@
     <number>4</number>
    </property>
    <item>
-    <layout class="QVBoxLayout" name="chanSelectLayout" stretch="0,0,0,0,0,0,0,0,0,0,0,0">
+    <layout class="QVBoxLayout" name="chanSelectLayout" stretch="0,0,0,0,0,0,0,0">
      <property name="spacing">
       <number>6</number>
      </property>
      <property name="topMargin">
-      <number>7</number>
+      <number>0</number>
      </property>
      <item>
       <layout class="QGridLayout" name="channelNameLayout">
@@ -126,49 +132,43 @@
       </layout>
      </item>
      <item>
-      <spacer name="verticalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <property name="topMargin">
+        <number>0</number>
        </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QCheckBox" name="averageTraces">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="toolTip">
-        <string>Whether to average successive records</string>
-       </property>
-       <property name="text">
-        <string>Average Traces</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="spinBox_nAverage">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="toolTip">
-        <string>How many successive records to average (if averaging)</string>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>128</number>
-       </property>
-       <property name="value">
-        <number>64</number>
-       </property>
-      </widget>
+       <item>
+        <widget class="QCheckBox" name="averageTraces">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="toolTip">
+          <string>Whether to average successive records</string>
+         </property>
+         <property name="text">
+          <string>Avg. Traces</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="spinBox_nAverage">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="toolTip">
+          <string>How many successive records to average (if averaging)</string>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>128</number>
+         </property>
+         <property name="value">
+          <number>64</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <widget class="QComboBox" name="plotTypeComboBox">
@@ -192,13 +192,6 @@
          <string>Err vs FB</string>
         </property>
        </item>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="pulseAxesLabel">
-       <property name="text">
-        <string>Pulse axes:</string>
-       </property>
       </widget>
      </item>
      <item>
@@ -258,13 +251,6 @@ baseline levels to zero or staggered values</string>
       </layout>
      </item>
      <item>
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Physical units?</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <property name="topMargin">
         <number>0</number>
@@ -272,6 +258,13 @@ baseline levels to zero or staggered values</string>
        <property name="rightMargin">
         <number>0</number>
        </property>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Phys.?</string>
+         </property>
+        </widget>
+       </item>
        <item>
         <widget class="QCheckBox" name="xPhysicalCheck">
          <property name="text">
@@ -299,7 +292,7 @@ baseline levels to zero or staggered values</string>
        <property name="sizeHint" stdset="0">
         <size>
          <width>20</width>
-         <height>40</height>
+         <height>0</height>
         </size>
        </property>
       </spacer>
@@ -319,6 +312,12 @@ baseline levels to zero or staggered values</string>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="minimumSize">
+        <size>
+         <width>100</width>
+         <height>100</height>
+        </size>
+       </property>
        <property name="frameShape">
         <enum>QFrame::Box</enum>
        </property>
@@ -330,6 +329,22 @@ baseline levels to zero or staggered values</string>
      </item>
      <item>
       <layout class="QHBoxLayout" name="belowPlotHLayout">
+       <item>
+        <widget class="QPushButton" name="axesButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>Open dialog to fix axis ranges</string>
+         </property>
+         <property name="text">
+          <string>Axes...</string>
+         </property>
+        </widget>
+       </item>
        <item>
         <widget class="QPushButton" name="pauseButton">
          <property name="sizePolicy">
@@ -568,8 +583,8 @@ baseline levels to zero or staggered values</string>
    <slot>close()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>632</x>
-     <y>424</y>
+     <x>593</x>
+     <y>409</y>
     </hint>
     <hint type="destinationlabel">
      <x>550</x>
@@ -600,12 +615,28 @@ baseline levels to zero or staggered values</string>
    <slot>clearAllTraces()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>492</x>
-     <y>424</y>
+     <x>508</x>
+     <y>409</y>
     </hint>
     <hint type="destinationlabel">
      <x>373</x>
      <y>396</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>axesButton</sender>
+   <signal>clicked()</signal>
+   <receiver>plotContainer</receiver>
+   <slot>launchAxesDialog()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>216</x>
+     <y>388</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>175</x>
+     <y>390</y>
     </hint>
    </hints>
   </connection>
@@ -616,5 +647,6 @@ baseline levels to zero or staggered values</string>
   <slot>yAxisLog(bool)</slot>
   <slot>clearAllTraces()</slot>
   <slot>savePlot()</slot>
+  <slot>launchAxesDialog()</slot>
  </slots>
 </ui>

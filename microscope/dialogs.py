@@ -31,3 +31,33 @@ class HelpDialog(QtWidgets.QDialog):
         super().__init__(parent)
 
         PyQt5.uic.loadUi(find_resource("ui/help.ui"), self)
+
+
+class AxisRangeDialog(QtWidgets.QDialog):
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+        super().__init__(parent)
+
+        PyQt5.uic.loadUi(find_resource("ui/axesdialog.ui"), self)
+
+    def get_values(self) -> dict[str, float | None]:
+        """Get the line-edit values, as a dict.
+
+        Returns
+        -------
+        dict[str, float | None]
+            The axis range limit, or None if none, for each of ("xmax", "xmin", "ymax", "ymin")
+        """
+
+        def get(lineedit) -> float | None:
+            val = lineedit.text()
+            try:
+                return float(val)
+            except ValueError:
+                return None
+
+        return {
+            "xmax": get(self.xMaxLineEdit),
+            "xmin": get(self.xMinLineEdit),
+            "ymax": get(self.yMaxLineEdit),
+            "ymin": get(self.yMinLineEdit),
+        }

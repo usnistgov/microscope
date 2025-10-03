@@ -6,14 +6,26 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>709</width>
-    <height>484</height>
+    <width>500</width>
+    <height>339</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <property name="leftMargin">
      <number>4</number>
@@ -22,6 +34,9 @@
      <number>4</number>
     </property>
     <property name="rightMargin">
+     <number>4</number>
+    </property>
+    <property name="bottomMargin">
      <number>4</number>
     </property>
     <item>
@@ -100,12 +115,12 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>709</width>
+     <width>500</width>
      <height>37</height>
     </rect>
    </property>
    <property name="sizePolicy">
-    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
      <horstretch>0</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
@@ -313,8 +328,8 @@
    <slot>close()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>61</x>
-     <y>311</y>
+     <x>690</x>
+     <y>444</y>
     </hint>
     <hint type="destinationlabel">
      <x>66</x>
