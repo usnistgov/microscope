@@ -163,9 +163,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             for j in range(nentries):
                 cstart = cg.firstChan + j * self.NUM_TRACES
                 cend = cstart + self.NUM_TRACES - 1
-                if cend > cg.lastChan:
-                    cstart -= (cend - cg.lastChan)
-                    cend = cg.lastChan
+                cend = min(cend, cg.lastChan)
                 label = f"Ch {cstart}-{cend} (group {i})"
                 self.quickFBComboBox.addItem(label)
                 self.quickSelectIndex.append((cstart, cend))
