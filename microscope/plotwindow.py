@@ -422,11 +422,13 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
     @pyqtSlot(int)
     def plotTypeChanged(self, index: int) -> None:
-        self.clearAllTraces()
+        self.clearAllTraces(clearSummaries=False)
         isspectrum = self.isSpectrum
         self.plotWidget.setLogMode(isspectrum, isspectrum)
         self.xPhysicalChanged()
         self.yPhysicalChanged()
+        self.subtractBaselineMenu.setDisabled(self.isTimeseries)
+        self.averageTraces.setDisabled(self.isTimeseries)
         if self.isTDM:
             errvfb = (index == PlotTrace.TYPE_ERR_FB)
             self.quickErrComboBox.setDisabled(errvfb)
@@ -515,6 +517,10 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         return self.plotTypeComboBox.currentIndex() == PlotTrace.TYPE_PSD
 
     @property
+    def isTimeseries(self) -> bool:
+        return self.plotTypeComboBox.currentIndex() == PlotTrace.TYPE_TIMESERIES
+
+    @property
     def isErrvsFB(self) -> bool:
         return self.isTDM and (self.plotTypeComboBox.currentIndex() == PlotTrace.TYPE_ERR_FB)
 
@@ -594,13 +600,13 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             self.mainwindow.settings.setValue("lastplot/yphysical", self.yPhysicalCheck.isChecked())
 
     @pyqtSlot()
-    def clearAllTraces(self) -> None:
+    def clearAllTraces(self, clearSummaries: bool = True) -> None:
         for traceIdx in range(self.NUM_TRACES):
-            self.clearTrace(traceIdx)
+            self.clearTrace(traceIdx, clearSummaries)
 
-    def clearTrace(self, traceIdx: int) -> None:
+    def clearTrace(self, traceIdx: int, clearSummaries: bool = False) -> None:
         trace = self.traces[traceIdx]
-        trace.clearhistory()
+        trace.clearhistory(clearSummaries)
         curve = trace.curve
         if curve is None:
             return
