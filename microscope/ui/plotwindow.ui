@@ -174,7 +174,7 @@
       <widget class="QComboBox" name="plotTypeComboBox">
        <item>
         <property name="text">
-         <string>Timeseries</string>
+         <string>Pulse records</string>
         </property>
        </item>
        <item>
@@ -190,6 +190,11 @@
        <item>
         <property name="text">
          <string>Err vs FB</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Pulse rms Timeseries</string>
         </property>
        </item>
       </widget>
