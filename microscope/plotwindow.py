@@ -465,6 +465,10 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             return
 
         sbtext = self.subtractBaselineMenu.currentText()
+        tstext = ""
+        if self.isTimeseries:
+            tstext = self.timeseriesComboBox.currentText()
+
         waterfallSpacing = self.waterfallDeltaSpin.value()
         average = self.averageTraces.isChecked()
         self.lastRecord = record
@@ -478,8 +482,11 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             else:
                 s = record.summarize()
                 trace.summary_pulse_rms.append(s.pulse_rms)
+                trace.summary_pulse_avg.append(s.pulse_avg)
+                trace.summary_pulse_peak.append(s.pulse_peak)
+                trace.summary_pretrig_mean.append(s.pretrig_mean)
                 trace.summary_time_ns.append(s.triggerTime_ns)
-                trace.plotrecord(record, self.plotWidget, sbtext, waterfallSpacing, average)
+                trace.plotrecord(record, self.plotWidget, sbtext, tstext, waterfallSpacing, average)
         if self.isErrvsFB:
             self.setLimits(xMin=self.YMIN, xMax=self.YMAX / 2)
         elif self.isSpectrum:
@@ -647,12 +654,13 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     @pyqtSlot()
     def redrawAll(self) -> None:
         sbtext = self.subtractBaselineMenu.currentText()
+        tstext = self.timeseriesComboBox.currentText()
         iswaterfall = "Waterfall" in sbtext
         self.waterfallDeltaSpin.setEnabled(iswaterfall)
         spacing = self.waterfallDeltaSpin.value()
         average = self.averageTraces.isChecked()
         for trace in self.traces:
-            trace.drawStoredRecord(sbtext, spacing, average)
+            trace.drawStoredRecord(sbtext, tstext, spacing, average)
 
     closed = pyqtSignal()
 
