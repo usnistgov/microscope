@@ -27,10 +27,11 @@ class timeAxis:
 
 
 class PlotTrace:
-    TYPE_TIMESERIES = 0
+    TYPE_PULSERECORD = 0
     TYPE_PSD = 1
     TYPE_RT_PSD = 2
     TYPE_ERR_FB = 3
+    TYPE_TIMESERIES = 4
 
     DEFAULT_REDRAW_TIME = 0.25  # seconds
 
@@ -44,7 +45,7 @@ class PlotTrace:
         self.previousPartners: deque[DastardRecord] = deque([], traceHistoryLength)
         self.previousPSD: deque[np.ndarray] = deque([], traceHistoryLength)
         self.computingFFT = False
-        self.plotType = self.TYPE_TIMESERIES
+        self.plotType = self.TYPE_PULSERECORD
         self.redrawTime_ns = 1e9 * self.DEFAULT_REDRAW_TIME
         self.lastdrawTime_ns = np.uint64(0)
 
@@ -116,7 +117,7 @@ class PlotTrace:
             return
         self.lastdrawTime_ns = record.triggerTime_ns
 
-        if self.plotType == self.TYPE_TIMESERIES:
+        if self.plotType == self.TYPE_PULSERECORD:
             if average:
                 record = meanDastardRecord(self.previousRecords)
             if "Raw" in sbtext:
@@ -151,6 +152,9 @@ class PlotTrace:
                 partner = meanDastardRecord(self.previousPartners)
             x = np.asarray(record.record, dtype=float)
             ydata = np.asarray(partner.record, dtype=float)
+
+        elif self.plotType == self.TYPE_TIMESERIES:
+            pass
 
         self.curve.setData(x, ydata)
 
