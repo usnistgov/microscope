@@ -194,7 +194,7 @@
        </item>
        <item>
         <property name="text">
-         <string>Pulse rms Timeseries</string>
+         <string>Timeseries summary</string>
         </property>
        </item>
       </widget>

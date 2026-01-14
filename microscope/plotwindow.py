@@ -78,6 +78,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.setupPlot()
         self.xPhysicalCheck.toggled.connect(self.xPhysicalChanged)
         self.yPhysicalCheck.toggled.connect(self.yPhysicalChanged)
+        self.timeseriesComboBox.currentIndexChanged.connect(self.yPhysicalChanged)
         self.subtractBaselineMenu.currentIndexChanged.connect(self.redrawAll)
         self.quickFBComboBox.currentIndexChanged.connect(self.quickChannel)
         self.quickErrComboBox.currentIndexChanged.connect(self.quickChannel)
@@ -427,9 +428,12 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.plotWidget.setLogMode(isspectrum, isspectrum)
         self.xPhysicalChanged()
         self.yPhysicalChanged()
-        self.subtractBaselineMenu.setDisabled(self.isTimeseries)
-        self.averageTraces.setDisabled(self.isTimeseries)
-        self.timeseriesComboBox.setEnabled(self.isTimeseries)
+        isTS = self.isTimeseries
+        self.subtractBaselineMenu.setDisabled(isTS)
+        self.averageTraces.setDisabled(isTS)
+        self.xPhysicalCheck.setDisabled(isTS)
+        self.yPhysicalCheck.setDisabled(isTS)
+        self.timeseriesComboBox.setEnabled(isTS)
         if self.isTDM:
             errvfb = (index == PlotTrace.TYPE_ERR_FB)
             self.quickErrComboBox.setDisabled(errvfb)
@@ -596,6 +600,10 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             self.yPhysicalCheck.setChecked(False)
             label = "TES signal"
             units = ""
+
+        elif self.isTimeseries:
+            label = self.timeseriesComboBox.currentText()
+            units = "arbs"
 
         elif phys:
             scale = vperarb
