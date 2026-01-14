@@ -429,6 +429,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.yPhysicalChanged()
         self.subtractBaselineMenu.setDisabled(self.isTimeseries)
         self.averageTraces.setDisabled(self.isTimeseries)
+        self.timeseriesComboBox.setEnabled(self.isTimeseries)
         if self.isTDM:
             errvfb = (index == PlotTrace.TYPE_ERR_FB)
             self.quickErrComboBox.setDisabled(errvfb)
@@ -536,6 +537,9 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             label = "Feedback"
             units = "arbs"
             self.xPhysicalCheck.setChecked(False)
+        elif self.isTimeseries:
+            label = "Time relative to first pulse"
+            units = "s"
         elif self.xPhysicalCheck.isChecked():
             label = "Time after trigger"
             units = "s"

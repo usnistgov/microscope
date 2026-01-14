@@ -31,7 +31,7 @@ class PulseHistory:
         self.cap = capacity
         self.used = 0
         if shift is None:
-            shift = self.cap / 10
+            shift = max(self.cap // 10, 10)
         self.shift = shift
         self.data = np.zeros(self.cap, dtype=dtype)
 
@@ -76,7 +76,9 @@ class PlotTrace:
     def __init__(self, idx: int, color: str, traceHistoryLength: int) -> None:
         self.traceIdx = idx
         self.color = color
-        self.pen = pg.mkPen(color, width=1)
+        self.pen = pg.mkPen(color, width=1)  # for lines
+        self.brush = pg.mkBrush(color)  # for symbols
+
         self.curve: pg.PlotDataItem | None = None
         self.timeAx: timeAxis | None = None
         self.previousRecords: deque[DastardRecord] = deque([], traceHistoryLength)
@@ -160,7 +162,7 @@ class PlotTrace:
             return
         self.lastdrawTime_ns = record.triggerTime_ns
 
-        # Default plot arguments: lines, no symbol. (Override for timeseries plots.)
+        # Default plot arguments: lines, no symbol. (Override this for timeseries plots.)
         plotargs = {
             "symbol": None,
         }
@@ -202,12 +204,13 @@ class PlotTrace:
             ydata = np.asarray(partner.record, dtype=float)
 
         elif self.plotType == self.TYPE_TIMESERIES:
-            # x = self.summary_time_ns.series
+            x = self.summary_time_ns.series
+            x = (x[:] - x[0]) / 1e9
             ydata = self.summary_pulse_rms.series
-            x = np.arange(len(ydata))
             plotargs["symbol"] = "o"
-            plotargs["pen"] = None
-            plotargs["symbolsize"] = 3
+            plotargs["symbolPen"] = self.pen
+            plotargs["symbolSize"] = 5
+            plotargs["symbolBrush"] = self.brush
 
         self.curve.setData(x, ydata, **plotargs)
 

@@ -33,7 +33,7 @@
     <number>4</number>
    </property>
    <item>
-    <layout class="QVBoxLayout" name="chanSelectLayout" stretch="0,0,0,0,0,0,0,0">
+    <layout class="QVBoxLayout" name="chanSelectLayout" stretch="0,0,0,0,0,0,0,0,0">
      <property name="spacing">
       <number>6</number>
      </property>
@@ -195,6 +195,36 @@
        <item>
         <property name="text">
          <string>Pulse rms Timeseries</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="timeseriesComboBox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>Which summary to plot as a timeseries</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>   Pulse peak</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>   Pulse rms</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>   Pulse average</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>   Pretrigger mean</string>
         </property>
        </item>
       </widget>
