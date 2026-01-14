@@ -38,7 +38,6 @@ class PulseHistory:
     def _truncate(self, min_to_remove: int = 1):
         # Always remove at least min_to_remove, AND always at least self.shift
         nremove = max(min_to_remove, self.shift)
-        print(f"Truncating! Removing {nremove} values")
         self.data[:self.used - nremove] = self.data[nremove:self.used]
         self.used -= nremove
 
