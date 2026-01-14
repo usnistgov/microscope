@@ -213,8 +213,9 @@ class PlotTrace:
             x = self.summary_time_ns.series
             x = (x[:] - x[0]) / 1e9
             ydata = self.summary_named(tstext).series
+            plotargs["pen"] = None  # no line connecting points
             plotargs["symbol"] = "o"
-            plotargs["symbolPen"] = self.pen
+            plotargs["symbolPen"] = self.pen  # but use correct color to outline symbols
             plotargs["symbolSize"] = 5
             plotargs["symbolBrush"] = self.brush
 
