@@ -26,6 +26,43 @@ class timeAxis:
         return timeAxis(nPresamples, nSamples, timebase_sec, xsamples)
 
 
+class PulseHistory:
+    def __init__(self, capacity: int, shift: int | None = None, dtype: type = np.float32):
+        self.cap = capacity
+        self.used = 0
+        if shift is None:
+            shift = self.cap / 10
+        self.shift = shift
+        self.data = np.zeros(self.cap, dtype=dtype)
+
+    def _truncate(self, min_to_remove: int = 1):
+        # Always remove at least min_to_remove, AND always at least self.shift
+        nremove = max(min_to_remove, self.shift)
+        print(f"Truncating! Removing {nremove} values")
+        self.data[:self.used - nremove] = self.data[nremove:self.used]
+        self.used -= nremove
+
+    def append(self, value):
+        if self.used >= self.cap:
+            self._truncate()
+        self.data[self.used] = value
+        self.used += 1
+
+    def extend(self, values):
+        n = len(values)
+        if n + self.used >= self.cap:
+            self._truncate(n)
+        self.data[self.used:self.used + n] = values[:]
+        self.used += n
+
+    def clear(self):
+        self.used = 0
+
+    @property
+    def series(self):
+        return self.data[:self.used]
+
+
 class PlotTrace:
     TYPE_PULSERECORD = 0
     TYPE_PSD = 1
@@ -34,6 +71,7 @@ class PlotTrace:
     TYPE_TIMESERIES = 4
 
     DEFAULT_REDRAW_TIME = 0.25  # seconds
+    HISTORY_LENGTH = 65536  # enough for 1 hour at ~18 cps
 
     def __init__(self, idx: int, color: str, traceHistoryLength: int) -> None:
         self.traceIdx = idx
@@ -44,6 +82,8 @@ class PlotTrace:
         self.previousRecords: deque[DastardRecord] = deque([], traceHistoryLength)
         self.previousPartners: deque[DastardRecord] = deque([], traceHistoryLength)
         self.previousPSD: deque[np.ndarray] = deque([], traceHistoryLength)
+        self.summary_pulse_rms = PulseHistory(self.HISTORY_LENGTH, dtype=np.float32)
+        self.summary_time_ns = PulseHistory(self.HISTORY_LENGTH, dtype=np.uint64)
         self.computingFFT = False
         self.plotType = self.TYPE_PULSERECORD
         self.redrawTime_ns = 1e9 * self.DEFAULT_REDRAW_TIME
@@ -68,6 +108,8 @@ class PlotTrace:
         self.previousRecords.clear()
         self.previousPartners.clear()
         self.previousPSD.clear()
+        self.summary_pulse_rms.clear()
+        self.summary_time_ns.clear()
 
     def saverecord(self, record: DastardRecord, isPartner: bool = False) -> None:
         # If the record is not compatible with previous, clear the queue.
@@ -117,6 +159,11 @@ class PlotTrace:
             return
         self.lastdrawTime_ns = record.triggerTime_ns
 
+        # Default plot arguments: lines, no symbol. (Override for timeseries plots.)
+        plotargs = {
+            "symbol": None,
+        }
+
         if self.plotType == self.TYPE_PULSERECORD:
             if average:
                 record = meanDastardRecord(self.previousRecords)
@@ -154,9 +201,14 @@ class PlotTrace:
             ydata = np.asarray(partner.record, dtype=float)
 
         elif self.plotType == self.TYPE_TIMESERIES:
-            pass
+            # x = self.summary_time_ns.series
+            ydata = self.summary_pulse_rms.series
+            x = np.arange(len(ydata))
+            plotargs["symbol"] = "o"
+            plotargs["pen"] = None
+            plotargs["symbolsize"] = 3
 
-        self.curve.setData(x, ydata)
+        self.curve.setData(x, ydata, **plotargs)
 
     @property
     def isSpectrum(self) -> bool:

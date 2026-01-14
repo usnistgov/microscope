@@ -473,6 +473,9 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             if thisIsPartner:
                 trace.plotpartner(record, sbtext, waterfallSpacing, average)
             else:
+                s = record.summarize()
+                trace.summary_pulse_rms.append(s.pulse_rms)
+                trace.summary_time_ns.append(s.triggerTime_ns)
                 trace.plotrecord(record, self.plotWidget, sbtext, waterfallSpacing, average)
         if self.isErrvsFB:
             self.setLimits(xMin=self.YMIN, xMax=self.YMAX / 2)
