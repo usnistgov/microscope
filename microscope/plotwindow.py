@@ -78,6 +78,7 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         self.setupPlot()
         self.xPhysicalCheck.toggled.connect(self.xPhysicalChanged)
         self.yPhysicalCheck.toggled.connect(self.yPhysicalChanged)
+        self.timeseriesComboBox.currentIndexChanged.connect(self.yPhysicalChanged)
         self.subtractBaselineMenu.currentIndexChanged.connect(self.redrawAll)
         self.quickFBComboBox.currentIndexChanged.connect(self.quickChannel)
         self.quickErrComboBox.currentIndexChanged.connect(self.quickChannel)
@@ -422,11 +423,17 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
 
     @pyqtSlot(int)
     def plotTypeChanged(self, index: int) -> None:
-        self.clearAllTraces()
+        self.clearAllTraces(clearSummaries=False)
         isspectrum = self.isSpectrum
         self.plotWidget.setLogMode(isspectrum, isspectrum)
         self.xPhysicalChanged()
         self.yPhysicalChanged()
+        isTS = self.isTimeseries
+        self.subtractBaselineMenu.setDisabled(isTS)
+        self.averageTraces.setDisabled(isTS)
+        self.xPhysicalCheck.setDisabled(isTS)
+        self.yPhysicalCheck.setDisabled(isTS)
+        self.timeseriesComboBox.setEnabled(isTS)
         if self.isTDM:
             errvfb = (index == PlotTrace.TYPE_ERR_FB)
             self.quickErrComboBox.setDisabled(errvfb)
@@ -462,6 +469,10 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             return
 
         sbtext = self.subtractBaselineMenu.currentText()
+        tstext = ""
+        if self.isTimeseries:
+            tstext = self.timeseriesComboBox.currentText()
+
         waterfallSpacing = self.waterfallDeltaSpin.value()
         average = self.averageTraces.isChecked()
         self.lastRecord = record
@@ -473,7 +484,13 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             if thisIsPartner:
                 trace.plotpartner(record, sbtext, waterfallSpacing, average)
             else:
-                trace.plotrecord(record, self.plotWidget, sbtext, waterfallSpacing, average)
+                s = record.summarize()
+                trace.summary_pulse_rms.append(s.pulse_rms)
+                trace.summary_pulse_avg.append(s.pulse_avg)
+                trace.summary_pulse_peak.append(s.pulse_peak)
+                trace.summary_pretrig_mean.append(s.pretrig_mean)
+                trace.summary_time_ns.append(s.triggerTime_ns)
+                trace.plotrecord(record, self.plotWidget, sbtext, tstext, waterfallSpacing, average)
         if self.isErrvsFB:
             self.setLimits(xMin=self.YMIN, xMax=self.YMAX / 2)
         elif self.isSpectrum:
@@ -512,6 +529,10 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
         return self.plotTypeComboBox.currentIndex() == PlotTrace.TYPE_PSD
 
     @property
+    def isTimeseries(self) -> bool:
+        return self.plotTypeComboBox.currentIndex() == PlotTrace.TYPE_TIMESERIES
+
+    @property
     def isErrvsFB(self) -> bool:
         return self.isTDM and (self.plotTypeComboBox.currentIndex() == PlotTrace.TYPE_ERR_FB)
 
@@ -527,6 +548,9 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             label = "Feedback"
             units = "arbs"
             self.xPhysicalCheck.setChecked(False)
+        elif self.isTimeseries:
+            label = "Time relative to first pulse"
+            units = "s"
         elif self.xPhysicalCheck.isChecked():
             label = "Time after trigger"
             units = "s"
@@ -577,6 +601,10 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             label = "TES signal"
             units = ""
 
+        elif self.isTimeseries:
+            label = self.timeseriesComboBox.currentText()
+            units = "arbs"
+
         elif phys:
             scale = vperarb
             if self.isTDM:
@@ -591,13 +619,13 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
             self.mainwindow.settings.setValue("lastplot/yphysical", self.yPhysicalCheck.isChecked())
 
     @pyqtSlot()
-    def clearAllTraces(self) -> None:
+    def clearAllTraces(self, clearSummaries: bool = True) -> None:
         for traceIdx in range(self.NUM_TRACES):
-            self.clearTrace(traceIdx)
+            self.clearTrace(traceIdx, clearSummaries)
 
-    def clearTrace(self, traceIdx: int) -> None:
+    def clearTrace(self, traceIdx: int, clearSummaries: bool = False) -> None:
         trace = self.traces[traceIdx]
-        trace.clearhistory()
+        trace.clearhistory(clearSummaries)
         curve = trace.curve
         if curve is None:
             return
@@ -634,12 +662,13 @@ class PlotWindow(QtWidgets.QWidget):  # noqa: PLR0904
     @pyqtSlot()
     def redrawAll(self) -> None:
         sbtext = self.subtractBaselineMenu.currentText()
+        tstext = self.timeseriesComboBox.currentText()
         iswaterfall = "Waterfall" in sbtext
         self.waterfallDeltaSpin.setEnabled(iswaterfall)
         spacing = self.waterfallDeltaSpin.value()
         average = self.averageTraces.isChecked()
         for trace in self.traces:
-            trace.drawStoredRecord(sbtext, spacing, average)
+            trace.drawStoredRecord(sbtext, tstext, spacing, average)
 
     closed = pyqtSignal()
 

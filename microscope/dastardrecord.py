@@ -65,6 +65,15 @@ def FFTFreq(N: int, dt: int | float) -> np.ndarray:
 
 
 @dataclass(frozen=True)
+class PulseSummary:
+    pulse_rms: np.float32
+    pulse_avg: np.float32
+    pulse_peak: np.float32
+    pretrig_mean: np.float32
+    triggerTime_ns: np.uint64
+
+
+@dataclass(frozen=True)
 class DastardRecord:
     channelIndex: int
     datatype: type
@@ -129,6 +138,13 @@ class DastardRecord:
                 (self.nSamples != other.nSamples):
             return True
         return abs(other.timebase / self.timebase - 1) > rtol
+
+    def summarize(self) -> PulseSummary:
+        ptmean = self.record[:self.nPresamples].mean()
+        pulseavg = self.record[self.nPresamples:].mean() - ptmean
+        pulserms = np.mean((self.record[self.nPresamples:]-ptmean)**2)**0.5
+        peak = self.record[self.nPresamples:].max() - ptmean
+        return PulseSummary(pulserms, pulseavg, peak, ptmean, self.triggerTime_ns)
 
 
 def meanDastardRecord(buffer: deque[DastardRecord]) -> DastardRecord:
